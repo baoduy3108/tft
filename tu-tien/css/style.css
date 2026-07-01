@@ -1,0 +1,111 @@
+/* style.css — Mobile-first, dark theme cho Tu Tiên. */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #0a0e14; --card: #141922; --card2: #1a2029;
+  --line: #26303d; --txt: #d8dee7; --muted: #7f8b9c;
+  --cyan: #00e5ff; --gold: #ffab40; --good: #6fdc8c; --bad: #ff6b6b; --warn: #ffd54f;
+  --lore: #b39ddb; --accent: #ff6f00;
+}
+html, body { background: var(--bg); color: var(--txt); }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.55; font-size: 15px;
+  padding: 8px; max-width: 720px; margin: 0 auto; min-height: 100vh;
+}
+#app { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- STATUS PANEL ---- */
+#status-panel {
+  position: sticky; top: 0; z-index: 10;
+  background: linear-gradient(180deg, #141922, #10151d);
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.5);
+}
+.st-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.st-name { font-weight: 700; color: var(--cyan); font-size: 1.05rem; }
+.st-realm { color: var(--gold); font-weight: 600; }
+.st-bar { position: relative; height: 16px; background: #0c1118; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); margin-bottom: 8px; }
+.st-bar-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #0288d1, #00e5ff); }
+.st-bar span { position: relative; z-index: 1; font-size: .72rem; display: block; text-align: center; line-height: 16px; text-shadow: 0 1px 2px #000; }
+.st-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px 12px; font-size: .82rem; }
+.st-grid > div { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px dotted #202833; padding: 1px 0; }
+.st-grid b { color: var(--muted); font-weight: 500; }
+.st-grid .bad b, .st-grid.bad { color: var(--bad); }
+.st-grid .good { color: var(--good); }
+.st-grid .warn { color: var(--warn); }
+.st-loc { margin-top: 8px; font-size: .74rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 6px; }
+
+/* ---- MAIN VIEW ---- */
+#main-view { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+h1 { color: var(--cyan); text-align: center; font-size: 1.5rem; margin-bottom: 8px; }
+h2 { color: var(--gold); font-size: 1.15rem; margin-bottom: 10px; }
+
+/* ---- STORY ---- */
+.story-text { white-space: normal; margin-bottom: 16px; font-size: .97rem; }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+
+.btn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--card2); border: 1px solid var(--line); color: var(--txt);
+  padding: 11px 13px; border-radius: 10px; font-size: .9rem; cursor: pointer;
+  text-align: left; transition: .12s; font-family: inherit;
+}
+.btn:active { transform: scale(.98); }
+.btn:hover { border-color: #3a4a5e; background: #1f2732; }
+.btn.primary { background: linear-gradient(90deg, #e65100, #ff6f00); border: none; color: #fff; font-weight: 700; justify-content: center; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.danger { border-color: #5a2323; color: var(--bad); }
+.btn.disabled, .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.small { width: auto; padding: 6px 12px; font-size: .8rem; flex: none; }
+
+.choice .ch-key {
+  flex: none; width: 26px; height: 26px; border-radius: 6px; background: #0c1118;
+  border: 1px solid var(--line); display: grid; place-items: center;
+  font-weight: 700; color: var(--gold); font-size: .85rem;
+}
+.ch-label { flex: 1; }
+.ch-hint { display: block; font-size: .74rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+
+/* ---- MENU ---- */
+.title-wrap { text-align: center; padding: 24px 8px; }
+.subtitle { color: var(--muted); margin-bottom: 24px; font-size: .9rem; }
+.menu-btns { display: flex; flex-direction: column; gap: 10px; max-width: 320px; margin: 0 auto; }
+.menu-btns .btn { justify-content: center; }
+.warn-note { margin-top: 24px; color: var(--bad); font-size: .82rem; }
+
+/* ---- HUB ---- */
+.hub-hint { color: var(--muted); font-size: .84rem; margin-bottom: 12px; }
+.hub-group { margin-bottom: 14px; }
+.hub-title { color: var(--cyan); font-weight: 600; font-size: .88rem; margin-bottom: 6px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+.hub-group .btn { margin-bottom: 6px; }
+.hub-group .btn:not(.primary) { justify-content: flex-start; }
+
+/* ---- LOG ---- */
+.log { background: #0c1118; border: 1px solid var(--line); border-radius: 8px; padding: 8px; max-height: 220px; overflow-y: auto; font-size: .82rem; }
+.log-line { padding: 2px 0; border-bottom: 1px dotted #1a212b; }
+.log-line.good { color: var(--good); }
+.log-line.bad { color: var(--bad); }
+.log-line.warn { color: var(--warn); }
+.log-line.lore { color: var(--lore); font-style: italic; }
+.log-line.death { color: var(--bad); font-weight: 700; }
+
+/* ---- EVENT ---- */
+.ev-cat { display: inline-block; background: #2a1e1e; color: var(--gold); border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px; font-size: .74rem; font-weight: 700; margin-bottom: 8px; letter-spacing: .5px; }
+
+/* ---- INVENTORY / CHAR ---- */
+.inv-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; margin-bottom: 6px; font-size: .85rem; }
+.muted { color: var(--muted); }
+small.muted { font-size: .76rem; }
+.char p { margin-bottom: 8px; font-size: .9rem; }
+.char .btn, .inv .btn:not(.small) { margin-top: 10px; }
+.warn { color: var(--warn); }
+
+/* ---- DEATH ---- */
+.death { text-align: center; padding: 20px 8px; }
+.death h1 { color: var(--bad); }
+.death-cause { color: var(--bad); font-size: 1rem; margin: 14px 0; font-style: italic; }
+.death-stats { color: var(--muted); font-size: .86rem; margin-bottom: 20px; }
+.death-stats p { margin-bottom: 6px; }
+.death .btn { max-width: 320px; margin: 0 auto; }
+
+@media (min-width: 520px) { .st-grid { grid-template-columns: repeat(3, 1fr); } }
