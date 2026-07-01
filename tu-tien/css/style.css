@@ -108,4 +108,21 @@ small.muted { font-size: .76rem; }
 .death-stats p { margin-bottom: 6px; }
 .death .btn { max-width: 320px; margin: 0 auto; }
 
+/* ---- FREE-FORM CHOICE (bảng điền lựa chọn tự do) ---- */
+.freeform { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 10px; }
+.ff-label { font-size: .78rem; color: var(--muted); margin-bottom: 6px; font-style: italic; }
+.ff-row { display: flex; gap: 6px; }
+.ff-input {
+  flex: 1; background: #0c1118; border: 1px solid var(--line); color: var(--txt);
+  border-radius: 8px; padding: 9px 11px; font-size: .85rem; font-family: inherit;
+}
+.ff-input:focus { outline: none; border-color: var(--cyan); }
+.free-result {
+  background: #12181f; border-left: 3px solid var(--lore); border-radius: 6px;
+  padding: 9px 11px; margin-bottom: 12px; font-size: .88rem; font-style: italic;
+}
+.free-result.good { border-left-color: var(--good); }
+.free-result.warn { border-left-color: var(--warn); }
+.free-result.bad { border-left-color: var(--bad); }
+
 @media (min-width: 520px) { .st-grid { grid-template-columns: repeat(3, 1fr); } }

@@ -12,6 +12,8 @@ import { refine, canRefine, baseSuccess } from './systems/alchemy.js';
 import { fmtNam, fmtLinhThach, fmtThoiGian, fmtPercent } from './util/format.js';
 import { getRealm } from './data/realms.js';
 import { getVein } from './data/spiritveins.js';
+import { parseIntent, matchByIntent, genericOutcome, detectChoiceLetters } from './systems/intent.js';
+import { addKarma } from './systems/karma.js';
 
 // Đăng ký nội dung cốt truyện
 loadPrologue();
@@ -21,12 +23,27 @@ let screen = 'menu';      // menu | story | hub | event | inventory | char | dea
 let currentNode = null;
 let currentEvent = null;
 let eventResult = null;
+let freeMsg = null;       // kết quả tạm của lựa chọn tự do (hiển thị trên story node)
+
+// Khối HTML ô nhập "lựa chọn tự do" (bảng điền theo ý người chơi)
+function freeFormHTML() {
+  return `
+    <div class="freeform">
+      <div class="ff-label">✍ Hoặc tự quyết định (gõ hành động của riêng ngươi — kể cả "chọn cả A và B"):</div>
+      <div class="ff-row">
+        <input id="freetext" class="ff-input" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off">
+        <button class="btn small primary" data-act="freeact">Làm</button>
+      </div>
+    </div>`;
+}
 
 const view = () => document.getElementById('main-view');
 const statusEl = () => document.getElementById('status-panel');
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function nl2br(s) { return esc(s).replace(/\n/g, '<br>'); }
+function letterToVisibleIndex(letter, count) { const i = letter.charCodeAt(0) - 65; return i >= 0 && i < count ? i : -1; }
+function addKarmaSafe(n, reason) { try { addKarma(G, n, reason); } catch (e) {} }
 
 // ---------- MASTER RENDER ----------
 function render() {
@@ -101,13 +118,15 @@ function renderStory() {
   const choices = visibleChoices(G, currentNode);
   view().innerHTML = `
     <div class="story-text">${nl2br(resolveText(G, currentNode))}</div>
+    ${freeMsg ? `<div class="free-result ${freeMsg.cls || ''}">${nl2br(freeMsg.text)}</div>` : ''}
     <div class="choices">
       ${choices.map((c, i) => `
         <button class="btn choice ${c.enabled ? '' : 'disabled'}" data-act="choice" data-arg="${c.idx}" ${c.enabled ? '' : 'disabled'}>
           <span class="ch-key">${String.fromCharCode(65 + i)}</span>
           <span class="ch-label">${esc(c.label)}${c.hint ? `<span class="ch-hint">${esc(c.hint)}</span>` : ''}</span>
         </button>`).join('')}
-    </div>`;
+    </div>
+    ${choices.length ? freeFormHTML() : ''}`;
 }
 
 // ---------- HUB ----------
@@ -207,6 +226,7 @@ function renderEvent() {
             <span class="ch-label">${esc(c.label)}${c.hint ? `<span class="ch-hint">${esc(c.hint)}</span>` : ''}</span>
           </button>`).join('')}
       </div>
+      ${freeFormHTML()}
     </div>`;
 }
 
@@ -292,10 +312,62 @@ const actions = {
   restart() { doNewGame(); },
 
   choice(arg) {
+    freeMsg = null;
     const res = applyChoice(G, currentNode, Number(arg));
     if (res.screen) { switchTo(res.screen); }
     else { currentNode = res.node; }
     afterAction();
+  },
+
+  // Lựa chọn TỰ DO (bảng điền). Diễn giải ý định -> khớp nhánh có sẵn hoặc ứng biến.
+  freeact() {
+    const input = document.getElementById('freetext');
+    const text = input ? input.value.trim() : '';
+    if (!text) return;
+    const intent = parseIntent(text);
+    const letters = detectChoiceLetters(text);
+
+    if (screen === 'event' && currentEvent && !eventResult) {
+      const labels = currentEvent.choices.map((c) => (typeof c.label === 'function' ? '' : c.label));
+      // "chọn cả A và B" -> ưu tiên chữ cái; nếu 2 chữ, khen mưu trí rồi chạy nhánh đầu
+      let idx = -1;
+      const vis = currentEvent.choices.map((c, i) => ({ c, i })).filter(({ c }) => !c.show || c.show(G));
+      if (letters.length >= 1) {
+        const vi = letterToVisibleIndex(letters[0], vis.length);
+        if (vi >= 0) idx = vis[vi].i;
+        if (letters.length >= 2) { addKarmaSafe(1, 'lối chơi mưu trí phá cách'); }
+      }
+      if (idx < 0) idx = matchByIntent(intent, labels);
+      if (idx >= 0 && currentEvent.choices[idx]) {
+        eventResult = currentEvent.choices[idx].act(G) || { text: '...' };
+      } else {
+        eventResult = genericOutcome(G, intent, text);
+      }
+      afterAction(true);
+      return;
+    }
+
+    if (screen === 'story' && currentNode) {
+      const vis = visibleChoices(G, currentNode); // [{idx,label,...}]
+      let target = -1;
+      if (letters.length >= 1) {
+        const vi = letterToVisibleIndex(letters[0], vis.length);
+        if (vi >= 0) target = vis[vi].idx;
+        if (letters.length >= 2) addKarmaSafe(1, 'lối chơi mưu trí phá cách');
+      }
+      if (target < 0) {
+        const m = matchByIntent(intent, vis.map((c) => c.label));
+        if (m >= 0) target = vis[m].idx;
+      }
+      if (target >= 0) {
+        freeMsg = null;
+        const res = applyChoice(G, currentNode, target);
+        if (res.screen) switchTo(res.screen); else currentNode = res.node;
+      } else {
+        freeMsg = genericOutcome(G, intent, text); // ứng biến, ở lại node
+      }
+      afterAction();
+    }
   },
 
   cultivate(arg) { cultivate(G, Number(arg)); afterAction(); },
@@ -383,6 +455,7 @@ function afterAction(skipStoryRefresh) {
 
 function doNewGame() {
   createNewGame({});
+  freeMsg = null; currentEvent = null; eventResult = null;
   currentNode = enterNode(G, 'prologue_start');
   screen = 'story';
   log('— Một sinh mệnh mới chào đời tại [Khô Kiệt Tinh Lộ] —', 'lore');

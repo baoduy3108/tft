@@ -7,6 +7,25 @@ import { G, log } from '../state.js';
 import { addKarma, addAttention } from '../systems/karma.js';
 import { grantWithPrice } from '../systems/worldrules.js';
 import { luck } from '../state.js';
+import { getOrigin, applyOrigin, rollRandomOrigin, RARITY } from '../data/origins.js';
+
+// Lựa chọn xuất thân theo slot i (0-4) trong tay bài đã bốc.
+function originChoice(i) {
+  return {
+    show: (G) => (G.s._originHand || []).length > i && !G.s.flags.originId,
+    label: (G) => {
+      const o = getOrigin(G.s._originHand[i]);
+      return `[${RARITY[o.rarity].name}] ${o.name}`;
+    },
+    hint: (G) => getOrigin(G.s._originHand[i]).desc,
+    effect: (G) => {
+      const o = getOrigin(G.s._originHand[i]);
+      applyOrigin(G, o);
+      log(`Xuất thân [${RARITY[o.rarity].name}]: ${o.name}.`, 'lore');
+    },
+    goto: 'prologue_village',
+  };
+}
 
 const nodes = [
   {
@@ -16,38 +35,23 @@ const nodes = [
 
 [Khô Kiệt Tinh Lộ] — một góc hoang vu bị trời đất ruồng bỏ. Linh khí ở đây loãng đến mức cây cỏ còi cọc, đất đai nứt nẻ như da người chết khát. Người ta bảo đây từng là một tinh vực trù phú, nhưng các đại tông môn đã hút cạn long mạch rồi bỏ đi, để lại một mảnh đất chết cho lũ phàm nhân bọ kiến bám víu sinh tồn.
 
-Ngươi lớn lên trong Thôn Khô Thạch, nơi một bát cháo loãng cũng là xa xỉ. Ngươi chưa từng thấy tiên nhân bay trên mây như trong truyện kể của bà lão mù đầu thôn. Ngươi chỉ thấy đói, thấy rét, và thỉnh thoảng — thấy người ta biến mất.
+Ngươi lớn lên trong Thôn Khô Thạch, nơi một bát cháo loãng cũng là xa xỉ. Nhưng dòng máu, tàn hồn, hay gia sản giấu kín trong ngươi — quá khứ của ngươi — mới quyết định điểm khởi đầu này.
 
-Ngươi là ai, trước khi câu chuyện này bắt đầu?`,
+Ngươi thực sự là ai?`,
     choices: [
+      originChoice(0),
+      originChoice(1),
+      originChoice(2),
+      originChoice(3),
+      originChoice(4),
       {
-        label: 'Con của một thợ săn nghèo đã chết vì thú dữ — thân thể ngươi rắn rỏi hơn bạn đồng lứa.',
-        hint: 'Khí huyết tốt hơn một chút.',
+        label: 'Để số phận định đoạt. (Bốc ngẫu nhiên một xuất thân bất kỳ — kể cả những thứ không có trong danh sách trên.)',
+        hint: 'Hardcore: có thể cực phẩm, cũng có thể là địa ngục.',
+        show: (G) => !G.s.flags.originId,
         effect: (G) => {
-          G.s.flags.origin = 'thosan';
-          if (G.s.physique?.buffs) G.s.physique.buffs.hp = (G.s.physique.buffs.hp ?? 1) * 1.1;
-          log('Xuất thân: con thợ săn. Thân thể ngươi quen với đói khát và gian khổ.', 'lore');
-        },
-        goto: 'prologue_village',
-      },
-      {
-        label: 'Một đứa trẻ mồ côi nhặt ve chai — ngươi sống sót nhờ luôn cảnh giác và nhanh trí.',
-        hint: 'Cảnh giác cao, dễ nhận ra hiểm nguy.',
-        effect: (G) => {
-          G.s.flags.origin = 'conhi';
-          G.s.flags.wary = true;
-          log('Xuất thân: cô nhi. Ngươi học được rằng lòng tốt luôn có giá.', 'lore');
-        },
-        goto: 'prologue_village',
-      },
-      {
-        label: 'Con của một nhà buôn sa cơ — ngươi biết chữ, biết tính toán, và còn giữ vài đồng bạc vụn.',
-        hint: 'Có chút bạc & tri thức.',
-        effect: (G) => {
-          G.s.flags.origin = 'nhabuon';
-          G.s.flags.literate = true;
-          G.s.inventory['bac_vun'] = (G.s.inventory['bac_vun'] ?? 0) + 30;
-          log('Xuất thân: con nhà buôn. Ngươi hiểu rằng mọi thứ trên đời đều có thể mua bán — kể cả mạng người.', 'lore');
+          const o = getOrigin(rollRandomOrigin(G.rng));
+          applyOrigin(G, o);
+          log(`Số phận an bài — Xuất thân [${RARITY[o.rarity].name}]: ${o.name}.`, 'lore');
         },
         goto: 'prologue_village',
       },
@@ -93,6 +97,63 @@ Hắn dừng lại. Ánh mắt hắn... dừng trên người ngươi.`,
           addKarma(G, 3, 'liều mình che chở kẻ yếu');
           addAttention(G, 5, 'dám chống lại tu sĩ');
         },
+        goto: 'prologue_defiance',
+      },
+      // ---- LỰA CHỌN ẨN #5: chỉ hiện với xuất thân mang huyết mạch/ma tính ----
+      {
+        label: '⚝ Một luồng sát khí xa lạ trong huyết mạch ngươi đột nhiên trỗi dậy, đòi được giải phóng...',
+        hint: 'Ẩn — huyết mạch/ma tính thức tỉnh. Nguy hiểm khó lường.',
+        show: (G) => {
+          const f = G.s.flags;
+          return f.demon_heir || f.demon_blood || f.ancient_blood || f.beast_origin ||
+            f.demon_seed || f.chaos_root || f.emperor_soul || f.primordial_body;
+        },
+        effect: (G) => {
+          G.s.flags.awakened_early = true;
+          addAttention(G, 8, 'khí tức dị biến bộc phát');
+          addKarma(G, -2, 'thả lỏng bản năng hắc ám');
+          log('Một tiếng gầm cổ xưa vang lên trong huyết mạch. Ngươi cảm thấy sức mạnh — và cả sự đói khát.', 'warn');
+        },
+        goto: 'prologue_awaken',
+      },
+      // ---- LỰA CHỌN ẨN #6: chỉ hiện với xuất thân giàu có / khí vận lớn ----
+      {
+        label: '⚝ Ngươi sực nhớ tới gia sản/vận mệnh giấu kín của mình — có lẽ đủ để đổi lấy một mạng người.',
+        hint: 'Ẩn — dùng tài phú/khí vận để can thiệp.',
+        show: (G) => {
+          const f = G.s.flags;
+          return f.rich_heir || f.reborn_saint || f.infinite_luck || f.fallen_prince || f.hidden_lineage;
+        },
+        effect: (G) => {
+          G.s.flags.bribed_cultivator = true;
+          addKarma(G, 2, 'dùng của cải cứu người');
+          addAttention(G, 4, 'phô ra tài phú bất thường');
+          log('Ngươi lặng lẽ dúi vào tay tu sĩ một vật giá trị. Hắn nhíu mày, rồi thả bé gái ra — lần này thôi.', 'good');
+        },
+        goto: 'prologue_after_tribute',
+      },
+    ],
+  },
+
+  {
+    id: 'prologue_awaken',
+    text:
+`Đồng tử ngươi co lại. Máu trong người sôi lên như dung nham. Trong một khoảnh khắc, cả sân Thu Cống như đông cứng — ngay cả tu sĩ áo đen cũng khựng lại, ánh mắt lần đầu tiên lộ vẻ nghiêm túc khi nhìn về phía ngươi.
+
+"Huyết mạch này... ngươi là thứ gì?" Hắn lẩm bẩm, bàn tay đã âm thầm nắm chặt pháp bảo.
+
+Ngươi biết — khoảnh khắc này, ngươi đã lọt vào mắt của những kẻ mạnh. Từ nay, ngươi không còn là một con kiến vô danh nữa. Đó vừa là cơ hội, vừa là bản án tử.`,
+    onEnter: (G) => { G.s.flags.marked_by_power = true; },
+    choices: [
+      {
+        label: 'Nén luồng sức mạnh xuống, giả vờ như vừa lên cơn động kinh.',
+        hint: 'Cố gắng che giấu — nhưng liệu có kịp?',
+        effect: (G) => { addAttention(G, -3, ''); log('Ngươi gắng gượng đè nén, gục xuống co giật. Tu sĩ bán tín bán nghi.', ''); },
+        goto: 'prologue_after_tribute',
+      },
+      {
+        label: 'Mặc kệ. Nếu đằng nào cũng bị nhắm tới, chi bằng để họ thấy ngươi không dễ nuốt.',
+        effect: (G) => { addAttention(G, 5, 'công khai thị uy'); addKarma(G, -1, ''); G.s.flags.defiant = true; },
         goto: 'prologue_defiance',
       },
     ],

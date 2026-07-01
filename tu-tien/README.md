@@ -35,6 +35,26 @@ Hương vị hardcore: linh khí **ô nhiễm** (tu = "nạp độc", cần tẩ
 **khấu trừ thọ nguyên** khi hao tổn, kinh tế **linh thạch** khắc nghiệt, **khí
 vận độc hại**. Khởi đầu tại vùng đất bị ruồng bỏ **[Khô Kiệt Tinh Lộ]**.
 
+## Xuất thân & lựa chọn vô hạn
+
+- **83 xuất thân khởi đầu** theo 6 bậc hiếm (Phàm Thường / Hiếm / Quý / Sử Thi /
+  Truyền Thuyết / Thần Thoại) — `data/origins.js`. Mỗi lần chơi bốc một "tay bài"
+  5 xuất thân theo trọng số hiếm, cộng nút **"Để số phận định đoạt"** (random toàn
+  bộ, kể cả Thần Thoại như *Tàn Niệm Đại Đạo*, *Hồng Mông Chí Thể*). Ví dụ:
+  *Thiên Đạo kiếp trước ruồng bỏ* (Hắc Vận, nhân quả −10, nhưng ẩn giấu bí mật),
+  *Thánh Tử đầu thai* (khí vận lớn + gia sản kếch xù). Mọi xuất thân đều được đóng
+  khung là "quá khứ/huyết mạch/tàn hồn/gia sản giấu kín" nên tương thích một mở màn.
+- **Lựa chọn ẩn 5/6**: một số nhánh chỉ hiện dựa trên xuất thân & lựa chọn trước
+  (vd huyết mạch/ma tính → "sát khí trỗi dậy"; giàu có/khí vận → "dùng gia sản cứu
+  người"). Engine hỗ trợ điều kiện `show(G)` cho mọi choice.
+- **Ô nhập lựa chọn tự do** ("bảng điền"): người chơi tự gõ hành động (kể cả "chọn
+  cả A và B"). Bộ diễn giải ý định `systems/intent.js` sẽ **khớp vào nhánh có sẵn**
+  để ra hệ quả thật, hoặc tạo **kết cục ứng biến** ảnh hưởng nhân quả / lộ diện /
+  quan hệ NPC → nhân quả cốt truyện gần như vô tận.
+  > Lưu ý: đây là diễn giải theo TỪ KHÓA (tất định, chạy offline). Muốn NPC/kịch
+  > bản hiểu câu tự nhiên bất kỳ như "AI thật" thì cần nối một API mô hình ngôn ngữ
+  > (điểm mở rộng đã chừa sẵn trong `systems/intent.js`).
+
 ## Hệ thống
 
 - **100 đại cảnh giới** (Luyện Khí → ĐẠI ĐẠO), mỗi đại cảnh có tiểu cảnh. Sức

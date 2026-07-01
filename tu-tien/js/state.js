@@ -6,6 +6,7 @@ import { rollRoot } from './data/spiritroots.js';
 import { buildPhysiques, rollStartPhysique } from './data/physiques.js';
 import { rollStartLuck, getLuck } from './data/luck.js';
 import { startingWorld } from './data/worlds.js';
+import { rollOriginHand } from './data/origins.js';
 
 const SAVE_KEY = 'tu_tien_save_v1';
 const SAVE_VERSION = 1;
@@ -81,6 +82,7 @@ export function createNewGame(opts = {}) {
     node: 'prologue_start', // node hiện tại của story engine
     flags: {},             // cờ cốt truyện
     hiddenFortune: pickHiddenFortune(rng), // cơ duyên ẩn
+    _originHand: rollOriginHand(rng, 5),   // tay bài xuất thân để người chơi chọn
 
     // Thời gian in-game
     time: { nam: 0, thang: 1, ngay: 1 },
