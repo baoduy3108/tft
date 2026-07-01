@@ -65,8 +65,15 @@ vận độc hại**. Khởi đầu tại vùng đất bị ruồng bỏ **[Khô
   tại ở vũ trụ khởi đầu.
 - **Linh căn** (`data/spiritroots.js`), **180 thể chất** (`data/physiques.js`),
   **khí vận** (`data/luck.js`), **linh mạch 12 bậc** (`data/spiritveins.js`).
-- **Tu luyện / đột phá** có rủi ro, dị biến, thọ nguyên (`systems/cultivation.js`,
-  `systems/breakthrough.js`).
+- **Tu luyện theo NHỊP THỜI GIAN THỰC** (`systems/realtime.js`): bế quan là một
+  trạng thái idle chạy theo giây — KHÔNG phải "bấm là lên cảnh". Hai chế độ
+  **Tĩnh Tu** (an toàn) và **Khổ Tu** (nhanh gấp bội nhưng hao thọ nguyên, tích
+  chướng tính, dễ gặp tai họa). Tu vi dâng dần; càng cảnh cao độ khó càng lớn nên
+  càng lâu (phàm nhân có thể kẹt "vạn năm"). Có **tiến độ khi offline** (áp dụng
+  khi mở lại, trần 12 giờ thực) và **sự kiện ngắt** khi đang bế quan.
+  Chỉnh `SEC_PER_YEAR` để đổi nhịp toàn cục.
+- **Đột phá** vẫn THỦ CÔNG và có rủi ro (tẩu hỏa/thọ nguyên/dị biến) —
+  `systems/breakthrough.js`. Đan dược chỉ tăng TIẾN ĐỘ, không tự đột phá.
 - **Luyện đan** với tỉ lệ thất bại → nổ lò / phản phệ / cháy hồn (`systems/alchemy.js`).
 - **Chiến đấu** theo lượt + uy áp + công kích nguyên thần (`systems/combat.js`).
 - **Tông môn** 8 cấp / 7 loại / 7 vị trí (`data/sects.js`).
@@ -105,7 +112,8 @@ icon bộ đầy đủ trong `assets/`, và chính sách quyền riêng tư.
 
 ## Trạng thái
 
-Bản hybrid v1: đầy đủ hệ thống lõi + khung dữ liệu cho cả 100 cảnh giới, cốt
-truyện viết tay cho giai đoạn đầu, và event thủ tục vô hạn cho phần còn lại.
-Đã kiểm thử tự động (Playwright + node) qua toàn bộ luồng chơi và 5 loại event,
-không có lỗi runtime.
+Bản hybrid v1: đầy đủ hệ thống lõi + khung dữ liệu cho cả 100 cảnh giới, 83 xuất
+thân, cốt truyện viết tay cho giai đoạn đầu, event thủ tục vô hạn, ô lựa chọn tự
+do, và tu luyện theo nhịp thời gian thực (idle) với tiến độ offline. Đã kiểm thử
+tự động (Playwright + node) qua toàn bộ luồng chơi, 5 loại event, và vòng lặp
+thời gian thực — không có lỗi runtime.

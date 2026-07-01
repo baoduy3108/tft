@@ -87,6 +87,10 @@ export function createNewGame(opts = {}) {
     // Thời gian in-game
     time: { nam: 0, thang: 1, ngay: 1 },
 
+    // Nhịp thời gian thực
+    mode: 'idle',          // idle | tinh | kho | soul
+    lastTick: Date.now(),  // mốc thời gian thực gần nhất (cho tick + offline)
+
     // Nhật ký sự kiện (mới nhất ở cuối)
     log: [],
 

@@ -13,7 +13,8 @@ import { fmtNam, fmtLinhThach, fmtThoiGian, fmtPercent } from './util/format.js'
 import { getRealm } from './data/realms.js';
 import { getVein } from './data/spiritveins.js';
 import { parseIntent, matchByIntent, genericOutcome, detectChoiceLetters } from './systems/intent.js';
-import { addKarma } from './systems/karma.js';
+import { addKarma, disasterChance, fortuneChance } from './systems/karma.js';
+import { tick as rtTick, applyOffline, startMode, stopMode, MODES, estSecondsToBreak } from './systems/realtime.js';
 
 // Đăng ký nội dung cốt truyện
 loadPrologue();
@@ -141,13 +142,17 @@ function renderHub() {
   view().innerHTML = `
     <div class="hub">
       <h2>Bế Quan Tu Luyện</h2>
-      <p class="hub-hint">Tốc độ hiện tại: <b>${(perYear * 100).toFixed(1)}%</b> tu vi mỗi năm. ${s.technique ? '' : '<span class="warn">(Chưa có công pháp → cực chậm)</span>'}</p>
+      ${cultStatusHTML()}
 
-      <div class="hub-group"><div class="hub-title">🧘 Tu Luyện</div>
-        <button class="btn" data-act="cultivate" data-arg="0.0833">Vận công 1 tháng</button>
-        <button class="btn" data-act="cultivate" data-arg="1">1 năm</button>
-        <button class="btn" data-act="cultivate" data-arg="10">10 năm</button>
-        <button class="btn" data-act="cultivate_until">Tu tới khi đủ đột phá</button>
+      <div class="hub-group"><div class="hub-title">🧘 Tu Luyện (thời gian thực)</div>
+        ${s.mode === 'idle' ? `
+          <button class="btn" data-act="startcult" data-arg="tinh">Bắt đầu Tĩnh Tu — ước ${fmtDur(estSecondsToBreak(G, 'tinh'))} tới khi đủ đột phá</button>
+          <button class="btn" data-act="startcult" data-arg="kho">Khổ Tu (×${MODES.kho.speed} nhanh, hao thọ + chướng tính, dễ gặp họa)</button>
+        ` : `
+          <button class="btn primary" data-act="stopcult">⏹ Dừng ${MODES[s.mode] ? MODES[s.mode].name : 'bế quan'}</button>
+          <p class="hub-hint">Đang ${MODES[s.mode] ? MODES[s.mode].name : ''}... thời gian đang trôi. ${s.mode !== 'soul' ? `Còn ~${fmtDur(estSecondsToBreak(G, s.mode))} tới khi đủ đột phá.` : ''}</p>
+        `}
+        ${s.technique ? '' : '<p class="hub-hint warn">(Chưa có công pháp → cực chậm)</p>'}
       </div>
 
       <div class="hub-group"><div class="hub-title">⚡ Đột Phá</div>
@@ -157,8 +162,9 @@ function renderHub() {
       </div>
 
       <div class="hub-group"><div class="hub-title">🧠 Nguyên Thần & Thanh Tẩy</div>
-        <button class="btn" data-act="soul" data-arg="1">Luyện nguyên thần (1 năm)</button>
-        <button class="btn" data-act="soul" data-arg="10">Luyện nguyên thần (10 năm)</button>
+        ${s.mode === 'soul'
+          ? '<button class="btn primary" data-act="stopcult">⏹ Dừng luyện nguyên thần</button>'
+          : `<button class="btn ${s.mode === 'idle' ? '' : 'disabled'}" data-act="startcult" data-arg="soul" ${s.mode === 'idle' ? '' : 'disabled'}>Luyện nguyên thần (theo thời gian thực)</button>`}
         <button class="btn ${hasThanhLinh ? '' : 'disabled'}" data-act="purge" ${hasThanhLinh ? '' : 'disabled'}>Tẩy chướng tính (Thanh Linh Đan)</button>
       </div>
 
@@ -197,6 +203,23 @@ function renderLog() {
   const items = G.s.log.slice(-12).reverse();
   if (!items.length) return '<i>Chưa có gì.</i>';
   return items.map((l) => `<div class="log-line ${l.cls}">${esc(l.t)}</div>`).join('');
+}
+
+function cultStatusHTML() {
+  const s = G.s;
+  const modeName = s.mode === 'idle' ? 'Nhàn rỗi' : (MODES[s.mode] ? MODES[s.mode].name : s.mode);
+  const cls = s.mode === 'kho' ? 'warn' : '';
+  return `<p class="hub-hint ${cls}">Trạng thái: <b>${modeName}</b> · Tu vi <b>${Math.round(s.cultProgress * 100)}%</b>${s.mode !== 'idle' ? ' · ⏳ thời gian đang trôi từng giây' : ''}</p>`;
+}
+
+// Định dạng thời lượng thực (giây) → người đọc.
+function fmtDur(sec) {
+  if (!isFinite(sec)) return '∞';
+  if (sec < 60) return `${Math.max(1, Math.ceil(sec))} giây`;
+  if (sec < 3600) return `${Math.round(sec / 60)} phút`;
+  if (sec < 86400) return `${(sec / 3600).toFixed(1)} giờ`;
+  if (sec < 86400 * 365) return `${(sec / 86400).toFixed(1)} ngày`;
+  return `${(sec / (86400 * 365)).toFixed(1)} năm thực`;
 }
 
 // ---------- EVENT ----------
@@ -307,7 +330,15 @@ function renderDeath() {
 // ---------- ACTION DISPATCH ----------
 const actions = {
   newgame() { doNewGame(); },
-  continue() { if (load()) { screen = G.s.alive ? 'hub' : 'death'; if (G.s.alive && G.s.node && !G.s.flags.can_cultivate) { screen = 'story'; currentNode = enterNode(G, G.s.node); } render(); } },
+  continue() {
+    if (load()) {
+      const y = applyOffline(G, Date.now()); // tiến độ khi vắng mặt (có trần)
+      if (y > 0) log(`Ngươi đã bế quan liên tục, ${Math.round(y)} năm trôi qua khi ngươi vắng mặt.`, 'lore');
+      screen = G.s.alive ? 'hub' : 'death';
+      if (G.s.alive && G.s.node && !G.s.flags.can_cultivate) { screen = 'story'; currentNode = enterNode(G, G.s.node); }
+      render();
+    }
+  },
   delete() { deleteSave(); render(); },
   restart() { doNewGame(); },
 
@@ -370,21 +401,18 @@ const actions = {
     }
   },
 
-  cultivate(arg) { cultivate(G, Number(arg)); afterAction(); },
-  cultivate_until() {
-    let guard = 0;
-    while (G.s.alive && G.s.cultProgress < 1 && guard < 5000) { cultivate(G, 1); guard++; }
-    afterAction();
-  },
+  startcult(arg) { startMode(G, arg); afterAction(); },
+  stopcult() { stopMode(G); afterAction(); },
   breakthrough() {
-    const res = attemptBreakthrough(G, breakOpts());
+    if (G.s.mode !== 'idle') stopMode(G); // dừng bế quan trước khi đột phá
+    attemptBreakthrough(G, breakOpts());
     clearBreakBuffs();
     afterAction();
   },
-  soul(arg) { refineSoul(G, Number(arg)); afterAction(); },
   purge() { usePill(G, 'thanh_linh_dan'); afterAction(); },
 
   explore() {
+    if (G.s.mode !== 'idle') stopMode(G); // xuất quan thì ngừng bế quan
     currentEvent = rollEvent(G);
     eventResult = null;
     switchTo('event');
@@ -471,6 +499,56 @@ document.addEventListener('click', (e) => {
   const fn = actions[act];
   if (fn) fn(arg);
 });
+// Enter trong ô lựa chọn tự do = bấm "Làm"
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target && e.target.id === 'freetext') { e.preventDefault(); actions.freeact(); }
+});
+
+// ---------- VÒNG LẶP THỜI GIAN THỰC ----------
+let eventAccrual = 0;      // số năm in-game tích lũy để roll sự kiện định kỳ
+let lastSaveMs = Date.now();
+const EVENT_EVERY_YEARS = 30;
+
+function gameLoop() {
+  if (!G.s) return;
+  if (!G.s.alive) {
+    if (screen !== 'death' && screen !== 'menu') { screen = 'death'; render(); }
+    return;
+  }
+  if (!G.s.mode || G.s.mode === 'idle') { renderStatus(); return; }
+
+  const res = rtTick(G, Math.min(5000, Date.now() - (G.s.lastTick || Date.now())));
+  G.s.lastTick = Date.now();
+
+  // Tu vi viên mãn → tự dừng để người chơi tự quyết định đột phá
+  if (G.s.mode !== 'idle' && G.s.mode !== 'soul' && G.s.cultProgress >= 1) {
+    stopMode(G);
+    log('Tu vi đã viên mãn — có thể ĐỘT PHÁ (nhớ: đột phá luôn có rủi ro).', 'good');
+  }
+
+  // Sự kiện định kỳ khi đang bế quan (chỉ ngắt khi đang ở hub để không giật màn khác)
+  if (G.s.mode !== 'idle') {
+    eventAccrual += res.years || 0;
+    if (eventAccrual >= EVENT_EVERY_YEARS) {
+      eventAccrual = 0;
+      const p = Math.min(0.6, disasterChance(G) + fortuneChance(G));
+      if (screen === 'hub' && G.rng.chance(p)) {
+        stopMode(G);
+        currentEvent = rollEvent(G);
+        eventResult = null;
+        screen = 'event';
+        log('Đang bế quan thì có biến — ngươi buộc phải xuất quan!', 'warn');
+      }
+    }
+  }
+
+  // Tự lưu định kỳ
+  if (Date.now() - lastSaveMs > 8000) { save(); lastSaveMs = Date.now(); }
+
+  if (!G.s.alive) { screen = 'death'; render(); return; }
+  if (screen === 'hub') render(); else renderStatus();
+}
+setInterval(gameLoop, 500);
 
 // Khởi động
 render();
