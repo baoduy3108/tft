@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ===== SEO (replace YOUR-USERNAME after deploy) ===== -->
+<title>Photo to Art — Free Pop-Art, Halftone, ASCII & Glitch Photo Effects</title>
+<meta name="description" content="Turn any photo into striking art for free: pop-art, halftone comic, ASCII, glitch/VHS, pencil sketch and pixel art. Runs 100% in your browser — no upload, instant, private.">
+<meta name="keywords" content="photo to art, pop art generator, photo to ascii, glitch photo effect, halftone generator, pencil sketch from photo, pixel art maker, cartoon yourself">
+<link rel="canonical" href="https://YOUR-USERNAME.github.io/tft/photo-studio/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Photo to Art — Free striking photo effects">
+<meta property="og:description" content="Pop-art, ASCII, glitch, halftone & sketch effects. 100% in your browser, no upload.">
+<meta property="og:url" content="https://YOUR-USERNAME.github.io/tft/photo-studio/">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Photo to Art Studio",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<!-- ===== GOOGLE ADSENSE (uncomment & set ca-pub-XXXX after approval) ===== -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
+<style>
+:root{
+  --bg:#0b0d13; --panel:#141824; --panel2:#1c2130; --ink:#e8ecf5; --muted:#8b95ad;
+  --brand:#ff2d75; --brand2:#7c5cff; --line:#262c3d; --good:#22d39a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;line-height:1.5;padding:14px}
+.wrap{max-width:900px;margin:0 auto}
+header{text-align:center;padding:18px 0 6px}
+header h1{font-size:1.6rem;letter-spacing:-.02em}
+header h1 span{background:linear-gradient(90deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{color:var(--muted);margin-top:6px;font-size:.92rem}
+.badge{display:inline-block;background:#1a1030;color:#c9b8ff;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:999px;margin-top:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.drop{border:2px dashed #33405e;border-radius:14px;padding:30px 14px;text-align:center;cursor:pointer;transition:.15s;background:#10131d}
+.drop.hover{border-color:var(--brand);background:#181022}
+.drop .big{font-size:2rem}
+.drop h2{font-size:1rem;margin:8px 0 4px}
+.drop small{color:var(--muted)}
+.stage{display:none;text-align:center}
+canvas{max-width:100%;height:auto;border-radius:12px;background:#000;border:1px solid var(--line)}
+.fx-grid{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.fx{flex:1;min-width:96px;background:var(--panel2);border:2px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:.12s}
+.fx.active{border-color:var(--brand);background:#26142099;box-shadow:0 0 0 2px #ff2d7533}
+.fx .emo{font-size:1.2rem;display:block;margin-bottom:3px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:6px}
+.ctrl{flex:1;min-width:180px}
+.ctrl label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px;font-weight:600}
+.ctrl output{color:var(--brand);font-weight:700}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.wm{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+.btn{border:none;border-radius:10px;padding:11px 16px;font-weight:700;font-size:.92rem;cursor:pointer}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn-row .btn{flex:1;min-width:130px}
+.ad-slot{background:#10131d;border:1px dashed #33405e;border-radius:12px;min-height:90px;display:flex;align-items:center;justify-content:center;color:#4a5678;font-size:.72rem;margin:14px 0}
+.donate{text-align:center;margin:10px 0}
+.donate a{display:inline-block;background:#29abe0;color:#fff;text-decoration:none;padding:9px 18px;border-radius:10px;font-weight:700;font-size:.9rem}
+.pro{background:linear-gradient(90deg,#1a1030,#231633);border:1px solid #3a2a5c;border-radius:14px;padding:14px;margin:14px 0}
+.pro h3{font-size:.95rem;color:#c9b8ff}
+.pro p{font-size:.82rem;color:var(--muted);margin:4px 0 10px}
+.pro .row{display:flex;gap:8px;flex-wrap:wrap}
+.pro input{flex:1;min-width:140px;padding:9px;border-radius:8px;border:1px solid var(--line);background:#0d1017;color:var(--ink)}
+.pro-ok{color:var(--good);font-weight:700;font-size:.85rem}
+.faq h3{font-size:.95rem;margin:12px 0 3px}
+.faq p{font-size:.86rem;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:.78rem;padding:18px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>🎨 Photo <span>to Art</span> Studio</h1>
+    <p>Turn any photo into striking, shareable art — one tap, in your browser.</p>
+    <span class="badge">🔒 100% private · nothing is uploaded</span>
+  </header>
+
+  <div class="ad-slot">Ad space (Google AdSense)</div>
+
+  <div class="card">
+    <div class="drop" id="drop">
+      <div class="big">📸</div>
+      <h2>Drop a photo here or click to browse</h2>
+      <small>Selfie, pet, or landscape · nothing leaves your device</small>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+
+      <div class="fx-grid" id="fxGrid"></div>
+
+      <div class="controls">
+        <div class="ctrl">
+          <label>Intensity — <output id="intOut">50</output></label>
+          <input type="range" id="intensity" min="0" max="100" value="50">
+        </div>
+        <label class="wm"><input type="checkbox" id="wmToggle" disabled> Remove watermark (Pro)</label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="dlBtn">⬇️ Download</button>
+        <button class="btn btn-ghost" id="newBtn">🔁 New photo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="donate">
+    <a href="https://ko-fi.com/YOUR-USERNAME" target="_blank" rel="noopener">☕ Support this free tool</a>
+  </div>
+
+  <!-- Pro unlock = where people actually pay (sell code on Gumroad/Ko-fi) -->
+  <div class="pro">
+    <h3>✦ Unlock Pro</h3>
+    <p>Remove the watermark, export in high resolution, unlock exclusive styles. Buy an unlock code, paste it below (saved on this device).</p>
+    <div class="row">
+      <input type="text" id="proCode" placeholder="Enter unlock code">
+      <button class="btn btn-primary" id="proBtn">Unlock</button>
+    </div>
+    <div id="proMsg"></div>
+  </div>
+
+  <div class="ad-slot">Ad space (Google AdSense)</div>
+
+  <div class="card faq">
+    <h3>Is it free and private?</h3>
+    <p>Yes. Every effect is computed in your browser with the Canvas API. Your photo is never uploaded, so it's instant and works offline.</p>
+    <h3>How do I share my creation?</h3>
+    <p>Tap Download, then post it anywhere. The free version adds a small credit so friends can find the tool too.</p>
+    <h3>Which effect goes viral?</h3>
+    <p>Pop-art selfies and glitch portraits tend to get the most shares — try them on a clear, well-lit photo.</p>
+  </div>
+
+  <footer>Runs 100% client-side · host free on GitHub Pages.</footer>
+</div>
+
+<script>
+// ================= config =================
+const SITE = "PhotoFX";
+const SITE_URL = "your-url.github.io"; // change to your live URL after deploy
+const PREVIEW_MAX = 1100;   // preview processing cap (px)
+const HD_MAX = 3000;        // Pro export cap (px)
+const UNLOCK_CODE = "ARTPRO-2026"; // change to your secret; sell it on Gumroad/Ko-fi
+
+let srcImg = null;
+let current = "popart";
+let isPro = localStorage.getItem("pfx_pro") === "1";
+
+const $ = id => document.getElementById(id);
+const drop = $("drop"), fileEl = $("file"), stage = $("stage");
+const cv = $("cv"), ctx = cv.getContext("2d", { willReadFrequently: true });
+const intEl = $("intensity"), intOut = $("intOut");
+const wmToggle = $("wmToggle");
+
+// ================= effects =================
+function lum(r, g, b){ return 0.299*r + 0.587*g + 0.114*b; }
+
+const Effects = {
+  original(c, w, h){ c.drawImage(srcImg, 0, 0, w, h); },
+
+  popart(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const pal = [[26,11,79],[199,44,131],[255,102,73],[255,214,102]];
+    const gamma = 0.4 + (amt/100)*1.4;
+    for(let i=0;i<d.length;i+=4){
+      let l = lum(d[i],d[i+1],d[i+2]) / 255;
+      l = Math.pow(l, gamma);
+      const band = Math.min(3, Math.floor(l*4));
+      const cc = pal[band];
+      d[i]=cc[0]; d[i+1]=cc[1]; d[i+2]=cc[2];
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  halftone(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    c.fillStyle = "#f5f2ea"; c.fillRect(0, 0, w, h);
+    const step = 4 + Math.round(amt/100*14);
+    c.fillStyle = "#141018";
+    for(let y=0;y<h;y+=step){
+      for(let x=0;x<w;x+=step){
+        const px = (Math.min(h-1,y+(step>>1))*w + Math.min(w-1,x+(step>>1)))*4;
+        const l = lum(src[px],src[px+1],src[px+2]) / 255;
+        const r = (1-l) * step * 0.62;
+        if(r > 0.4){ c.beginPath(); c.arc(x+step/2, y+step/2, r, 0, 6.2832); c.fill(); }
+      }
+    }
+  },
+
+  ascii(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    c.fillStyle = "#060a06"; c.fillRect(0, 0, w, h);
+    const cell = 5 + Math.round(amt/100*7);
+    const ramp = "@%#*+=-:. ";
+    c.fillStyle = "#39ff14";
+    c.font = cell + "px monospace";
+    c.textBaseline = "top";
+    for(let y=0;y<h;y+=cell){
+      for(let x=0;x<w;x+=cell){
+        const px = (Math.min(h-1,y)*w + Math.min(w-1,x))*4;
+        const l = lum(src[px],src[px+1],src[px+2]) / 255;
+        const idx = Math.min(ramp.length-1, Math.floor((1-l)*(ramp.length-1)));
+        const ch = ramp[idx];
+        if(ch !== " ") c.fillText(ch, x, y);
+      }
+    }
+  },
+
+  glitch(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h);
+    const s = img.data, out = new Uint8ClampedArray(s);
+    const dx = 2 + Math.round(amt/100*28);
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i = (y*w+x)*4;
+        const rx = Math.min(w-1, x+dx), bx = Math.max(0, x-dx);
+        out[i]   = s[(y*w+rx)*4];
+        out[i+1] = s[i+1];
+        out[i+2] = s[(y*w+bx)*4+2];
+        out[i+3] = 255;
+        if((y & 1) === 0){ out[i]*=0.9; out[i+1]*=0.9; out[i+2]*=0.9; }
+      }
+    }
+    const bands = 3 + Math.round(amt/100*7);
+    for(let b=0;b<bands;b++){
+      const by = Math.floor(Math.random()*h);
+      const bh = 2 + Math.floor(Math.random()*(h*0.04));
+      const shift = Math.floor((Math.random()*2-1)*dx*3);
+      for(let y=by;y<Math.min(h,by+bh);y++){
+        const row = out.slice(y*w*4, (y+1)*w*4);
+        for(let x=0;x<w;x++){
+          const sx = ((x+shift)%w+w)%w;
+          const di = (y*w+x)*4, si = sx*4;
+          out[di]=row[si]; out[di+1]=row[si+1]; out[di+2]=row[si+2];
+        }
+      }
+    }
+    img.data.set(out);
+    c.putImageData(img, 0, 0);
+  },
+
+  sketch(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const g = new Float32Array(w*h);
+    for(let i=0,p=0;i<d.length;i+=4,p++) g[p] = lum(d[i],d[i+1],d[i+2]);
+    const out = c.createImageData(w, h), o = out.data;
+    const strength = 0.6 + (amt/100)*2.2;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const xm=Math.max(0,x-1), xp=Math.min(w-1,x+1), ym=Math.max(0,y-1), yp=Math.min(h-1,y+1);
+        const gx = g[y*w+xm]-g[y*w+xp];
+        const gy = g[ym*w+x]-g[yp*w+x];
+        const mag = Math.sqrt(gx*gx+gy*gy)*strength;
+        const v = Math.max(0, 255 - mag);
+        const i = (y*w+x)*4;
+        o[i]=o[i+1]=o[i+2]=v; o[i+3]=255;
+      }
+    }
+    c.putImageData(out, 0, 0);
+  },
+
+  pixel(c, w, h, amt){
+    const f = 4 + Math.round(amt/100*36);
+    const tw = Math.max(1, Math.round(w/f)), th = Math.max(1, Math.round(h/f));
+    const tmp = document.createElement("canvas");
+    tmp.width = tw; tmp.height = th;
+    tmp.getContext("2d").drawImage(srcImg, 0, 0, tw, th);
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, w, h);
+    c.drawImage(tmp, 0, 0, tw, th, 0, 0, w, h);
+    c.imageSmoothingEnabled = true;
+  }
+};
+
+const FX_LIST = [
+  ["popart","🌈","Pop-Art"],
+  ["halftone","⚫","Halftone"],
+  ["ascii","🔡","ASCII"],
+  ["glitch","📺","Glitch"],
+  ["sketch","✏️","Sketch"],
+  ["pixel","🎮","Pixel"]
+];
+
+// ================= watermark =================
+function watermarkOn(){ return !(isPro && wmToggle.checked); }
+function stamp(c, w, h){
+  if(!watermarkOn()) return;
+  const fs = Math.max(13, Math.round(w*0.022));
+  c.save();
+  c.font = `bold ${fs}px -apple-system,Segoe UI,sans-serif`;
+  c.textBaseline = "bottom";
+  const text = `${SITE} · ${SITE_URL}`;
+  const pad = fs*0.7, tw = c.measureText(text).width;
+  const x = w - tw - pad, y = h - pad*0.5;
+  c.lineWidth = Math.max(2, fs*0.16); c.strokeStyle = "rgba(0,0,0,0.55)";
+  c.strokeText(text, x, y);
+  c.fillStyle = "rgba(255,255,255,0.92)";
+  c.fillText(text, x, y);
+  c.restore();
+}
+
+// ================= render =================
+function fitSize(maxDim){
+  let w = srcImg.naturalWidth, h = srcImg.naturalHeight;
+  const scale = Math.min(1, maxDim/Math.max(w, h));
+  return { w: Math.max(1, Math.round(w*scale)), h: Math.max(1, Math.round(h*scale)) };
+}
+function render(){
+  if(!srcImg) return;
+  const { w, h } = fitSize(PREVIEW_MAX);
+  cv.width = w; cv.height = h;
+  Effects[current](ctx, w, h, +intEl.value);
+  stamp(ctx, w, h);
+}
+
+// ================= UI wiring =================
+function buildFxButtons(){
+  const grid = $("fxGrid"); grid.innerHTML = "";
+  FX_LIST.forEach(([key, emo, label]) => {
+    const b = document.createElement("button");
+    b.className = "fx" + (key === current ? " active" : "");
+    b.innerHTML = `<span class="emo">${emo}</span>${label}`;
+    b.onclick = () => { current = key; buildFxButtons(); render(); };
+    grid.appendChild(b);
+  });
+}
+
+function loadFile(file){
+  if(!file || !file.type.startsWith("image/")) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => { URL.revokeObjectURL(url); srcImg = img; stage.style.display = "block"; drop.style.display = "none"; buildFxButtons(); render(); };
+  img.src = url;
+}
+
+drop.addEventListener("click", () => fileEl.click());
+fileEl.addEventListener("change", () => loadFile(fileEl.files[0]));
+["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hover"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); }));
+drop.addEventListener("drop", e => { if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+intEl.addEventListener("input", () => { intOut.textContent = intEl.value; render(); });
+wmToggle.addEventListener("change", render);
+$("newBtn").addEventListener("click", () => { srcImg = null; fileEl.value = ""; stage.style.display = "none"; drop.style.display = "block"; });
+
+// download (HD re-render for Pro)
+$("dlBtn").addEventListener("click", () => {
+  const { w, h } = fitSize(isPro ? HD_MAX : PREVIEW_MAX);
+  const ex = document.createElement("canvas");
+  ex.width = w; ex.height = h;
+  const ectx = ex.getContext("2d", { willReadFrequently: true });
+  Effects[current](ectx, w, h, +intEl.value);
+  if(watermarkOn()) stamp(ectx, w, h);
+  ex.toBlob(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `photofx-${current}.png`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }, "image/png");
+});
+
+// pro unlock (client-side gate; fine for cheap digital unlock)
+function applyProUI(){
+  wmToggle.disabled = !isPro;
+  $("proMsg").innerHTML = isPro ? '<span class="pro-ok">✓ Pro unlocked on this device — watermark toggle & HD export enabled.</span>' : "";
+}
+$("proBtn").addEventListener("click", () => {
+  if($("proCode").value.trim().toUpperCase() === UNLOCK_CODE){
+    isPro = true; localStorage.setItem("pfx_pro", "1"); applyProUI();
+  } else {
+    $("proMsg").innerHTML = '<span style="color:#ff6b6b;font-size:.85rem;font-weight:700">Invalid code.</span>';
+  }
+});
+applyProUI();
+</script>
+</body>
+</html>
