@@ -13,7 +13,8 @@ import { fmtNam, fmtLinhThach, fmtThoiGian, fmtPercent } from './util/format.js'
 import { getRealm } from './data/realms.js';
 import { getVein } from './data/spiritveins.js';
 import { parseIntent, matchByIntent, genericOutcome, detectChoiceLetters } from './systems/intent.js';
-import { addKarma, disasterChance, fortuneChance } from './systems/karma.js';
+import { addKarma, addAttention, disasterChance, fortuneChance } from './systems/karma.js';
+import { aiAvailable, aiResolveFreeAction, getAIConfig, setAIConfig, aiTest, MODEL_OPTIONS, DEFAULT_MODEL } from './systems/ai.js';
 import { tick as rtTick, applyOffline, startMode, stopMode, MODES, estSecondsToBreak } from './systems/realtime.js';
 
 // Đăng ký nội dung cốt truyện
@@ -25,16 +26,19 @@ let currentNode = null;
 let currentEvent = null;
 let eventResult = null;
 let freeMsg = null;       // kết quả tạm của lựa chọn tự do (hiển thị trên story node)
+let aiBusy = false;       // đang chờ AI diễn giải lựa chọn tự do
 
 // Khối HTML ô nhập "lựa chọn tự do" (bảng điền theo ý người chơi)
 function freeFormHTML() {
+  const ai = aiAvailable();
   return `
     <div class="freeform">
-      <div class="ff-label">✍ Hoặc tự quyết định (gõ hành động của riêng ngươi — kể cả "chọn cả A và B"):</div>
+      <div class="ff-label">✍ Hoặc tự quyết định (gõ hành động của riêng ngươi — kể cả "chọn cả A và B"): <span class="${ai ? 'ai-on' : 'muted'}">${ai ? '⚡ AI đang bật' : 'AI tắt (diễn giải offline)'}</span></div>
       <div class="ff-row">
-        <input id="freetext" class="ff-input" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off">
-        <button class="btn small primary" data-act="freeact">Làm</button>
+        <input id="freetext" class="ff-input" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off" ${aiBusy ? 'disabled' : ''}>
+        <button class="btn small primary" data-act="freeact" ${aiBusy ? 'disabled' : ''}>${aiBusy ? '…' : 'Làm'}</button>
       </div>
+      ${aiBusy ? '<div class="ff-busy">⚡ Thiên cơ đang diễn hóa lựa chọn của ngươi...</div>' : ''}
     </div>`;
 }
 
@@ -45,6 +49,74 @@ function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').
 function nl2br(s) { return esc(s).replace(/\n/g, '<br>'); }
 function letterToVisibleIndex(letter, count) { const i = letter.charCodeAt(0) - 65; return i >= 0 && i < count ? i : -1; }
 function addKarmaSafe(n, reason) { try { addKarma(G, n, reason); } catch (e) {} }
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v || 0));
+
+// Bối cảnh gửi cho AI (mô tả cảnh hiện tại).
+function buildScene() {
+  if (screen === 'event' && currentEvent) {
+    return {
+      loai: currentEvent.category, tieu_de: currentEvent.title,
+      mo_ta: currentEvent.text,
+      lua_chon: (currentEvent.choices || []).filter((c) => !c.show || c.show(G)).map((c) => (typeof c.label === 'function' ? '' : c.label)),
+    };
+  }
+  if (screen === 'story' && currentNode) {
+    return {
+      loai: 'cốt truyện', tieu_de: currentNode.id, mo_ta: resolveText(G, currentNode),
+      lua_chon: visibleChoices(G, currentNode).map((c) => c.label),
+    };
+  }
+  return { loai: 'tự do', mo_ta: '', lua_chon: [] };
+}
+
+// Áp dụng hệ quả AI trả về (đã kẹp giới hạn để mô hình không phá vỡ cân bằng).
+function applyAIResult(G, r) {
+  if (!r || typeof r !== 'object') return;
+  const s = G.s;
+  const k = clamp(Math.round(r.karma), -10, 10); if (k) addKarma(G, k, 'diễn biến (AI)');
+  const a = clamp(Math.round(r.attention), -10, 20); if (a) addAttention(G, a, 'diễn biến (AI)');
+  s.taint = Math.max(0, s.taint + clamp(r.chuong_tinh, 0, 10));
+  s.thoNguyen += clamp(r.tho_nguyen, -30, 30);
+  s.cultProgress = Math.max(0, Math.min(1, s.cultProgress + clamp(r.tu_vi, -0.1, 0.2)));
+  if (r.chet === true) { s.alive = false; s.causeOfDeath = r.narrative || 'Hành động của ngươi dẫn tới cái chết.'; }
+  if (s.thoNguyen <= 0 && s.alive) { s.alive = false; s.causeOfDeath = 'Thọ nguyên cạn kiệt sau hành động liều lĩnh.'; }
+}
+
+// Diễn giải lựa chọn tự do bằng parser TỪ KHÓA (offline). Đặt trạng thái, KHÔNG gọi afterAction.
+function freeactKeyword(text) {
+  const intent = parseIntent(text);
+  const letters = detectChoiceLetters(text);
+  if (screen === 'event' && currentEvent && !eventResult) {
+    const labels = currentEvent.choices.map((c) => (typeof c.label === 'function' ? '' : c.label));
+    const vis = currentEvent.choices.map((c, i) => ({ c, i })).filter(({ c }) => !c.show || c.show(G));
+    let idx = -1;
+    if (letters.length >= 1) {
+      const vi = letterToVisibleIndex(letters[0], vis.length);
+      if (vi >= 0) idx = vis[vi].i;
+      if (letters.length >= 2) addKarmaSafe(1, 'lối chơi mưu trí phá cách');
+    }
+    if (idx < 0) idx = matchByIntent(intent, labels);
+    eventResult = (idx >= 0 && currentEvent.choices[idx]) ? (currentEvent.choices[idx].act(G) || { text: '...' }) : genericOutcome(G, intent, text);
+    return;
+  }
+  if (screen === 'story' && currentNode) {
+    const vis = visibleChoices(G, currentNode);
+    let target = -1;
+    if (letters.length >= 1) {
+      const vi = letterToVisibleIndex(letters[0], vis.length);
+      if (vi >= 0) target = vis[vi].idx;
+      if (letters.length >= 2) addKarmaSafe(1, 'lối chơi mưu trí phá cách');
+    }
+    if (target < 0) { const m = matchByIntent(intent, vis.map((c) => c.label)); if (m >= 0) target = vis[m].idx; }
+    if (target >= 0) {
+      freeMsg = null;
+      const res = applyChoice(G, currentNode, target);
+      if (res.screen) switchTo(res.screen); else currentNode = res.node;
+    } else {
+      freeMsg = genericOutcome(G, intent, text);
+    }
+  }
+}
 
 // ---------- MASTER RENDER ----------
 function render() {
@@ -58,6 +130,7 @@ function render() {
     case 'inventory': renderInventory(); break;
     case 'char': renderChar(); break;
     case 'death': renderDeath(); break;
+    case 'settings': renderSettings(); break;
   }
 }
 function commit() { if (G.s) save(); render(); }
@@ -107,9 +180,34 @@ function renderMenu() {
       <div class="menu-btns">
         ${cont ? '<button class="btn primary" data-act="continue">▶ Tiếp tục hành trình</button>' : ''}
         <button class="btn" data-act="newgame">✦ Bắt đầu mới</button>
+        <button class="btn" data-act="settings">⚙ Thiết lập AI (thử nghiệm)</button>
         ${cont ? '<button class="btn danger" data-act="delete">🗑 Xóa dữ liệu</button>' : ''}
       </div>
       <p class="warn-note">⚠ Thế giới này không xoay quanh ngươi. Nếu không đủ mạnh — ngươi sẽ chết như vô số kẻ khác.</p>
+    </div>`;
+}
+
+// ---------- SETTINGS (AI) ----------
+function renderSettings() {
+  const c = getAIConfig();
+  view().innerHTML = `
+    <div class="settings">
+      <h2>⚙ Thiết lập AI (thử nghiệm)</h2>
+      <p class="muted">Bật để ô "lựa chọn tự do" được diễn giải bằng mô hình Claude thật (hiểu câu bất kỳ, sinh hệ quả & tường thuật riêng). Cần API key Anthropic của <b>chính ngươi</b>.</p>
+      <p class="warn" style="font-size:.8rem;">⚠ Key lưu trên máy ngươi và gọi thẳng từ trình duyệt — chỉ dùng cho bản cá nhân. Bản phát hành Google Play nên proxy qua server để giấu key.</p>
+      <label class="set-row"><input type="checkbox" id="ai-enabled" ${c.enabled ? 'checked' : ''}> Bật AI cho lựa chọn tự do</label>
+      <label class="set-lbl">API Key (x-api-key):</label>
+      <input id="ai-key" class="ff-input" type="password" placeholder="sk-ant-..." value="${(c.apiKey || '').replace(/"/g, '')}" autocomplete="off">
+      <label class="set-lbl">Mô hình:</label>
+      <select id="ai-model" class="ff-input">
+        ${MODEL_OPTIONS.map((m) => `<option value="${m.id}" ${(c.model || DEFAULT_MODEL) === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}
+      </select>
+      <div class="set-btns">
+        <button class="btn primary" data-act="save_ai">💾 Lưu</button>
+        <button class="btn" data-act="test_ai">🔌 Kiểm tra key</button>
+        <button class="btn" data-act="tomenu">◀ Về menu</button>
+      </div>
+      <div id="ai-msg" class="set-msg"></div>
     </div>`;
 }
 
@@ -207,9 +305,20 @@ function renderLog() {
 
 function cultStatusHTML() {
   const s = G.s;
-  const modeName = s.mode === 'idle' ? 'Nhàn rỗi' : (MODES[s.mode] ? MODES[s.mode].name : s.mode);
-  const cls = s.mode === 'kho' ? 'warn' : '';
-  return `<p class="hub-hint ${cls}">Trạng thái: <b>${modeName}</b> · Tu vi <b>${Math.round(s.cultProgress * 100)}%</b>${s.mode !== 'idle' ? ' · ⏳ thời gian đang trôi từng giây' : ''}</p>`;
+  const active = s.mode !== 'idle';
+  const modeName = active ? (MODES[s.mode] ? MODES[s.mode].name : s.mode) : 'Nhàn rỗi';
+  const pct = Math.round(s.cultProgress * 100);
+  const eta = (active && s.mode !== 'soul') ? fmtDur(estSecondsToBreak(G, s.mode)) : '';
+  const sub = pct >= 100 ? 'ĐÃ VIÊN MÃN — có thể đột phá' : (eta ? `còn ~${eta} tới khi đủ đột phá` : 'chưa bế quan');
+  return `
+    <div class="cult-panel ${active ? 'active' : ''} ${s.mode === 'kho' ? 'kho' : ''}">
+      <div class="cult-row">
+        <span class="cult-mode">${active ? '⏳ ' : '💤 '}${modeName}${active && s.mode === 'soul' ? '' : ''}</span>
+        <span class="cult-date">🗓 ${esc(fmtThoiGian(s.time))}</span>
+      </div>
+      <div class="cult-bar"><div class="cult-bar-fill" style="width:${pct}%"></div><span>Tu vi ${pct}%</span></div>
+      <div class="cult-sub">${esc(sub)}</div>
+    </div>`;
 }
 
 // Định dạng thời lượng thực (giây) → người đọc.
@@ -341,6 +450,26 @@ const actions = {
   },
   delete() { deleteSave(); render(); },
   restart() { doNewGame(); },
+  settings() { screen = 'settings'; render(); },
+  tomenu() { screen = 'menu'; render(); },
+  save_ai() {
+    const enabled = document.getElementById('ai-enabled')?.checked;
+    const apiKey = document.getElementById('ai-key')?.value.trim();
+    const model = document.getElementById('ai-model')?.value;
+    setAIConfig({ enabled, apiKey, model });
+    const el = document.getElementById('ai-msg');
+    if (el) { el.textContent = enabled && apiKey ? '✅ Đã lưu. AI đang bật.' : '💾 Đã lưu. (AI tắt — thiếu key hoặc chưa bật.)'; el.className = 'set-msg good'; }
+  },
+  async test_ai() {
+    const enabled = document.getElementById('ai-enabled')?.checked;
+    const apiKey = document.getElementById('ai-key')?.value.trim();
+    const model = document.getElementById('ai-model')?.value;
+    setAIConfig({ enabled, apiKey, model });
+    const el = document.getElementById('ai-msg');
+    if (el) { el.textContent = '⏳ Đang kiểm tra...'; el.className = 'set-msg'; }
+    try { await aiTest(); if (el) { el.textContent = '✅ Key hợp lệ, kết nối thành công!'; el.className = 'set-msg good'; } }
+    catch (e) { if (el) { el.textContent = '❌ Lỗi: ' + (e.message || 'không kết nối được'); el.className = 'set-msg bad'; } }
+  },
 
   choice(arg) {
     freeMsg = null;
@@ -350,55 +479,31 @@ const actions = {
     afterAction();
   },
 
-  // Lựa chọn TỰ DO (bảng điền). Diễn giải ý định -> khớp nhánh có sẵn hoặc ứng biến.
-  freeact() {
+  // Lựa chọn TỰ DO (bảng điền). Nếu bật AI -> diễn giải bằng LLM; nếu không -> parser từ khóa.
+  async freeact() {
     const input = document.getElementById('freetext');
     const text = input ? input.value.trim() : '';
     if (!text) return;
-    const intent = parseIntent(text);
-    const letters = detectChoiceLetters(text);
 
-    if (screen === 'event' && currentEvent && !eventResult) {
-      const labels = currentEvent.choices.map((c) => (typeof c.label === 'function' ? '' : c.label));
-      // "chọn cả A và B" -> ưu tiên chữ cái; nếu 2 chữ, khen mưu trí rồi chạy nhánh đầu
-      let idx = -1;
-      const vis = currentEvent.choices.map((c, i) => ({ c, i })).filter(({ c }) => !c.show || c.show(G));
-      if (letters.length >= 1) {
-        const vi = letterToVisibleIndex(letters[0], vis.length);
-        if (vi >= 0) idx = vis[vi].i;
-        if (letters.length >= 2) { addKarmaSafe(1, 'lối chơi mưu trí phá cách'); }
-      }
-      if (idx < 0) idx = matchByIntent(intent, labels);
-      if (idx >= 0 && currentEvent.choices[idx]) {
-        eventResult = currentEvent.choices[idx].act(G) || { text: '...' };
-      } else {
-        eventResult = genericOutcome(G, intent, text);
+    if (aiAvailable() && (screen === 'story' || (screen === 'event' && currentEvent && !eventResult))) {
+      aiBusy = true; render();
+      try {
+        const scene = buildScene();
+        const r = await aiResolveFreeAction(G, text, scene);
+        applyAIResult(G, r);
+        if (screen === 'event') { eventResult = { text: r.narrative || '...', cls: 'lore' }; }
+        else { freeMsg = { text: r.narrative || '...', cls: 'lore' }; }
+      } catch (e) {
+        log('(AI lỗi, dùng diễn giải offline) ' + (e.message || ''), 'warn');
+        freeactKeyword(text);
+      } finally {
+        aiBusy = false;
       }
       afterAction(true);
       return;
     }
-
-    if (screen === 'story' && currentNode) {
-      const vis = visibleChoices(G, currentNode); // [{idx,label,...}]
-      let target = -1;
-      if (letters.length >= 1) {
-        const vi = letterToVisibleIndex(letters[0], vis.length);
-        if (vi >= 0) target = vis[vi].idx;
-        if (letters.length >= 2) addKarmaSafe(1, 'lối chơi mưu trí phá cách');
-      }
-      if (target < 0) {
-        const m = matchByIntent(intent, vis.map((c) => c.label));
-        if (m >= 0) target = vis[m].idx;
-      }
-      if (target >= 0) {
-        freeMsg = null;
-        const res = applyChoice(G, currentNode, target);
-        if (res.screen) switchTo(res.screen); else currentNode = res.node;
-      } else {
-        freeMsg = genericOutcome(G, intent, text); // ứng biến, ở lại node
-      }
-      afterAction();
-    }
+    freeactKeyword(text);
+    afterAction(screen === 'event');
   },
 
   startcult(arg) { startMode(G, arg); afterAction(); },

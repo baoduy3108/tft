@@ -55,6 +55,16 @@ vận độc hại**. Khởi đầu tại vùng đất bị ruồng bỏ **[Khô
   > bản hiểu câu tự nhiên bất kỳ như "AI thật" thì cần nối một API mô hình ngôn ngữ
   > (điểm mở rộng đã chừa sẵn trong `systems/intent.js`).
 
+## AI thật cho lựa chọn tự do (tùy chọn)
+
+Vào **⚙ Thiết lập AI** ở menu, bật và nhập **API key Anthropic của chính bạn**
+(`systems/ai.js`). Khi bật, ô "lựa chọn tự do" sẽ được **mô hình Claude thật**
+diễn giải: hiểu câu gõ bất kỳ, sinh tường thuật riêng + hệ quả (nhân quả, lộ diện,
+chướng tính, thọ nguyên, tu vi — đã kẹp giới hạn để không phá cân bằng). Không
+bật → dùng parser từ khóa offline như cũ. Gọi thẳng Messages API từ trình duyệt
+(`claude-opus-4-8` mặc định; có Sonnet 5 / Haiku 4.5 cho rẻ hơn).
+> ⚠ Key nằm ở client — chỉ hợp bản cá nhân. Bản Google Play nên proxy qua server.
+
 ## Hệ thống
 
 - **100 đại cảnh giới** (Luyện Khí → ĐẠI ĐẠO), mỗi đại cảnh có tiểu cảnh. Sức

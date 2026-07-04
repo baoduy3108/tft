@@ -23,10 +23,13 @@ export function veinIdOfRegion(G) {
   return G.s.regionVein ?? 2; // mặc định tàn mạch
 }
 
-// Độ khó tăng theo cảnh giới: càng cao càng chậm.
+// Độ khó tăng theo cảnh giới — DỐC DẦN (tuyến tính × lũy thừa nhẹ) để hậu kỳ
+// trở nên trường kỳ khủng khiếp (phàm nhân có thể kẹt "vạn năm"), trong khi đầu
+// game vẫn mượt. Cách duy nhất đi tiếp: linh căn/linh mạch/công pháp/đan tốt hơn.
+//   r=1 ≈ 1.3 · r=10 ≈ 6 · r=30 ≈ 49 · r=60 ≈ 540 · r=100 ≈ 9100
 function difficulty(realmId) {
   if (realmId <= 0) return 0.8;
-  return 1 + realmId * 0.35;
+  return (1 + realmId * 0.25) * Math.pow(1.06, realmId);
 }
 
 // Tiến độ tu luyện thu được trên MỖI NĂM tại bối cảnh hiện tại.
