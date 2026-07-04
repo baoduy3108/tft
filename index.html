@@ -3,35 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
-
-    <!-- ===== SEO: giúp Google index & xếp hạng (đổi domain khi deploy) ===== -->
-    <title>TFT Mùa 17 Tier List & Team Builder | Meta Comps Cập Nhật</title>
-    <meta name="description" content="Tier List meta TFT Mùa 17 mới nhất: xếp hạng tướng mạnh S/A/B/C theo tỉ lệ Top4 & Win. Công cụ build team, phân tích đội hình và gợi ý xoay bài miễn phí.">
-    <meta name="keywords" content="TFT tier list, TFT mùa 17, TFT meta, team comp TFT, build team TFT, tướng mạnh TFT, teamfight tactics">
-    <link rel="canonical" href="https://YOUR-USERNAME.github.io/tft/">
-
-    <!-- Open Graph: hiển thị đẹp khi share Facebook / Discord / Reddit -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="TFT Mùa 17 Tier List & Team Builder">
-    <meta property="og:description" content="Xếp hạng tướng meta S/A/B/C và công cụ build team TFT miễn phí.">
-    <meta property="og:url" content="https://YOUR-USERNAME.github.io/tft/">
-
-    <!-- Structured data: giúp Google hiểu đây là web app -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "TFT Mùa 17 Tier List & Team Builder",
-      "applicationCategory": "GameApplication",
-      "operatingSystem": "Web",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-    }
-    </script>
-
-    <!-- ===== GOOGLE ADSENSE ===== -->
-    <!-- Sau khi được AdSense duyệt, bỏ comment dòng dưới & thay ca-pub-XXXX bằng mã của bạn -->
-    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
-
+    <title>TFT Mùa 17 - Linh Hoạt Build Team</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -96,61 +68,11 @@
         }
         button.primary:active { background: #e65100; }
         .note { font-size: 0.7rem; color: #aaa; text-align: center; margin-top: 8px; }
-
-        /* ===== TIER LIST ===== */
-        .tier-row { display: flex; margin-bottom: 6px; border-radius: 8px; overflow: hidden; }
-        .tier-label {
-            flex: 0 0 44px; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.1rem; color: #111;
-        }
-        .tier-champs {
-            flex: 1; background: #14171d; padding: 6px;
-            display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
-        }
-        .tier-champ {
-            background: #252830; border: 1px solid #3f4754; color: #eee;
-            padding: 3px 7px; border-radius: 6px; font-size: 0.72rem;
-            display: flex; align-items: center; gap: 4px;
-        }
-        .tier-S .tier-label { background: #ff5252; }
-        .tier-A .tier-label { background: #ff9800; }
-        .tier-B .tier-label { background: #ffd54f; }
-        .tier-C .tier-label { background: #81c784; }
-        .tier-D .tier-label { background: #64b5f6; }
-
-        /* ===== AD SLOT (chỗ cắm quảng cáo) ===== */
-        .ad-slot {
-            background: #141821; border: 1px dashed #2c3a4b; border-radius: 10px;
-            min-height: 90px; display: flex; align-items: center; justify-content: center;
-            color: #556; font-size: 0.72rem; text-align: center; margin-bottom: 12px; padding: 8px;
-        }
-        /* ===== DONATE ===== */
-        .donate-bar { text-align: center; margin: 4px 0 14px; }
-        .donate-btn {
-            display: inline-block; background: #29abe0; color: #fff; text-decoration: none;
-            padding: 9px 18px; border-radius: 8px; font-weight: bold; font-size: 0.9rem;
-        }
-        .donate-btn:active { background: #1c8bb8; }
     </style>
 </head>
 <body>
-    <h1>🧠 TFT MÙA 17 – TIER LIST & TEAM BUILDER</h1>
-    <p class="patch">Meta tướng mạnh Mùa 17 – Cập nhật 28/06/2026</p>
-
-    <!-- Nút ủng hộ (đổi link Ko-fi/Buy Me a Coffee của bạn) -->
-    <div class="donate-bar">
-        <a class="donate-btn" href="https://ko-fi.com/YOUR-USERNAME" target="_blank" rel="noopener">☕ Ủng hộ mình một ly cà phê</a>
-    </div>
-
-    <!-- Ô quảng cáo TRÊN CÙNG: dán mã <ins> của AdSense vào đây sau khi được duyệt -->
-    <div class="ad-slot" id="ad-top">Khu vực quảng cáo (Google AdSense)</div>
-
-    <!-- Tier List Meta: phần "hút traffic" — auto tạo từ dữ liệu tướng -->
-    <div class="card">
-        <div class="section-title">🏆 Tier List Meta – Xếp hạng tướng theo tỉ lệ Top4</div>
-        <div id="tierList"></div>
-        <p class="note">S = mạnh nhất → D = yếu nhất. Xếp hạng dựa trên tỉ lệ vào Top4 trung bình.</p>
-    </div>
+    <h1>🧠 TFT MÙA 17 - TEAM BUILDER ĐỘNG</h1>
+    <p class="patch">Dữ liệu từ bảng thống kê mày gửi – Cập nhật 28/06/2026</p>
 
     <!-- Chọn tướng hiện có -->
     <div class="card">
@@ -180,11 +102,7 @@
         <p style="font-size:0.7rem; color:#aaa;">Mở mục này bằng chế độ Floating Apps để đè lên game.</p>
     </div>
 
-    <!-- Ô quảng cáo GIỮA TRANG -->
-    <div class="ad-slot" id="ad-mid">Khu vực quảng cáo (Google AdSense)</div>
-
     <div class="note">⚠ Tỉ lệ Win/Top4 của team được tính trung bình từ dữ liệu tướng. Dùng để tham khảo nhanh.</div>
-    <p class="note">Made for TFT players 💙 – Web tĩnh, host miễn phí trên GitHub Pages.</p>
 
     <script>
         // ========== DỮ LIỆU TƯỚNG MÙA 17 (TỪ BẢNG MÀY GỬI) ==========
@@ -407,36 +325,8 @@
             }
         }
 
-        // ========== TIER LIST META (tự tạo từ dữ liệu) ==========
-        // Xếp hạng theo tỉ lệ Top4 (chỉ số meta tin cậy hơn Win đơn lẻ)
-        function tierOf(top4) {
-            if (top4 >= 58) return 'S';
-            if (top4 >= 54) return 'A';
-            if (top4 >= 50) return 'B';
-            if (top4 >= 46) return 'C';
-            return 'D';
-        }
-        function renderTierList() {
-            const tiers = { S: [], A: [], B: [], C: [], D: [] };
-            for (let [name, s] of Object.entries(champStats)) {
-                tiers[tierOf(s.top4)].push({ name, top4: s.top4 });
-            }
-            let html = '';
-            ['S', 'A', 'B', 'C', 'D'].forEach(t => {
-                const list = tiers[t].sort((a, b) => b.top4 - a.top4);
-                let champHTML = list.map(c => {
-                    const cost = getCostFromName(c.name);
-                    return `<span class="tier-champ"><span class="cost-dot cost${cost}"></span>${c.name}</span>`;
-                }).join('');
-                if (!champHTML) champHTML = '<span style="color:#556;font-size:0.7rem;">—</span>';
-                html += `<div class="tier-row tier-${t}"><div class="tier-label">${t}</div><div class="tier-champs">${champHTML}</div></div>`;
-            });
-            document.getElementById('tierList').innerHTML = html;
-        }
-
         // Khởi tạo
         renderChampButtons();
-        renderTierList();
     </script>
 </body>
   </html>

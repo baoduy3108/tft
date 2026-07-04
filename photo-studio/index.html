@@ -53,7 +53,9 @@ canvas{max-width:100%;height:auto;border-radius:12px;background:#000;border:1px 
 .fx-grid{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
 .fx{flex:1;min-width:96px;background:var(--panel2);border:2px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:.12s}
 .fx.active{border-color:var(--brand);background:#26142099;box-shadow:0 0 0 2px #ff2d7533}
+.fx.locked{opacity:.6}
 .fx .emo{font-size:1.2rem;display:block;margin-bottom:3px}
+.fx .tag{display:inline-block;font-size:.58rem;background:#3a2a5c;color:#c9b8ff;padding:1px 5px;border-radius:6px;margin-left:4px;vertical-align:middle}
 .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:6px}
 .ctrl{flex:1;min-width:180px}
 .ctrl label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px;font-weight:600}
@@ -167,6 +169,12 @@ const wmToggle = $("wmToggle");
 
 // ================= effects =================
 function lum(r, g, b){ return 0.299*r + 0.587*g + 0.114*b; }
+function mix(a, b, t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+// map luminance l (0..1) through an array of color stops
+function ramp(stops, l){
+  const n = stops.length - 1, seg = Math.min(n-1, Math.floor(l*n)), t = l*n - seg;
+  return mix(stops[seg], stops[seg+1], t);
+}
 
 const Effects = {
   original(c, w, h){ c.drawImage(srcImg, 0, 0, w, h); },
@@ -287,16 +295,151 @@ const Effects = {
     c.clearRect(0, 0, w, h);
     c.drawImage(tmp, 0, 0, tw, th, 0, 0, w, h);
     c.imageSmoothingEnabled = true;
+  },
+
+  // ---- gradient map to a two-color duotone ----
+  duotone(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const dark = [34, 10, 64], light = [255, 120, 180];
+    const contrast = 0.5 + (amt/100);
+    for(let i=0;i<d.length;i+=4){
+      let l = lum(d[i],d[i+1],d[i+2]) / 255;
+      l = Math.min(1, Math.max(0, (l-0.5)*contrast + 0.5));
+      const cc = mix(dark, light, l);
+      d[i]=cc[0]; d[i+1]=cc[1]; d[i+2]=cc[2];
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- 80s vaporwave: purple→pink→cyan tri-tone + scanlines ----
+  vaporwave(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const stops = [[26,11,79],[255,71,163],[92,225,230]];
+    const boost = 0.6 + (amt/100)*0.8;
+    for(let p=0,i=0;i<d.length;i+=4,p++){
+      let l = lum(d[i],d[i+1],d[i+2]) / 255;
+      l = Math.min(1, l*boost);
+      const cc = ramp(stops, l);
+      const y = (p / w) | 0;
+      const scan = (y & 1) === 0 ? 0.82 : 1;
+      d[i]=cc[0]*scan; d[i+1]=cc[1]*scan; d[i+2]=cc[2]*scan;
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- thermal camera palette ----
+  thermal(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const stops = [[0,0,0],[0,0,150],[190,0,110],[245,120,0],[255,255,220]];
+    const g = 0.5 + (amt/100);
+    for(let i=0;i<d.length;i+=4){
+      let l = Math.pow(lum(d[i],d[i+1],d[i+2])/255, g);
+      const cc = ramp(stops, l);
+      d[i]=cc[0]; d[i+1]=cc[1]; d[i+2]=cc[2];
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- PRO: neon glowing edges on black ----
+  neon(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data;
+    const g = new Float32Array(w*h);
+    for(let i=0,p=0;i<d.length;i+=4,p++) g[p] = lum(d[i],d[i+1],d[i+2]);
+    const out = c.createImageData(w, h), o = out.data;
+    const scale = 0.6 + (amt/100)*2.0;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const xm=Math.max(0,x-1), xp=Math.min(w-1,x+1), ym=Math.max(0,y-1), yp=Math.min(h-1,y+1);
+        const gx = g[y*w+xm]-g[y*w+xp], gy = g[ym*w+x]-g[yp*w+x];
+        const e = Math.min(1, Math.sqrt(gx*gx+gy*gy)/255*scale);
+        const hue = mix([0,238,255],[255,45,200], x/w); // cyan → magenta
+        const i=(y*w+x)*4;
+        o[i]=hue[0]*e; o[i+1]=hue[1]*e; o[i+2]=hue[2]*e; o[i+3]=255;
+      }
+    }
+    c.putImageData(out, 0, 0);
+  },
+
+  // ---- PRO: cel-shaded comic (posterize + inked edges) ----
+  comic(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const g = new Float32Array(w*h);
+    for(let i=0,p=0;i<d.length;i+=4,p++) g[p] = lum(d[i],d[i+1],d[i+2]);
+    const levels = 4, step = 255/(levels-1);
+    const thresh = 40 - (amt/100)*30; // higher intensity = more ink
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i=(y*w+x)*4;
+        for(let k=0;k<3;k++) d[i+k] = Math.round(d[i+k]/step)*step;
+        const xm=Math.max(0,x-1), xp=Math.min(w-1,x+1), ym=Math.max(0,y-1), yp=Math.min(h-1,y+1);
+        const gx=g[y*w+xm]-g[y*w+xp], gy=g[ym*w+x]-g[yp*w+x];
+        if(Math.sqrt(gx*gx+gy*gy) > thresh){ d[i]=d[i+1]=d[i+2]=15; }
+      }
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- PRO: oil painting (intensity-histogram filter) ----
+  oil(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    const out = c.createImageData(w, h), o = out.data;
+    const r = 2 + Math.round(amt/100*2), levels = 20;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const cnt = new Int32Array(levels), sr = new Int32Array(levels), sg = new Int32Array(levels), sb = new Int32Array(levels);
+        for(let ny=-r;ny<=r;ny++){
+          const yy = Math.min(h-1, Math.max(0, y+ny));
+          for(let nx=-r;nx<=r;nx++){
+            const xx = Math.min(w-1, Math.max(0, x+nx));
+            const p = (yy*w+xx)*4;
+            const inten = Math.min(levels-1, Math.floor(lum(src[p],src[p+1],src[p+2])/255*(levels-1)));
+            cnt[inten]++; sr[inten]+=src[p]; sg[inten]+=src[p+1]; sb[inten]+=src[p+2];
+          }
+        }
+        let mi=0; for(let k=1;k<levels;k++) if(cnt[k]>cnt[mi]) mi=k;
+        const i=(y*w+x)*4, n=cnt[mi]||1;
+        o[i]=sr[mi]/n; o[i+1]=sg[mi]/n; o[i+2]=sb[mi]/n; o[i+3]=255;
+      }
+    }
+    c.putImageData(out, 0, 0);
+  },
+
+  // ---- PRO: cyberpunk teal/magenta grade ----
+  cyberpunk(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const stops = [[3,8,22],[0,175,190],[255,40,150],[255,220,120]];
+    const k = 0.8 + (amt/100)*1.2;
+    for(let i=0;i<d.length;i+=4){
+      let l = lum(d[i],d[i+1],d[i+2]) / 255;
+      l = Math.min(1, Math.max(0, (l-0.5)*k + 0.5)); // contrast punch
+      const cc = ramp(stops, l);
+      d[i]=cc[0]; d[i+1]=cc[1]; d[i+2]=cc[2];
+    }
+    c.putImageData(img, 0, 0);
   }
 };
 
 const FX_LIST = [
-  ["popart","🌈","Pop-Art"],
-  ["halftone","⚫","Halftone"],
-  ["ascii","🔡","ASCII"],
-  ["glitch","📺","Glitch"],
-  ["sketch","✏️","Sketch"],
-  ["pixel","🎮","Pixel"]
+  ["popart","🌈","Pop-Art",false],
+  ["duotone","🟣","Duotone",false],
+  ["vaporwave","🌴","Vaporwave",false],
+  ["halftone","⚫","Halftone",false],
+  ["ascii","🔡","ASCII",false],
+  ["glitch","📺","Glitch",false],
+  ["sketch","✏️","Sketch",false],
+  ["pixel","🎮","Pixel",false],
+  ["thermal","🌡️","Thermal",false],
+  ["neon","💡","Neon",true],
+  ["comic","💥","Comic",true],
+  ["oil","🖼️","Oil Paint",true],
+  ["cyberpunk","🤖","Cyberpunk",true]
 ];
 
 // ================= watermark =================
@@ -334,11 +477,16 @@ function render(){
 // ================= UI wiring =================
 function buildFxButtons(){
   const grid = $("fxGrid"); grid.innerHTML = "";
-  FX_LIST.forEach(([key, emo, label]) => {
+  FX_LIST.forEach(([key, emo, label, pro]) => {
+    const locked = pro && !isPro;
     const b = document.createElement("button");
-    b.className = "fx" + (key === current ? " active" : "");
-    b.innerHTML = `<span class="emo">${emo}</span>${label}`;
-    b.onclick = () => { current = key; buildFxButtons(); render(); };
+    b.className = "fx" + (key === current ? " active" : "") + (locked ? " locked" : "");
+    const tag = pro ? `<span class="tag">${isPro ? "PRO" : "🔒"}</span>` : "";
+    b.innerHTML = `<span class="emo">${emo}</span>${label}${tag}`;
+    b.onclick = () => {
+      if(locked){ $("proMsg").innerHTML = '<span class="pro-ok" style="color:#c9b8ff">🔒 Enter a Pro code below to unlock this effect.</span>'; document.querySelector(".pro").scrollIntoView({ behavior: "smooth" }); return; }
+      current = key; buildFxButtons(); render();
+    };
     grid.appendChild(b);
   });
 }
@@ -381,7 +529,8 @@ $("dlBtn").addEventListener("click", () => {
 // pro unlock (client-side gate; fine for cheap digital unlock)
 function applyProUI(){
   wmToggle.disabled = !isPro;
-  $("proMsg").innerHTML = isPro ? '<span class="pro-ok">✓ Pro unlocked on this device — watermark toggle & HD export enabled.</span>' : "";
+  $("proMsg").innerHTML = isPro ? '<span class="pro-ok">✓ Pro unlocked — exclusive effects, watermark toggle & HD export enabled.</span>' : "";
+  if(srcImg) buildFxButtons();
 }
 $("proBtn").addEventListener("click", () => {
   if($("proCode").value.trim().toUpperCase() === UNLOCK_CODE){

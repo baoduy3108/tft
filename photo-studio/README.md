@@ -23,8 +23,12 @@ are searched worldwide.
 5. **Traffic**: share on Reddit, TikTok, Discord. The tool is the hook; traffic is the income.
 
 ## Effects
-Pop-Art (posterize + palette), Halftone (comic dots), ASCII (green-on-black), Glitch/VHS
-(RGB channel split + slice tears + scanlines), Pencil Sketch (Sobel edges), Pixel Art.
+**Free (9):** Pop-Art, Duotone, Vaporwave, Halftone, ASCII, Glitch/VHS, Pencil Sketch,
+Pixel Art, Thermal.
+**Pro (4, locked until unlock code):** Neon glow, Comic/cel-shade, Oil Paint, Cyberpunk.
+
+The Pro effects are the paid hook — buyers unlock exclusive styles + watermark removal +
+HD export. Add more Pro styles over time to keep the upgrade worth it.
 
 ## Tech
 Vanilla HTML/CSS/JS. Effects use canvas `getImageData` / `putImageData`. Zero dependencies.
