@@ -3,7 +3,7 @@
 Turn any photo into striking, shareable art — pop-art, halftone, ASCII, glitch, sketch, pixel.
 Runs **100% in the browser** (Canvas API). No upload, no backend, no build step.
 
-**Live (after enabling Pages):** `https://YOUR-USERNAME.github.io/tft/photo-studio/`
+**Live (after enabling Pages):** `https://baoduy3108.github.io/tft/photo-studio/`
 
 ## Why this can go global / viral
 Every exported image carries a small `PhotoFX · your-url` credit. People post their art on
