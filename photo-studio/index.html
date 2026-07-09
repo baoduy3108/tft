@@ -115,6 +115,8 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;padding:18px 0}
 
       <div class="btn-row">
         <button class="btn btn-primary" id="dlBtn">⬇️ Download</button>
+        <button class="btn btn-ghost" id="shareBtn">📲 Share</button>
+        <button class="btn btn-ghost" id="surpriseBtn">🎲 Surprise</button>
         <button class="btn btn-ghost" id="newBtn">🔁 New photo</button>
       </div>
     </div>
@@ -423,6 +425,71 @@ const Effects = {
       d[i]=cc[0]; d[i+1]=cc[1]; d[i+2]=cc[2];
     }
     c.putImageData(img, 0, 0);
+  },
+
+  // ---- black & white noir ----
+  noir(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const k = 1 + (amt/100)*1.6;
+    for(let i=0;i<d.length;i+=4){
+      let v = (lum(d[i],d[i+1],d[i+2]) - 128) * k + 128;
+      v = Math.max(0, Math.min(255, v));
+      d[i]=d[i+1]=d[i+2]=v;
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- vintage sepia ----
+  sepia(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const f = 0.5 + (amt/100)*0.5;
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i], g=d[i+1], b=d[i+2];
+      const nr=Math.min(255, 0.393*r+0.769*g+0.189*b);
+      const ng=Math.min(255, 0.349*r+0.686*g+0.168*b);
+      const nb=Math.min(255, 0.272*r+0.534*g+0.131*b);
+      d[i]=r+(nr-r)*f; d[i+1]=g+(ng-g)*f; d[i+2]=b+(nb-b)*f;
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- PRO: blueprint (white lines on blue) ----
+  blueprint(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data;
+    const g = new Float32Array(w*h);
+    for(let i=0,p=0;i<d.length;i+=4,p++) g[p] = lum(d[i],d[i+1],d[i+2]);
+    const out = c.createImageData(w, h), o = out.data;
+    const bg = [16, 58, 140];
+    const thresh = 42 - (amt/100)*30;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const xm=Math.max(0,x-1), xp=Math.min(w-1,x+1), ym=Math.max(0,y-1), yp=Math.min(h-1,y+1);
+        const gx=g[y*w+xm]-g[y*w+xp], gy=g[ym*w+x]-g[yp*w+x];
+        const edge = Math.sqrt(gx*gx+gy*gy) > thresh;
+        const i=(y*w+x)*4;
+        if(edge){ o[i]=220; o[i+1]=235; o[i+2]=255; } else { o[i]=bg[0]; o[i+1]=bg[1]; o[i+2]=bg[2]; }
+        o[i+3]=255;
+      }
+    }
+    c.putImageData(out, 0, 0);
+  },
+
+  // ---- PRO: infrared / aerochrome false color ----
+  infrared(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const f = 0.5 + (amt/100)*0.5;
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i], g=d[i+1], b=d[i+2];
+      const nr=Math.min(255, g*1.15 + r*0.25);
+      const ng=Math.min(255, b*0.85);
+      const nb=Math.min(255, r*0.75);
+      d[i]=r+(nr-r)*f; d[i+1]=g+(ng-g)*f; d[i+2]=b+(nb-b)*f;
+    }
+    c.putImageData(img, 0, 0);
   }
 };
 
@@ -430,6 +497,8 @@ const FX_LIST = [
   ["popart","🌈","Pop-Art",false],
   ["duotone","🟣","Duotone",false],
   ["vaporwave","🌴","Vaporwave",false],
+  ["noir","🎞️","Noir",false],
+  ["sepia","🟤","Sepia",false],
   ["halftone","⚫","Halftone",false],
   ["ascii","🔡","ASCII",false],
   ["glitch","📺","Glitch",false],
@@ -439,7 +508,9 @@ const FX_LIST = [
   ["neon","💡","Neon",true],
   ["comic","💥","Comic",true],
   ["oil","🖼️","Oil Paint",true],
-  ["cyberpunk","🤖","Cyberpunk",true]
+  ["cyberpunk","🤖","Cyberpunk",true],
+  ["blueprint","📐","Blueprint",true],
+  ["infrared","🌸","Infrared",true]
 ];
 
 // ================= watermark =================
@@ -509,21 +580,49 @@ intEl.addEventListener("input", () => { intOut.textContent = intEl.value; render
 wmToggle.addEventListener("change", render);
 $("newBtn").addEventListener("click", () => { srcImg = null; fileEl.value = ""; stage.style.display = "none"; drop.style.display = "block"; });
 
-// download (HD re-render for Pro)
-$("dlBtn").addEventListener("click", () => {
-  const { w, h } = fitSize(isPro ? HD_MAX : PREVIEW_MAX);
+// render the current effect to an off-screen canvas (HD for Pro) with watermark
+function exportCanvas(maxDim){
+  const { w, h } = fitSize(maxDim);
   const ex = document.createElement("canvas");
   ex.width = w; ex.height = h;
   const ectx = ex.getContext("2d", { willReadFrequently: true });
   Effects[current](ectx, w, h, +intEl.value);
   if(watermarkOn()) stamp(ectx, w, h);
-  ex.toBlob(blob => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `photofx-${current}.png`;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  }, "image/png");
+  return ex;
+}
+function exportBlob(maxDim){ return new Promise(res => exportCanvas(maxDim).toBlob(res, "image/png")); }
+function downloadBlob(blob){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `photofx-${current}.png`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+$("dlBtn").addEventListener("click", async () => {
+  downloadBlob(await exportBlob(isPro ? HD_MAX : PREVIEW_MAX));
+});
+
+// native share sheet (mobile) → post straight to Instagram/TikTok/FB; fallback to download
+$("shareBtn").addEventListener("click", async () => {
+  const blob = await exportBlob(isPro ? HD_MAX : PREVIEW_MAX);
+  const file = new File([blob], `photofx-${current}.png`, { type: "image/png" });
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    try { await navigator.share({ files: [file], text: `Made with ${SITE} · ${SITE_URL}` }); } catch(e){ /* user cancelled */ }
+  } else {
+    downloadBlob(blob);
+    alert("Direct share isn't supported here — the image was downloaded so you can post it manually.");
+  }
+});
+
+// surprise: random unlocked effect + random intensity
+$("surpriseBtn").addEventListener("click", () => {
+  const avail = FX_LIST.filter(f => !(f[3] && !isPro));
+  const pick = avail[Math.floor(Math.random()*avail.length)];
+  current = pick[0];
+  intEl.value = 20 + Math.floor(Math.random()*70);
+  intOut.textContent = intEl.value;
+  buildFxButtons(); render();
 });
 
 // pro unlock (client-side gate; fine for cheap digital unlock)

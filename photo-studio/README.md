@@ -22,13 +22,19 @@ are searched worldwide.
    but that's fine for a cheap digital unlock — most users pay for convenience.
 5. **Traffic**: share on Reddit, TikTok, Discord. The tool is the hook; traffic is the income.
 
-## Effects
-**Free (9):** Pop-Art, Duotone, Vaporwave, Halftone, ASCII, Glitch/VHS, Pencil Sketch,
-Pixel Art, Thermal.
-**Pro (4, locked until unlock code):** Neon glow, Comic/cel-shade, Oil Paint, Cyberpunk.
+## Effects (17)
+**Free (11):** Pop-Art, Duotone, Vaporwave, Noir, Sepia, Halftone, ASCII, Glitch/VHS,
+Pencil Sketch, Pixel Art, Thermal.
+**Pro (6, locked until unlock code):** Neon glow, Comic/cel-shade, Oil Paint, Cyberpunk,
+Blueprint, Infrared.
 
 The Pro effects are the paid hook — buyers unlock exclusive styles + watermark removal +
 HD export. Add more Pro styles over time to keep the upgrade worth it.
+
+## Extra features
+- **📲 Share** — uses the Web Share API to post the image straight to Instagram/TikTok/
+  Facebook on mobile (falls back to download on desktop). Big driver of the viral loop.
+- **🎲 Surprise** — applies a random unlocked effect at a random intensity for quick fun.
 
 ## Tech
 Vanilla HTML/CSS/JS. Effects use canvas `getImageData` / `putImageData`. Zero dependencies.
