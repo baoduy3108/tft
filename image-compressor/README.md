@@ -3,7 +3,7 @@
 A privacy-first image compressor and converter that runs **100% in the browser**.
 No uploads, no backend, no limits — built as a single static `index.html`.
 
-**Live demo (after you enable Pages):** `https://baoduy3108.github.io/photo-tools/image-compressor/`
+**Live demo (after you enable Pages):** `https://baoduy3108.github.io/tft/image-compressor/`
 
 ## Why this can reach a global audience
 - Targets huge worldwide search terms: *compress image*, *image converter*, *reduce image size*, *jpg to webp*.
