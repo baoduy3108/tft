@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baoduy3108.github.io/tft/sitemap.xml
