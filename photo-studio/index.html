@@ -148,6 +148,10 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;padding:18px 0}
     <p>Pop-art selfies and glitch portraits tend to get the most shares — try them on a clear, well-lit photo.</p>
   </div>
 
+  <nav style="text-align:center;margin:10px 0;font-size:.85rem">
+    More free tools: <a href="../image-compressor/" style="color:var(--brand)">🖼️ Image Compressor</a> ·
+    <a href="../tools/" style="color:var(--brand)">All tools</a>
+  </nav>
   <footer>Runs 100% client-side · host free on GitHub Pages.</footer>
 </div>
 
@@ -490,6 +494,102 @@ const Effects = {
       d[i]=r+(nr-r)*f; d[i+1]=g+(ng-g)*f; d[i+2]=b+(nb-b)*f;
     }
     c.putImageData(img, 0, 0);
+  },
+
+  // ---- PRO: ink cross-hatch engraving ----
+  crosshatch(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data;
+    const out = c.createImageData(w, h), o = out.data;
+    const sp = 4 + Math.round(amt/100*6);
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const p=(y*w+x)*4, dark = 1 - lum(d[p],d[p+1],d[p+2])/255;
+        let ink = false;
+        if(dark>0.15 && ((x+y)%sp)===0) ink=true;
+        if(dark>0.38 && ((x-y+w*sp)%sp)===0) ink=true;
+        if(dark>0.62 && (x%sp)===0) ink=true;
+        if(dark>0.82 && (y%sp)===0) ink=true;
+        const v = ink ? 25 : 245;
+        o[p]=o[p+1]=o[p+2]=v; o[p+3]=255;
+      }
+    }
+    c.putImageData(out, 0, 0);
+  },
+
+  // ---- PRO: stained-glass mosaic ----
+  mosaic(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    const b = 8 + Math.round(amt/100*20);
+    for(let by=0;by<h;by+=b){
+      for(let bx=0;bx<w;bx+=b){
+        let r=0,g=0,bl=0,n=0;
+        for(let y=by;y<Math.min(h,by+b);y++) for(let x=bx;x<Math.min(w,bx+b);x++){
+          const p=(y*w+x)*4; r+=src[p]; g+=src[p+1]; bl+=src[p+2]; n++;
+        }
+        c.fillStyle = `rgb(${r/n|0},${g/n|0},${bl/n|0})`;
+        c.fillRect(bx, by, b, b);
+      }
+    }
+    c.strokeStyle = "rgba(8,8,14,0.55)"; c.lineWidth = Math.max(1, b*0.08);
+    for(let x=0;x<=w;x+=b){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,h); c.stroke(); }
+    for(let y=0;y<=h;y+=b){ c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke(); }
+  },
+
+  // ---- PRO: pointillism dots ----
+  pointillism(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    c.fillStyle = "#f7f4ec"; c.fillRect(0, 0, w, h);
+    const dotR = 1.2 + (amt/100)*2.5;
+    const count = Math.min(90000, Math.round(w*h / (dotR*dotR*2.2)));
+    for(let k=0;k<count;k++){
+      const x = Math.random()*w|0, y = Math.random()*h|0, p=(y*w+x)*4;
+      c.fillStyle = `rgb(${src[p]},${src[p+1]},${src[p+2]})`;
+      c.beginPath(); c.arc(x, y, dotR, 0, 6.2832); c.fill();
+    }
+  },
+
+  // ---- PRO: soft watercolor ----
+  watercolor(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const img = c.getImageData(0, 0, w, h), d = img.data;
+    const g = new Float32Array(w*h);
+    for(let i=0,p=0;i<d.length;i+=4,p++) g[p] = lum(d[i],d[i+1],d[i+2]);
+    const levels = 6, step = 255/(levels-1);
+    const edgeK = 0.4 + (amt/100)*0.5;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i=(y*w+x)*4;
+        for(let k=0;k<3;k++) d[i+k] = Math.round(d[i+k]/step)*step;
+        const xm=Math.max(0,x-1), xp=Math.min(w-1,x+1), ym=Math.max(0,y-1), yp=Math.min(h-1,y+1);
+        const gx=g[y*w+xm]-g[y*w+xp], gy=g[ym*w+x]-g[yp*w+x];
+        const e = Math.min(1, Math.sqrt(gx*gx+gy*gy)/255*edgeK*3);
+        const m = 1 - e*0.5;
+        d[i]*=m; d[i+1]*=m; d[i+2]*=m;
+      }
+    }
+    c.putImageData(img, 0, 0);
+  },
+
+  // ---- PRO: retro 4-shade Gameboy ----
+  gameboy(c, w, h, amt){
+    c.drawImage(srcImg, 0, 0, w, h);
+    const src = c.getImageData(0, 0, w, h).data;
+    const b = 3 + Math.round(amt/100*7);
+    const pal = [[15,56,15],[48,98,48],[139,172,15],[155,188,15]];
+    for(let by=0;by<h;by+=b){
+      for(let bx=0;bx<w;bx+=b){
+        let s=0,n=0;
+        for(let y=by;y<Math.min(h,by+b);y++) for(let x=bx;x<Math.min(w,bx+b);x++){
+          const p=(y*w+x)*4; s+=lum(src[p],src[p+1],src[p+2]); n++;
+        }
+        const idx = Math.min(3, Math.floor((s/n/255)*4)), cc = pal[idx];
+        c.fillStyle = `rgb(${cc[0]},${cc[1]},${cc[2]})`;
+        c.fillRect(bx, by, b, b);
+      }
+    }
   }
 };
 
@@ -510,7 +610,12 @@ const FX_LIST = [
   ["oil","🖼️","Oil Paint",true],
   ["cyberpunk","🤖","Cyberpunk",true],
   ["blueprint","📐","Blueprint",true],
-  ["infrared","🌸","Infrared",true]
+  ["infrared","🌸","Infrared",true],
+  ["crosshatch","✒️","Cross-Hatch",true],
+  ["mosaic","🔲","Mosaic",true],
+  ["pointillism","⚪","Pointillism",true],
+  ["watercolor","💧","Watercolor",true],
+  ["gameboy","👾","Gameboy",true]
 ];
 
 // ================= watermark =================

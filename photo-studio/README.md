@@ -22,11 +22,11 @@ are searched worldwide.
    but that's fine for a cheap digital unlock — most users pay for convenience.
 5. **Traffic**: share on Reddit, TikTok, Discord. The tool is the hook; traffic is the income.
 
-## Effects (17)
+## Effects (22)
 **Free (11):** Pop-Art, Duotone, Vaporwave, Noir, Sepia, Halftone, ASCII, Glitch/VHS,
 Pencil Sketch, Pixel Art, Thermal.
-**Pro (6, locked until unlock code):** Neon glow, Comic/cel-shade, Oil Paint, Cyberpunk,
-Blueprint, Infrared.
+**Pro (11, locked until unlock code):** Neon glow, Comic/cel-shade, Oil Paint, Cyberpunk,
+Blueprint, Infrared, Cross-Hatch, Mosaic, Pointillism, Watercolor, Gameboy.
 
 The Pro effects are the paid hook — buyers unlock exclusive styles + watermark removal +
 HD export. Add more Pro styles over time to keep the upgrade worth it.
