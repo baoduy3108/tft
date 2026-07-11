@@ -133,6 +133,28 @@ const REALMS=(function(){
 function lifeFor(id){const t=[150,320,800,2000,5000,12000,30000,80000,200000,500000];if(id<=10)return t[id-1];return 500000*Math.pow(10,(id-10)*0.7);}
 function realmName(ri,si){if(ri<=0)return'Phàm Nhân';const r=REALMS[ri-1];return r.name+' '+r.subs[clamp(si,0,r.subs.length-1)];}
 function powerExp(ri,si){if(ri<=0)return 0;const r=REALMS[ri-1];return r.subExps[clamp(si,0,r.subExps.length-1)];}
+// Miêu tả SỨC MẠNH từng cảnh giới — tu sĩ ở cảnh này làm được gì
+const REALM_POWER={
+ 'Luyện Khí':'Dẫn linh khí nhập thể, gột rửa phàm cân tục cốt. Có thể ngưng linh lực sơ khai, đả xuất chưởng phong, luyện chút bùa chú. Vẫn là phàm nhân trước mắt cường giả.',
+ 'Trúc Cơ':'Trúc thành đạo cơ, linh lực hóa dịch chảy khắp kinh mạch. Có thể ngự vật bay lượn tầm thấp, khinh công lướt trên mặt nước, thọ nguyên ~200 năm.',
+ 'Kim Đan':'Ngưng linh lực thành một viên Kim Đan bất diệt — nguồn lực gần như vô tận. Ngự khí phi hành ngàn dặm, thần thức tỏa ra ngoài thân, ngưng đan lập phái.',
+ 'Nguyên Anh':'Kim Đan vỡ ra, sinh Nguyên Anh — một "mình thứ hai" trong hồn. Nguyên thần xuất khiếu, thân xác dù nát vẫn có thể đoạt xá trùng sinh. Thọ ~800 năm.',
+ 'Hóa Thần':'Nguyên Anh dung hợp thiên địa, bắt đầu lĩnh ngộ Pháp Tắc. Cách không dời non lấp bể, một ý niệm khuấy động phong vân cả một vùng.',
+ 'Luyện Hư':'Thân hòa vào hư không, nhìn thấu tầng không gian. Có thể ẩn thân giữa hư vô, chớp mắt dịch chuyển, đấu pháp trong khe hở không gian.',
+ 'Hợp Thể':'Nguyên thần và nhục thân hợp nhất, đạt cảnh thiên nhân hợp nhất. Vung tay chấn nứt sơn hà, một hơi thở làm khí hậu cả châu vực đổi thay.',
+ 'Đại Thừa':'Đỉnh phong của nhân tiên, chuẩn bị đón lôi kiếp phi thăng. Cử động dẫn động linh khí thiên địa, uy áp khiến vạn linh cấp thấp phủ phục.',
+ 'Bán Tiên':'Nửa bước sang bờ tiên, thân đã nhiễm tiên khí, phàm binh phàm pháp khó tổn thương. Một niệm có thể định sinh tử vô số phàm nhân.',
+ 'Chân Tiên':'Chân chính thành tiên, thoát ly luân hồi, thọ nguyên gần như bất tận. Một niệm diệt được cả một tòa phàm thành; bắt đầu ganh đua nơi tiên giới.',
+};
+const GROUP_POWER={
+ 'Tiên Phàm Giới':'Từ phàm nhân leo dần tới tiên — mỗi cảnh giới là một lần lột xác của thân thể, linh hồn và thọ nguyên.',
+ 'Tiên Nhân':'Bậc chân tiên — có thể khai thiên tịch địa một phương tiểu thiên thế giới, nắm giữ nhiều pháp tắc, thọ nguyên tính bằng vạn năm.',
+ 'Đế Cấp':'Đế cấp cường giả — một niệm sinh, một niệm diệt cả một vũ trụ. Chưởng khống luân hồi, thời gian, nhân quả ở tầng vũ trụ.',
+ 'Đạo Cấp':'Đạo cấp tồn tại — bản thân đã hòa vào Đại Đạo, lời nói ra chính là pháp tắc, đứng ngoài vòng sinh diệt của vạn giới.',
+ 'Hỗn Nguyên Cấp':'Hỗn Nguyên cảnh — siêu thoát khỏi mọi vũ trụ, bất sinh bất diệt, một ý niệm có thể sáng tạo hoặc xóa sổ vô số thực tại.',
+ 'Đại Đạo Cấp':'Đứng trên vạn hữu — không còn là kẻ tu Đạo, mà chính là ĐẠI ĐẠO. Ở đây, ngôn ngữ phàm tục đã không thể miêu tả nổi.',
+};
+function realmPower(ri){if(ri<=0)return'Phàm nhân — chưa dẫn khí nhập thể, sinh lão bệnh tử như cỏ cây, thọ chưa tới trăm năm.';const r=REALMS[ri-1];return REALM_POWER[r.name]||GROUP_POWER[r.group]||'Sức mạnh vượt xa mọi miêu tả của ngôn từ.';}
 
 const PHAM=[ // 12 phẩm — spawn = xác suất gốc; pct = tỉ lệ % hiển thị (càng cao càng gần như không tồn tại)
  {id:1,n:'Phàm',c:'#9e9e9e',spawn:0.60,pct:'60%'},{id:2,n:'Linh',c:'#8bc34a',spawn:0.28,pct:'28%'},
@@ -150,22 +172,22 @@ function rollGrade(worldTier){ // gating: phẩm cao gần như không xuất hi
 }
 
 const LINH_CAN=[
- {id:'ngu_tap',n:'Ngũ Hành Tạp Linh Căn',spd:0.35,rar:0.42,d:'Đủ ngũ hành nhưng tạp loạn, tu cực chậm.'},
- {id:'tu',n:'Tứ Linh Căn',spd:0.45,rar:0.22,d:'Bốn thuộc tính, vẫn tạp.'},
- {id:'tam',n:'Tam Linh Căn',spd:0.6,rar:0.15,d:'Ba thuộc tính, tạm ổn cho tán tu.'},
- {id:'song',n:'Song Linh Căn',spd:0.9,rar:0.09,d:'Hai thuộc tính.'},
- {id:'kim',n:'Kim Linh Căn (đơn)',spd:1.6,rar:0.02,d:'Đơn hệ Kim, hợp kiếm/đao.'},
- {id:'moc',n:'Mộc Linh Căn (đơn)',spd:1.6,rar:0.02,d:'Đơn hệ Mộc, hợp đan/hồi phục.'},
- {id:'thuy',n:'Thủy Linh Căn (đơn)',spd:1.6,rar:0.02,d:'Đơn hệ Thủy, biến hóa.'},
- {id:'hoa',n:'Hỏa Linh Căn (đơn)',spd:1.7,rar:0.018,d:'Đơn hệ Hỏa, sát phạt, hợp luyện đan.'},
- {id:'tho',n:'Thổ Linh Căn (đơn)',spd:1.5,rar:0.02,d:'Đơn hệ Thổ, phòng ngự.'},
- {id:'loi',n:'Lôi Linh Căn (biến dị)',spd:2.4,rar:0.004,d:'Biến dị Lôi, sát thương kinh người.'},
- {id:'phong',n:'Phong Linh Căn (biến dị)',spd:2.2,rar:0.004,d:'Biến dị Phong, tốc độ tuyệt đỉnh.'},
- {id:'bang',n:'Băng Linh Căn (biến dị)',spd:2.3,rar:0.0035,d:'Biến dị Băng, khống chế.'},
- {id:'am',n:'Ám Linh Căn (biến dị)',spd:2.5,rar:0.003,d:'Biến dị Ám, hợp tà tu, dễ chiêu nhân quả.'},
- {id:'thien',n:'Thiên Linh Căn (đơn nhất)',spd:3.2,rar:0.0005,d:'Thuần khiết tuyệt đối. Thiên tài trăm năm.'},
- {id:'hondon',n:'Hỗn Độn Linh Căn (ẩn)',spd:4.5,rar:0.00002,d:'Truyền thuyết. Dung hợp vạn hệ. Thu hút tai họa.'},
- {id:'vo',n:'Vô Linh Căn (phế/ẩn)',spd:0.12,rar:0.05,d:'Gần như không hấp thu linh khí — bị coi là phế nhân.'},
+ {id:'ngu_tap',n:'Ngũ Hành Tạp Linh Căn',pham:1,spd:0.35,rar:0.42,d:'Đủ ngũ hành nhưng tạp loạn, linh khí đánh nhau trong người. Tu cực chậm, đa số kẹt cả đời ở Luyện Khí — Trúc Cơ. Cái "phổ thông" tàn nhẫn nhất của tu tiên giới.'},
+ {id:'tu',n:'Tứ Linh Căn',pham:2,spd:0.45,rar:0.22,d:'Bốn thuộc tính, vẫn tạp nhưng đỡ hơn. Làm tán tu quèn thì được, mơ tới Kim Đan đã là kỳ tích.'},
+ {id:'tam',n:'Tam Linh Căn',pham:2,spd:0.6,rar:0.15,d:'Ba thuộc tính. Tạm đủ tư cách bái vào tông môn hạng ba, tương lai trần Nguyên Anh.'},
+ {id:'song',n:'Song Linh Căn',pham:3,spd:0.9,rar:0.09,d:'Hai thuộc tính tương hợp, linh khí thuần hơn hẳn. Có thể luyện song hệ công pháp, được tông môn để mắt.'},
+ {id:'kim',n:'Kim Linh Căn (đơn hệ)',pham:4,spd:1.6,rar:0.02,d:'Đơn hệ Kim — sắc bén vô song, hợp kiếm đạo/đao đạo. Sát khí lăng lệ, một kiếm phá vạn pháp.'},
+ {id:'moc',n:'Mộc Linh Căn (đơn hệ)',pham:4,spd:1.6,rar:0.02,d:'Đơn hệ Mộc — sinh sinh bất tức, hồi phục kinh người, thiên phú luyện đan trồng dược. Khó chết bậc nhất.'},
+ {id:'thuy',n:'Thủy Linh Căn (đơn hệ)',pham:4,spd:1.6,rar:0.02,d:'Đơn hệ Thủy — nhu nhược thắng cương cường, biến hóa vô cùng, thân pháp trơn tuột như nước.'},
+ {id:'hoa',n:'Hỏa Linh Căn (đơn hệ)',pham:4,spd:1.7,rar:0.018,d:'Đơn hệ Hỏa — sát phạt quyết liệt, uy lực công kích đứng đầu ngũ hành, thiên phú luyện đan khống hỏa.'},
+ {id:'tho',n:'Thổ Linh Căn (đơn hệ)',pham:4,spd:1.5,rar:0.02,d:'Đơn hệ Thổ — phòng ngự vô địch, bền bỉ như đại địa, giỏi trận pháp và thủ thành.'},
+ {id:'loi',n:'Lôi Linh Căn (biến dị)',pham:6,spd:2.4,rar:0.004,d:'Biến dị Lôi — thiên phú công kích khủng khiếp, lôi đình khắc chế tà ma. Nhưng dễ chiêu lôi kiếp khi đột phá.'},
+ {id:'phong',n:'Phong Linh Căn (biến dị)',pham:6,spd:2.2,rar:0.004,d:'Biến dị Phong — tốc độ tuyệt đỉnh, đến đi vô ảnh, đối thủ chưa kịp thấy đã trúng đòn.'},
+ {id:'bang',n:'Băng Linh Căn (biến dị)',pham:6,spd:2.3,rar:0.0035,d:'Biến dị Băng — khống chế bậc nhất, đóng băng cả không gian lẫn thời gian một khắc, đạo tâm lạnh như băng.'},
+ {id:'am',n:'Ám Linh Căn (biến dị)',pham:6,spd:2.5,rar:0.003,d:'Biến dị Ám — hợp tà tu, ẩn nặc và soán đoạt, mạnh lên rất nhanh. Nhưng mỗi bước đều chiêu nhân quả.'},
+ {id:'thien',n:'Thiên Linh Căn (đơn nhất)',pham:8,spd:3.2,rar:0.0005,d:'Đơn nhất thuần khiết tuyệt đối, không tạp một tơ hào. Tu luyện nhanh như thổi, thiên tài trăm năm khó gặp — và mọi tông môn sẽ tranh đoạt tới đổ máu.'},
+ {id:'hondon',n:'Hỗn Độn Linh Căn (ẩn)',pham:11,spd:4.5,rar:0.00002,d:'Truyền thuyết trong truyền thuyết. Dung hợp vạn hệ, linh khí trời đất tự động vây quanh. Tư chất tối thượng — nhưng tỏa sáng quá rực giữa đêm, vạn ánh mắt trong bóng tối đều quay lại.'},
+ {id:'vo',n:'Vô Linh Căn (phế/ẩn)',pham:1,spd:0.12,rar:0.05,d:'Gần như không hấp thu linh khí — bị cả thiên hạ coi là phế nhân. Nhưng kẻ không thể tu bằng linh khí, đôi khi lại mở ra một con đường mà cả trời đất chưa từng thấy.'},
 ];
 function rollRoot(){const t=LINH_CAN.reduce((s,x)=>s+x.rar,0);let k=RNG.next()*t;for(const x of LINH_CAN){k-=x.rar;if(k<=0)return x;}return LINH_CAN[0];}
 
@@ -187,6 +209,21 @@ const THECHAT_NAMED=[
  {n:'Hỗn Độn Thánh Thể',t:9,buff:{hp:10,atk:8,cult:5,soul:4},d:'Sinh từ hỗn độn, gần bất khả chiến bại cùng cấp.'},
  {n:'Đạo Thể',t:10,buff:{cmp:6,cult:6},d:'Bản thân là một phần của Đạo.'},
  {n:'Hồng Mông Chí Thể',t:12,buff:{hp:50,atk:50,cult:20,soul:20},d:'Truyền thuyết trong truyền thuyết.'},
+ // — bổ sung thể chất danh tiếng, đủ mọi vai trò —
+ {n:'Bạch Ngọc Thể',t:2,buff:{spd:1.3},d:'Da thịt trắng nõn như ngọc, thân nhẹ như yến, hợp thân pháp và ẩn nặc.'},
+ {n:'Linh Giác Thể',t:2,buff:{soul:1.4,cmp:1.2},d:'Sinh ra thần thức nhạy bén khác thường, cảm ứng nguy hiểm trước một bước.'},
+ {n:'Cự Lực Thần Thể',t:3,buff:{atk:1.7,hp:1.3},d:'Sức mạnh thuần túy, tay không xé hổ báo, một quyền chấn núi.'},
+ {n:'Huyền Âm Băng Thể',t:3,buff:{cmp:1.3,def:1.3},d:'Thân mang hàn khí bẩm sinh, khống chế đóng băng, đạo tâm tĩnh như nước đóng.'},
+ {n:'Băng Cơ Ngọc Cốt Thể',t:4,buff:{cmp:1.5,soul:1.3},d:'Cốt cách thanh khiết, ít nhiễm chướng tính, tu luyện băng hệ và tâm pháp thanh tâm cực nhanh.'},
+ {n:'Tiên Thiên Kiếm Thể',t:4,buff:{atk:1.9,spd:1.3},d:'Sinh ra là để cầm kiếm — kiếm ý tự thông, một đời một kiếm chém tận trời cao.'},
+ {n:'Bất Diệt Kim Thân',t:4,buff:{hp:1.9,def:1.7},d:'Nhục thân tái sinh không ngừng, đứt tay mọc tay, chặt đầu... vẫn còn cơ hội.',flag:'regen'},
+ {n:'Hỗn Nguyên Nhất Khí Thể',t:5,buff:{cult:1.8,cmp:1.5},d:'Một khí hóa vạn pháp, dung hợp mọi thuộc tính, tu cái gì cũng nhanh đến đáng sợ.'},
+ {n:'Cửu U Huyền Âm Thể',t:5,buff:{soul:1.8,cult:1.6},d:'Chí âm chi thể vạn năm khó gặp, nguyên thần mạnh mẽ, tu về đêm gấp bội — thường bị tà tu săn lùng làm lô đỉnh.'},
+ {n:'Tiên Thiên Đạo Thai',t:6,buff:{cmp:2.2,cult:1.9},d:'Trong thai đã ngộ Đạo, ngộ tính cao đến mức nghịch thiên, nghe một hiểu mười.'},
+ {n:'Bất Tử Chi Thân',t:6,buff:{hp:3.5,def:2.5},d:'Truyền thuyết về kẻ không thể giết — chỉ cần một giọt máu còn sót cũng hồi sinh cả thân.',flag:'regen'},
+ {n:'Thái Cổ Thánh Long Thể',t:7,buff:{hp:4,atk:4.5,cult:2.5},d:'Huyết mạch chân long thời thái cổ hoàn chỉnh, vảy cứng hơn pháp bảo, một tiếng long ngâm khiếp phục vạn yêu.'},
+ {n:'Vô Thủy Thánh Thể',t:8,buff:{hp:6,atk:5,cult:3.5,soul:3},d:'Thánh thể có từ thuở khai thiên, không đầu không cuối, gần như bất khả chiến bại trong cùng cấp bậc.'},
+ {n:'Tiên Thiên Thánh Nhân Đạo Thể',t:9,buff:{cmp:8,cult:6,soul:5},d:'Sinh ra đã là bán thánh, đại đạo tam thiên tùy ý lĩnh ngộ, khí vận cả một thời đại đổ dồn vào một thân.'},
 ];
 const TC_PRE=['Huyền','Thái Cổ','Cửu U','Vạn Cổ','Chí Tôn','Hư Vô','Thái Sơ','Nguyên Thủy','Bích Lạc','Cửu Thiên','Tử Kim','Huyết','Băng Hàn','Viêm Dương','Thanh Liên','Bạch Cốt','Hắc Ám','Quang Minh','Lôi Đình','Cuồng Phong','Địa Sát','Thiên Cương'];
 const TC_CORE=['Long','Phượng','Kỳ Lân','Thần','Ma','Yêu','Quỷ','Đạo','Tiên','Thánh','Kiếm','Đan','Hồn','Linh','Cương','Nhu','Huyễn','Chân'];
@@ -375,7 +412,7 @@ function attemptBreak(){const tg=nextTarget();if(!tg){log('Ngươi đã ở tậ
   const p=breakChance();log(`Bắt đầu đột phá ${tg.name}... (tỉ lệ ${Math.round(p*100)}%)`,'');
   delete S.flags.phaCanh;delete S.flags.ngoDao;
   if(RNG.chance(p)){S.ri=tg.ri;S.si=tg.si;S.progress=0;S.stats.break++;log(`✦ Đột phá thành công! ${tg.name}.`,'good');
-    if(tg.major){const nr=REALMS[tg.ri-1];const gain=Math.max(nr.life-S.lifeMax,nr.life*0.1);S.life+=gain;S.lifeMax=Math.max(S.lifeMax,nr.life);log(`Thọ nguyên tăng ${Math.round(gain)} năm.`,'good');rollMutation();}
+    if(tg.major){const nr=REALMS[tg.ri-1];const gain=Math.max(nr.life-S.lifeMax,nr.life*0.1);S.life+=gain;S.lifeMax=Math.max(S.lifeMax,nr.life);log(`Thọ nguyên tăng ${Math.round(gain)} năm.`,'good');log('【'+nr.name+'】'+realmPower(tg.ri),'lore');rollMutation();}
     else if(RNG.chance(0.25))rollMutation();
   }else{S.progress=Math.max(0,S.progress-0.3);S.taint+=3;const major=tg.major;const deathRisk=(major?0.12:0.03)+(S.dao<30?0.06:0)+S.taint*0.002;
     if(RNG.chance(deathRisk)){S.alive=false;S.cause=`Tẩu hỏa nhập ma khi đột phá ${tg.name}. Kinh mạch nổ tung, nguyên thần tan biến.`;log('☠ TẨU HỎA NHẬP MA!','death');}
@@ -633,8 +670,9 @@ function renderView(){const v=$('#view');
 function freeform(){return `<div class="freeform"><div class="ff-l">✍ Hoặc tự quyết định (gõ hành động riêng — kể cả "chọn cả A và B"):</div><div class="ff-row"><input id="freetext" class="ff-in" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off"><button class="btn small primary" data-i="free">Làm</button></div></div>`;}
 function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).map(([k,v])=>`${k}:×${v}`).join(', ')||'không';
   $('#view').innerHTML=`<div class="sheet"><h2>Nhân Vật & Thiên Phú</h2>
-   <p><b>Cảnh giới:</b> ${esc(realmName(S.ri,S.si))} <span class="muted">(${S.ri>0?REALMS[S.ri-1].group:'Phàm'})</span> · Tu vi ${Math.round(S.progress*100)}%</p>
-   <p><b>Linh căn:</b> ${S.rootShown?esc(S.root.n)+' — '+esc(S.root.d):'<i>chưa rõ</i>'}</p>
+   <p><b>Cảnh giới:</b> ${esc(realmName(S.ri,S.si))} <span class="muted">(${S.ri>0?REALMS[S.ri-1].group:'Phàm'})</span> · Tu vi ${Math.round(S.progress*100)}% · Lực ${fmtExp(powerMight())}</p>
+   <p class="muted" style="font-size:.8rem;font-style:italic;margin:-2px 0 6px;border-left:2px solid var(--line);padding-left:8px">${esc(realmPower(S.ri))}</p>
+   <p><b>Linh căn:</b> ${S.rootShown?`${esc(S.root.n)} ${S.root.pham?pham(S.root.pham):''} <span class="muted">(tốc tu ×${S.root.spd})</span><br><span class="muted" style="font-size:.8rem">${esc(S.root.d)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Thể chất:</b> ${S.tcShown?`${esc(S.tc.n)} (Phẩm ${S.tc.t}) — ${esc(S.tc.d)}<br><span class="muted" style="font-size:.78rem">Buff: ${esc(buffs)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Khí vận:</b> ${S.luckShown?esc(l.n)+' — '+esc(l.d):'<i>chưa rõ</i>'}</p>
    <p><b>Ngộ tính:</b> ×${(S.cmp).toFixed(2)} · <b>Đạo tâm:</b> ${Math.round(S.dao)} · <b>Nguyên thần:</b> ${Math.floor(S.soul)}${S.soul<1?' <span class="warn">(chưa luyện — dễ chết vì công kích linh hồn!)</span>':''}</p>
