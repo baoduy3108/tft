@@ -509,8 +509,10 @@ function genBoss(){const target=Math.min(100,S.ri+RNG.int(0,3));const names=targ
 function usePill(k){const p=PILL_DEF[k];if(!p||(S.inv[k]||0)<=0)return;S.inv[k]--;const msg=p.use(S);S.pillToxin=(S.pillToxin||0)+p.g*0.5;log('Dùng '+p.n+': '+msg,'good');if(S.pillToxin>20&&RNG.chance((S.pillToxin-20)*0.03)){deductLife(S.pillToxin,'tích độc đan (nổ thân)');S.pillToxin*=0.5;}}
 
 /* ---- free input parser ---- */
-const INTENTS=[['attack',['giết','chém','đánh','tấn công','ra tay','diệt']],['flee',['chạy','trốn','bỏ đi','rút lui','né']],['help',['cứu','giúp','bảo vệ','che chở']],['talk',['nói','thương lượng','hỏi','mua','cầu xin','xin']],['observe',['quan sát','chờ','đợi','nghe ngóng','ẩn','nấp','rình']],['cultivate',['tu luyện','thiền','ngộ','vận công']],['submit',['quỳ','lạy','cúi','nhẫn nhịn','cầu']],['take',['nhặt','lấy','hái','thu','nhận','chộp']],['pray',['khấn','cầu nguyện','van']],['refuse',['từ chối','mặc kệ','phớt','bỏ qua']]];
+const INTENTS=[['attack',['giết','chém','đánh','tấn công','ra tay','diệt','động thủ','xuống tay','hạ sát']],['steal',['trộm','cắp','thó','móc túi','lén lấy','đạo tặc','cuỗm','cướp','cưỡng đoạt']],['threaten',['dọa','đe dọa','uy hiếp','hăm','ép buộc','cảnh cáo','thị uy']],['deceive',['lừa','gạt','dối','giả vờ','đóng giả','ngụy trang','hỏa mù','giả ngây','trá']],['ally',['kết giao','kết bạn','liên minh','bắt tay','chiêu mộ','thu nạp','kết thân','hợp tác']],['flee',['chạy','trốn','bỏ đi','rút lui','né','tẩu','thoát thân']],['sacrifice',['hi sinh','hy sinh','thí','vứt bỏ','bỏ của','buông bỏ','đánh đổi']],['gamble',['liều','đánh cược','mạo hiểm','thử vận','tất tay','đặt cược','cầu may']],['help',['cứu','giúp','bảo vệ','che chở','ứng cứu','xả thân']],['talk',['nói','thương lượng','hỏi','cầu xin','xin','thuyết phục','đàm phán']],['trade',['mua','bán','đổi','trao đổi','giao dịch','mặc cả','ngã giá']],['explore',['khám phá','dò xét','tìm kiếm','lục soát','lục lọi','thăm dò','đi sâu','soát']],['observe',['quan sát','chờ','đợi','nghe ngóng','ẩn','nấp','rình','theo dõi','án binh']],['cultivate',['tu luyện','thiền','ngộ','vận công','luyện công','tĩnh tọa']],['submit',['quỳ','lạy','cúi','nhẫn nhịn','cầu hòa','chịu thua']],['take',['nhặt','lấy','hái','thu','nhận','chộp','đoạt']],['pray',['khấn','cầu nguyện','van','khẩn cầu']],['refuse',['từ chối','mặc kệ','phớt','bỏ qua','ngó lơ','làm ngơ']]];
 function parseIntent(t){t=t.toLowerCase();for(const[i,ks]of INTENTS)if(ks.some(k=>t.includes(k)))return i;return'improvise';}
+// nhận diện MỌI ý định trong câu, theo thứ tự xuất hiện trong text (cho lối chơi kết hợp: "quan sát rồi ra tay")
+function parseIntents(t){t=t.toLowerCase();const hits=[];for(const[i,ks]of INTENTS){let pos=-1;for(const k of ks){const p=t.indexOf(k);if(p>=0&&(pos<0||p<pos))pos=p;}if(pos>=0)hits.push([i,pos]);}hits.sort((a,b)=>a[1]-b[1]);return hits.map(h=>h[0]);}
 function detectLetters(t){const toks=t.toUpperCase().split(/[^A-ZÀ-Ỹ]+/);const f=[];for(const x of toks)if(x.length===1&&'ABCDEF'.includes(x)&&!f.includes(x))f.push(x);return f;}
 function matchChoice(intent,labels){const rules={attack:['nghênh chiến','chiến','ra tay','giết','lao vào','liều'],flee:['chạy','rút','trốn','rời đi','bỏ đi','bỏ qua'],talk:['thương lượng','mua','nói','cầu','xin'],help:['che chở','cứu','giúp','chắn'],observe:['quan sát','nghe ngóng','chờ','ẩn','nấp','thận trọng','đề phòng'],take:['hái','lấy','nhặt','thu','xông thẳng'],submit:['cúi','quỳ','nhẫn','tạ tội'],refuse:['từ chối','bỏ qua','rời đi','không']};const ks=rules[intent];if(!ks)return-1;for(let i=0;i<labels.length;i++)if(ks.some(k=>(labels[i]||'').toLowerCase().includes(k)))return i;return-1;}
 function freeGeneric(intent,text){switch(intent){
@@ -522,13 +524,28 @@ function freeGeneric(intent,text){switch(intent){
   case'pray':return'Ngươi thầm khấn nguyện. Thiên đạo vô tình, nhưng thành tâm đôi khi lay động một tia khí vận mong manh.';
   case'take':return'Ngươi với tay lấy thứ trước mắt. Nhưng thứ dễ lấy nhất thường là cạm bẫy khéo giăng.';
   case'flee':return'Ngươi chọn rời đi. Bỏ lỡ cơ duyên, hay né được kiếp nạn — không ai biết trước.';
+  case'steal':if(RNG.chance(0.45)){const g=Math.round(Math.pow(10,1+S.ri*0.2));S.linhThach+=g;S.att+=3;addKarma(-1,'trộm đạo');return`Ngươi ra tay nhanh như chớp, thó gọn ${g.toLocaleString('vi-VN')} linh thạch rồi biến vào đám đông. Nhưng trộm đạo tất để lại dấu vết, và ánh mắt dò xét bắt đầu tìm ngươi.`;}S.att+=6;addKarma(-1,'trộm cắp bị lộ');return'Ngươi bị phát giác giữa chừng! Tiếng hô hoán vang lên — giờ cả một vùng đều nhớ mặt kẻ cắp là ngươi.';
+  case'threaten':S.att+=2;if(RNG.chance(0.4))return'Khí thế uy hiếp của ngươi khiến đối phương chùn bước. Lần này ngươi thắng mà không cần động thủ.';addKarma(-1,'ỷ mạnh hiếp người');return'Ngươi lên giọng đe dọa. Kẻ yếu cúi đầu, nhưng trong lòng đã gieo một hạt giống oán hận chờ ngày nảy mầm.';
+  case'deceive':if(RNG.chance(0.5))return'Ngươi tung hỏa mù, giả ngây giả dại. Đối phương bị dẫn dắt theo ý ngươi mà không hề hay biết — ngươi âm thầm chiếm thế thượng phong.';S.att+=2;addKarma(-1,'lừa gạt bị vạch trần');return'Mưu kế bị nhìn thấu. Ngươi mất mặt, lại thêm mang tiếng xảo trá gian manh.';
+  case'ally':if(RNG.chance(0.4)){const n=makeNPC(RNG.int(0,2));n.relation=35;remember(n,'ngươi chủ động kết giao',0);return`Ngươi chủ động đưa tay kết giao. ${n.name} đáp lại thiện chí — một đồng minh hiếm hoi giữa cõi tu chân cô độc (xem Tab Quan Hệ).`;}return'Ngươi ngỏ lời kết giao, nhưng chỉ nhận lại ánh mắt đề phòng. Ở tu tiên giới, lòng tin là thứ xa xỉ bậc nhất.';
+  case'sacrifice':S.att=Math.max(0,S.att-3);addKarma(1,'biết bỏ để giữ');return'Ngươi dứt khoát vứt bỏ thứ trong tay để thoát thân. Mất của, nhưng giữ được mạng và bớt bị dòm ngó — một cái đầu tỉnh táo.';
+  case'gamble':if(RNG.chance(0.5*luckOf().fort)){const t=genTreasure(clamp(2+RNG.int(0,2),1,maxGrade(S.world.tier)+1));S.treasures.push(t);grantWithPrice(t.name,t.grade);return`Ngươi đánh cược tất tay với vận mệnh — và thắng! Đoạt được ${t.name} (${t.gradeName}).`;}{const y=5+RNG.int(0,15);deductLife(y,'canh bạc thất bại');return S.alive?`Canh bạc thất bại, ngươi trả giá bằng ${y} năm thọ nguyên. Vận mệnh không nợ ai lòng thương.`:S.cause;}
+  case'explore':{const r=RNG.next();if(r<0.15){const g=Math.round(Math.pow(10,1+S.ri*0.15));S.linhThach+=g;return`Ngươi lục lọi tỉ mỉ từng ngóc ngách và tìm được ${g.toLocaleString('vi-VN')} linh thạch bị bỏ quên.`;}if(r<0.25){const y=3+RNG.int(0,8);deductLife(y,'sa vào cấm chế khi dò xét');return S.alive?`Ngươi dò xét quá sâu và vô tình kích hoạt một cấm chế cổ (-${y} năm thọ).`:S.cause;}return'Ngươi thăm dò xung quanh một cách cẩn thận. Chưa thấy gì đáng giá, nhưng cũng chẳng mất gì — sự thận trọng chưa bao giờ thừa.';}
+  case'trade':return'Ngươi ngã giá, cân đo từng phần thiệt hơn. Ở nơi mạnh được yếu thua, biết mặc cả đúng lúc cũng là một loại bản lĩnh sinh tồn.';
   default:if(RNG.chance(0.15)){S.progress=Math.min(1,S.progress+0.01);addKarma(1,'một quyết định khôn ngoan bất ngờ');return`Ngươi hành động theo cách riêng: "${text.slice(0,80)}". Một nước cờ lạ mở ra sinh cơ.`;}return`Ngươi hành động theo cách riêng: "${text.slice(0,80)}". Dòng nhân quả lại rẽ thêm một nhánh nhỏ...`;}}
-function doFree(){const inp=$('#freetext');const text=inp?inp.value.trim():'';if(!text)return;let sc=S.scene;if(!sc||sc.hub)sc=sceneHub();if(sc.result){render();return;}const intent=parseIntent(text);const letters=detectLetters(text);
+function doFree(){const inp=$('#freetext');const text=inp?inp.value.trim():'';if(!text)return;let sc=S.scene;if(!sc||sc.hub)sc=sceneHub();if(sc.result){render();return;}
+  const intents=parseIntents(text);const intent=intents[0]||'improvise';const letters=detectLetters(text);
   const choices=(sc.choices||[]).filter(c=>!c.show||c.show());
-  let idx=-1;if(letters.length){const vi=letters[0].charCodeAt(0)-65;if(vi>=0&&vi<choices.length)idx=vi;if(letters.length>=2)addKarma(1,'lối chơi mưu trí phá cách');}
+  const combo=letters.length>=2||intents.length>=2; // lối chơi kết hợp / tư duy chiến thuật
+  let idx=-1;if(letters.length){const vi=letters[0].charCodeAt(0)-65;if(vi>=0&&vi<choices.length)idx=vi;}
   if(idx<0)idx=matchChoice(intent,choices.map(c=>c.l));
-  if(idx>=0&&choices[idx]){choices[idx].act();afterAct();return;}
-  freeRes=freeGeneric(intent,text);render();save();}
+  if(idx>=0&&choices[idx]){if(combo)addKarma(1,'lối chơi mưu trí phá cách');choices[idx].act();afterAct();return;}
+  // Ứng biến tự do: mỗi ý định là một hệ quả THẬT; kết hợp nhiều ý định → nhiều hệ quả chồng lên nhau
+  let res=freeGeneric(intent,text);
+  if(combo&&intents.length>=2&&S.alive){addKarma(1,'lối chơi mưu trí phá cách');
+    res='『Mưu kế liên hoàn』 '+res;
+    for(let k=1;k<intents.length&&k<3&&S.alive;k++){res+=' — '+freeGeneric(intents[k],text);}}
+  freeRes=res;render();save();}
 
 /* ---- scene helpers ---- */
 function setScene(sc){S.scene=sc;freeRes=null;TAB='story';render();save();if(S&&!S.alive)render();}
