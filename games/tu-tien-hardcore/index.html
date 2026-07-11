@@ -434,6 +434,7 @@ function sceneHub(){
   if((S.inv.thanh_linh||0)>0)c.push({l:'💧 Dùng Thanh Linh Đan tẩy chướng tính',act:()=>{usePill('thanh_linh');afterAct();}});
   c.push({l:'🗺️ Xuất quan — bước vào thế gian hiểm ác (event)',act:()=>{setScene(rollEvent());}});
   if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Bế quan tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
+  if(S.ri>=100)c.unshift({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
   const overdue=S.ledger.filter(x=>x.n<0).length;
   const narr=`Ngươi đứng giữa ${S.world.name}, cảnh giới ${realmName(S.ri,S.si)}. Thời gian trôi, thọ nguyên hao mòn từng khắc — và con đường phía trước dài tựa vô tận.\n\n${overdue>3?'Ngươi mơ hồ cảm thấy có những ánh mắt oán độc đang tìm kiếm ngươi trong bóng tối...':luckOf().id<=0?'Vận đen đeo bám; đi đâu ngươi cũng thấy điềm gở.':'Thiên địa tĩnh lặng một cách đáng ngờ.'}`;
   return{title:'Bế Quan',narr,choices:c,log:true};
@@ -620,10 +621,44 @@ function chooseOrigin(){RNG=makeRNG((Date.now()^(Math.random()*1e9))>>>0);const 
   $('#view').innerHTML=`<h2>Chọn Xuất Thân</h2><p class="muted" style="font-size:.85rem;margin-bottom:10px">Mỗi xuất thân là một khởi đầu & cốt truyện khác nhau. (100 loại; mỗi ván bốc 5.)</p>
    ${hand.map((o,i)=>`<div class="origin-card" data-o="${o.id}"><span class="rar" style="background:${RAR[o.rar].c};color:#0a0e14">${RAR[o.rar].n}</span> <span class="nm">${esc(o.name)}</span><div class="ds">${esc(o.open.split('\n')[0]).slice(0,140)}…</div></div>`).join('')}
    <div class="origin-card" data-o="__random__" style="border-style:dashed"><span class="nm">🎲 Để số phận định đoạt</span><div class="ds">Bốc ngẫu nhiên một xuất thân bất kỳ — kể cả thứ không có trong danh sách. Có thể cực phẩm, cũng có thể là địa ngục.</div></div>`;}
+/* ---- KẾT CỤC: tính từ nhân quả + lựa chọn + cảnh giới tích lũy cả đời ---- */
+function computeEnding(){const k=S.karma,dao=S.dao,ri=S.ri,mut=S.mutations.length,kills=S.stats.kills,att=S.att,betray=S.stats.betray,ngo=S.stats.ngodao,age=Math.floor(S.age);
+  const tier=ri>=100?5:ri>=80?4:ri>=50?3:ri>=20?2:ri>=5?1:0; // tầng vóc dáng đạo nghiệp
+  const ascend=S.flags&&S.flags.ascended;
+  // trục đạo đức: -2 đại ma, -1 tà, 0 trung, 1 chính, 2 đại thiện
+  const moral=k<=-15?-2:k<=-4?-1:k>=15?2:k>=4?1:0;
+  let title,epithet,tone='bad',poem;
+  if(ascend||ri>=100){title='✧ PHI THĂNG THÀNH TIÊN ✧';tone='good';
+    epithet=moral<=-1?'Ma Đạo Chân Tiên — cả tiên giới nghe tên biến sắc':moral>=1?'Thượng Cổ Chân Tiên, danh chấn Tam Thiên Đại Thiên Thế Giới':'Tiêu Dao Tán Tiên, đến đi không dấu vết';
+    poem='Ngươi bước qua lôi kiếp cuối cùng. Thân xác tan thành vạn điểm tinh quang, bay lên khỏi phàm trần — nơi này đã không còn giữ nổi ngươi. Truyền thuyết về ngươi sẽ được kể mãi ở '+esc(S.world.name)+'.';}
+  else if(mut>=8){title='☍ NHÂN TÍNH TIÊU VONG';epithet='Một dị vật không còn nhớ mình từng là người';tone='warn';
+    poem=`Sau ${mut} lần dị biến, ngươi soi mình xuống mặt nước và không nhận ra thứ đang nhìn lại. Sức mạnh đã đổi bằng chính linh hồn ngươi. Cái chết này, có lẽ là một sự giải thoát.`;}
+  else if(tier>=3&&moral<=-2){title='☠ MA ĐẾ NGÃ XUỐNG';epithet=`Đại Ma Đầu tay nhuốm máu ${kills} sinh linh, bị chính đạo vây diệt`;tone='warn';
+    poem='Ngươi đã đứng trên đỉnh bằng xương máu vô số kẻ khác. Nhưng nợ máu tất phải trả — vạn tu sĩ chính đạo hợp lực, và ngay cả ngươi cũng không chống nổi nhân quả của cả một thời đại.';}
+  else if(tier>=3&&moral>=2){title='✦ ĐẠI NĂNG VIÊN TỊCH';epithet='Một vị chính đạo tiền bối được vạn người kính ngưỡng, ngồi hóa mà đi';tone='good';
+    poem='Ngươi sống một đời quang minh, cứu vớt vô số sinh linh. Khi thọ nguyên cạn, ngươi mỉm cười ngồi kiết già hóa đi, để lại một truyền thừa và một cái tên sạch sẽ giữa tu tiên giới đầy bùn nhơ.';}
+  else if(tier>=3){title='◈ NHẤT ĐẠI CƯỜNG GIẢ TẠ THẾ';epithet=`${esc(realmName(ri,S.si))} — kẻ đã đi rất xa trên đại đạo`;tone='good';
+    poem='Ngươi đã leo tới nơi mà chín phần mười tu sĩ cả đời không mơ tới. Nhưng đại đạo vô tận, còn thọ nguyên thì hữu hạn. Ngươi ngã xuống, mắt vẫn hướng về đỉnh trời chưa với tới.';}
+  else if(betray>=3&&moral<=-1){title='✎ CÔ GIA QUẢ NHÂN';epithet='Kẻ phản bội tất cả, rồi bị tất cả phản bội, chết trong cô độc';
+    poem='Ngươi đã bán đứng bao nhiêu người để leo lên? Đến cuối, không một ai bên cạnh khi ngươi tắt thở. Cái chết cô quạnh này là nhân quả ngươi tự gieo.';}
+  else if(age>=400&&tier<=1){title='☯ TÁN NHÂN ẨN THẾ';epithet=`Một lão nhân sống ${age} tuổi mà cảnh giới không cao — nhưng sống lâu hơn vô số thiên tài`;tone='';
+    poem='Ngươi không có đại tài, cũng chẳng có đại vận. Nhưng ngươi cẩn trọng, nhẫn nại, và ngươi sống — sống lâu hơn cả những thiên kiêu từng khinh thường ngươi. Đôi khi, sống sót cũng là một loại đạo.';}
+  else if(ngo>=5){title='❈ NGỘ ĐẠO NHI VONG';epithet='Kẻ mãi mê đại đạo mà quên mất tính mạng, đắc đạo trong khoảnh khắc lâm chung';
+    poem='Ngươi dành cả đời truy cầu chân lý, có lẽ đã chạm được một tia. Trong khoảnh khắc cuối, ngươi mỉm cười — hiểu ra, rồi tan biến. Đạo ở trong tâm, không ở tuổi thọ.';}
+  else if(tier>=1){title='⚔ VONG ĐỒ NƠI TU CHÂN GIỚI';epithet=`${esc(realmName(ri,S.si))} — một tu sĩ trung bình giữa dòng đời tàn khốc`;
+    poem='Ngươi đã cố gắng. Ngươi đã tiến bộ. Nhưng con đường tu tiên chất đầy xương trắng, và ngươi trở thành một trong số đó. Không ai nhớ tên ngươi ngoài chính ngươi.';}
+  else{title='☠ VÔ DANH CHI BỐI';epithet=att>10?'Lộ diện quá sớm, chết như một con kiến dưới chân người khác':'Một hạt bụi chưa kịp thấy bầu trời đã tắt lịm';
+    poem='Con đường còn chưa bắt đầu đã kết thúc. Trong '+esc(S.world.name)+', mỗi ngày có hàng vạn kẻ như ngươi ngã xuống, không tiếng vang, không dấu vết. Thế giới không hề dừng lại vì ngươi.';}
+  const balance=k>=8?'Cả đời ngươi tích thiện, nhân quả trong sạch.':k>=1?'Ngươi giữ được nhiều hơn phần thiện.':k<=-15?'Nợ máu ngập trời, oán khí chưa tan.':k<=-1?'Tay ngươi đã vấy không ít nghiệp chướng.':'Thiện ác cân bằng, một đời không nợ ai cũng chẳng ai nợ.';
+  return{title,epithet,tone,poem,balance};}
 function death(){$('#status').style.display='block';$('#tabbar').style.display='none';
-  $('#view').innerHTML=`<div class="menu-wrap"><h1 style="color:var(--bad)">☠ ĐẠO TIÊU HỒN TÁN</h1>
+  const E=computeEnding();const col=E.tone==='good'?'var(--gold)':E.tone==='warn'?'var(--cyan)':'var(--bad)';
+  $('#view').innerHTML=`<div class="menu-wrap"><h1 style="color:${col}">${esc(E.title)}</h1>
+   <p style="color:${col};font-weight:600;font-style:italic;margin:6px 0 2px">「 ${esc(E.epithet)} 」</p>
    <p class="bad" style="font-style:italic;margin:12px 0">${esc(S.cause||'Ngươi đã chết.')}</p>
-   <div class="muted" style="font-size:.86rem">Ngươi ngã xuống ở cảnh giới <b>${esc(realmName(S.ri,S.si))}</b>, hưởng "thọ" ${Math.floor(S.age)} tuổi.<br>Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Ngộ đạo ${S.stats.ngodao} lần.<br>Trong ${esc(S.world.name)}, ngươi chỉ là một trong vô số sinh linh đã tan biến. Thế giới không hề dừng lại.</div>
+   <p class="muted" style="font-size:.9rem;line-height:1.6;margin:12px 0">${esc(E.poem)}</p>
+   <p class="muted" style="font-size:.84rem;font-style:italic">${esc(E.balance)}</p>
+   <div class="muted" style="font-size:.82rem;border-top:1px solid var(--line);padding-top:10px;margin-top:12px">Ngã xuống ở <b>${esc(realmName(S.ri,S.si))}</b>, hưởng "thọ" ${Math.floor(S.age)} tuổi.<br>Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray} · Nhân quả ${S.karma}.</div>
    <button class="btn primary" data-m="new" style="margin-top:16px">Chuyển thế — bắt đầu lại</button></div>`;}
 function render(){renderStatus();renderTabs();renderView();}
 
