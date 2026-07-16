@@ -488,7 +488,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -690,6 +690,45 @@ function evBloodline(){const b=RNG.pick([['Thượng cổ thần long',{atk:1.3,
     {l:'Cưỡng ép đè nén huyết mạch.',act:()=>{deductLife(3,'đè nén huyết mạch phản phệ');setResult('Ngươi sợ mất nhân tính, gắng đè nén dòng huyết mạch. Nó tạm lắng xuống, nhưng cơ hội nghịch thiên có lẽ đã vụt qua.');}}]};}
 function sceneChooseProf(){return{title:'CHỨC NGHIỆP · Bái Sư Học Nghề',narr:'Một nghề phụ có thể nuôi sống ngươi giữa tu tiên giới khắc nghiệt, mở ra một con đường sức mạnh khác ngoài tu vi. Ngươi muốn học nghề gì? (Chỉ chọn một — chuyên một nghề mới mong đạt Nhất phẩm.)',choices:PROFS.map(p=>({l:p.n+' — '+p.d.split('.')[0]+'.',act:()=>{setProfession(p.id);setResult('Ngươi bái sư, chính thức là '+PROF_RANK[0]+' '+p.n+'. Hãy hành nghề để tinh tiến — Nhất phẩm đại sư được cả thiên hạ kính nể.');}})).concat([{l:'Thôi, dồn hết cho tu luyện.',act:()=>{S.scene=null;render();save();}}])};}
 
+/* ===== THĂNG THẾ GIỚI (phi thăng lên giới cao hơn — mở khóa phẩm cao) ===== */
+function worldAscendReq(){return Math.min(100,8+(S.world.tier-1)*11);}
+function canAscendWorld(){return S.world.tier<WORLDS.length&&S.ri>=worldAscendReq();}
+function sceneAscendWorld(){const nt=S.world.tier+1;const nw=WORLDS[nt-1];
+  return{title:'PHI THĂNG · Vượt Giới',narr:`Ngươi đã đạt tới đỉnh mà ${S.world.name} có thể dung chứa. Không gian quanh ngươi rạn nứt — bờ bên kia là ${nw.n}, một thế giới CAO HƠN: linh khí nồng gấp bội, tài nguyên phẩm cấp cao hơn hẳn (trần phẩm nâng từ ${maxGrade(S.world.tier)} lên ${maxGrade(nt)}). Nhưng vượt giới phải xuyên qua Không Gian Loạn Lưu cùng lôi kiếp vượt giới — vô số kẻ tan xác giữa hư không.`,choices:[
+    {l:`Độ kiếp vượt giới lên ${nw.n}.`,cls:'primary',hint:'Thất bại = tan xác giữa hư không.',act:()=>{const risk=clamp(0.4-S.soul*0.02-(S.dao-50)*0.003-profBonus('tran')*0.5-(S.natal?0.05:0),0.08,0.85);if(RNG.chance(risk)){S.alive=false;S.cause='Vượt giới thất bại — thân xác bị Không Gian Loạn Lưu xé vụn giữa hai thế giới.';setResult(S.cause);return;}S.world.tier=nt;S.world.name='['+nw.n+']';S.world.region=RNG.pick(['Tân Nhập Vực','Cổ Chiến Trường','Vạn Tộc Đại Lục','Biên Hoang','Trung Vực']);S.world.machId=Math.min(12,nt+2);S.att=Math.max(0,S.att-5);S.fame=clamp(S.fame+20,-100,1000);log('✧ VƯỢT GIỚI THÀNH CÔNG! Ngươi đặt chân tới '+nw.n+' — trần phẩm mở khóa lên '+maxGrade(nt)+'.','good');setResult('Ngươi xé rách không gian, đặt chân lên '+nw.n+'! Linh khí nồng đậm gấp bội, pháp bảo/công pháp/linh dược/trận/thú phẩm cao bắt đầu xuất hiện. Nhưng ở đây ngươi lại chỉ là tân khách yếu ớt giữa vô số cường giả bản địa.');}},
+    {l:'Chưa vội — ở lại tích lũy thêm.',act:()=>{S.scene=null;render();save();}}]};}
+/* ===== THÔNG THIÊN THÁP (thí luyện xếp hạng) ===== */
+function sceneTower(){S.tower=S.tower||{best:0};const floor=(S._towerFloor||0)+1;const b=genBoss();b.ri=Math.min(100,Math.max(1,Math.round(S.ri*0.55+floor*1.3)));b.boss=true;b.soul=floor>=10;
+  return{title:'THÔNG THIÊN THÁP · Tầng '+floor,narr:`Tầng ${floor} của Thông Thiên Tháp. Thủ tháp: ${b.name} (${realmName(b.ri,b.si)})${b.soul?' — tỏa áp lực thần hồn':''}. Vượt qua để lên tầng cao hơn; phần thưởng & hiểm nguy đều tăng. Kỷ lục hiện tại: tầng ${S.tower.best||0}.`,choices:[
+    {l:'Khiêu chiến thủ tháp tầng '+floor+'.',cls:'primary',hint:'Bại thì bị đẩy khỏi tháp; chết là thật.',act:()=>{const r=fight(b);if(r==='win'){S._towerFloor=floor;S.tower.best=Math.max(S.tower.best||0,floor);S.fame=clamp(S.fame+2,-100,1000);const g=loot(Math.min(6,1+Math.floor(floor/5)));log('Vượt tầng '+floor+' Thông Thiên Tháp! Thu: '+g.join(', '),'good');setScene(sceneTower());}else if(r==='dead')setResult(S.cause);else{S._towerFloor=0;setResult('Ngươi bại ở tầng '+floor+' ('+r+'), bị kình lực đẩy văng khỏi tháp. Kỷ lục: tầng '+S.tower.best+'.');}}},
+    {l:'Rời tháp, giữ kỷ lục.',act:()=>{S._towerFloor=0;setResult('Ngươi rời Thông Thiên Tháp với kỷ lục tầng '+(S.tower.best||0)+'.');}}]};}
+/* ===== ĐỘNG PHỦ + LINH ĐIỀN ===== */
+function caveCost(){return Math.round(Math.pow(10,2+S.ri*0.18));}
+function sceneCave(){
+  if(!S.cave)return{title:'ĐỘNG PHỦ',narr:'Một động phủ riêng cho ngươi nơi bế quan an toàn linh khí tụ, kèm một mảnh Linh Điền 3 ô để trồng linh dược. Giá: '+caveCost().toLocaleString('vi-VN')+' linh thạch.',choices:[
+    {l:'Tậu động phủ ('+caveCost().toLocaleString('vi-VN')+' linh thạch).',show:()=>S.linhThach>=caveCost(),act:()=>{S.linhThach-=caveCost();S.cave={level:1,field:[null,null,null]};log('Ngươi tậu được động phủ + linh điền 3 ô.','good');setResult('Ngươi đã có động phủ riêng! Bế quan trong đây tu nhanh hơn, và có thể trồng/thu hoạch linh dược ở Linh Điền.');}},
+    {l:'Thôi.',act:()=>{S.scene=null;render();save();}}]};
+  const cv=S.cave;const c=[];
+  cv.field.forEach((plot,i)=>{if(!plot)c.push({l:'🌱 Gieo linh dược ô '+(i+1)+' (100 linh thạch)',show:()=>S.linhThach>=100,act:()=>{S.linhThach-=100;const h=genHerb(S.world.tier);cv.field[i]={herb:h,ready:S.time.y+3+RNG.int(0,4)};setResult('Ngươi gieo hạt giống linh dược vào ô '+(i+1)+'; vài năm nữa sẽ chín.');}});
+    else if(S.time.y>=plot.ready)c.push({l:'🌾 Thu hoạch ô '+(i+1)+' ('+plot.herb.name+')',act:()=>{const h=plot.herb;S.inv['herb_'+h.uid]=1;S.invMeta=S.invMeta||{};S.invMeta['herb_'+h.uid]=h;cv.field[i]=null;setResult('Ngươi thu hoạch được '+h.name+' từ Linh Điền!');}});
+    else c.push({l:'⏳ Ô '+(i+1)+': '+plot.herb.name+' (chín năm '+plot.ready+', nay '+S.time.y+')',act:()=>{setResult('Linh dược chưa chín. Cứ tu luyện, thời gian sẽ tới.');}});});
+  c.push({l:'🧘 Bế quan trong động phủ (~2 năm, tu nhanh hơn)',act:()=>{cultivate(2,false);S.progress=Math.min(1,S.progress+0.015*cv.level);log('Bế quan trong động phủ, linh khí tụ giúp tu vi tinh tiến.','good');afterAct();}});
+  if(cv.level<9)c.push({l:'⬆ Nâng cấp động phủ (cấp '+cv.level+'→'+(cv.level+1)+', '+(cv.level*500).toLocaleString('vi-VN')+' linh thạch)',show:()=>S.linhThach>=cv.level*500,act:()=>{S.linhThach-=cv.level*500;cv.level++;setResult('Động phủ nâng lên cấp '+cv.level+', linh khí càng nồng, bế quan càng lợi.');}});
+  c.push({l:'↩ Rời động phủ.',act:()=>{S.scene=null;render();save();}});
+  return{title:'ĐỘNG PHỦ (cấp '+cv.level+')',narr:'Động phủ của ngươi — chốn nương thân giữa cõi tu chân tàn khốc. Linh Điền 3 ô để trồng linh dược, bế quan tại đây tu nhanh hơn.',choices:c};}
+/* ===== KIẾN LẬP THẾ LỰC RIÊNG ===== */
+function sceneForce(){
+  if(!S.ownForce)return{title:'KIẾN LẬP THẾ LỰC',narr:'Thực lực hiện tại đủ để ngươi tự lập môn hộ, cát cứ một phương, chiêu mộ bộ hạ. Một thế lực cho ngươi thu nhập, danh tiếng và tai mắt — cũng khiến ngươi thành mục tiêu của các thế lực khác.',choices:[
+    {l:'Lập thế lực của riêng ngươi.',cls:'primary',act:()=>{S.ownForce={name:RNG.pick(SECT_PRE)+' '+RNG.pick(['Các','Cung','Môn','Điện','Trại','Đường']),members:3,power:S.ri,rep:0};S.fame=clamp(S.fame+10,-100,1000);log('Ngươi lập ra thế lực '+S.ownForce.name+'!','good');setResult('Thế lực «'+S.ownForce.name+'» chính thức thành lập với 3 bộ hạ đầu tiên. Từ nay ngươi là chủ một phương.');}},
+    {l:'Chưa vội.',act:()=>{S.scene=null;render();save();}}]};
+  const f=S.ownForce;const c=[
+    {l:'📢 Chiêu mộ bộ hạ (~1 năm)',act:()=>{advance(1);if(RNG.chance(0.7)){const n=1+RNG.int(0,2);f.members+=n;setResult('Ngươi chiêu mộ được '+n+' tán tu gia nhập. Tổng bộ hạ: '+f.members+'.');}else setResult('Năm nay không ai đủ tư cách gia nhập, hoặc không ai dám.');}},
+    {l:'💰 Thu thuế/kinh doanh (~1 năm)',act:()=>{advance(1);const inc=Math.round(f.members*Math.pow(10,1+S.ri*0.15));S.linhThach+=inc;f.rep+=2;setResult('Thế lực thu về '+inc.toLocaleString('vi-VN')+' linh thạch, danh tiếng tăng.');}},
+    {l:'⚔ Bành trướng, thôn tính thế lực yếu (~2 năm)',hint:'Rủi ro chiến tranh.',act:()=>{advance(2);const b=genBoss();b.ri=Math.max(1,S.ri+RNG.int(-1,1));const r=fight(b);if(r==='win'){f.members+=RNG.int(2,6);f.power=Math.max(f.power,S.ri);f.rep+=5;S.fame=clamp(S.fame+5,-100,1000);setResult('Ngươi đánh bại thủ lĩnh địch, thôn tính thế lực của chúng! Bộ hạ tăng mạnh.');}else setResult(r==='dead'?S.cause:('Cuộc bành trướng thất bại ('+r+'), thế lực tổn thất bộ hạ.'));if(S.alive&&r!=='win')f.members=Math.max(0,f.members-RNG.int(1,3));}},
+    {l:'↩ Rời sảnh nghị sự.',act:()=>{S.scene=null;render();save();}},
+  ];
+  return{title:'THẾ LỰC · '+f.name,narr:`«${f.name}» — thế lực của ngươi. Bộ hạ: ${f.members} · Danh vọng: ${f.rep}. Bộ hạ đông, thu nhập lớn, nhưng cũng dễ chiêu kẻ thù nhòm ngó.`,choices:c};}
+
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
 function sceneReveal(){
@@ -738,6 +777,14 @@ function sceneHub(){
   if(S.ri>=3&&!S.natal&&S.treasures.length)c.push({l:'⚜ Tế luyện bản mệnh pháp bảo',act:()=>{setScene(sceneNatal());}});
   // Phường thị
   c.push({l:'🏪 Tới phường thị (mua/bán)',act:()=>{setScene(sceneMarket());}});
+  // Động phủ + linh điền
+  c.push({l:S.cave?`🏔️ Vào động phủ (cấp ${S.cave.level})`:'🏔️ Tậu động phủ + linh điền',act:()=>{setScene(sceneCave());}});
+  // Thông Thiên Tháp
+  if(S.ri>=1)c.push({l:`🗼 Thí luyện Thông Thiên Tháp (kỷ lục: tầng ${(S.tower&&S.tower.best)||0})`,act:()=>{S._towerFloor=0;setScene(sceneTower());}});
+  // Kiến lập thế lực (Kim Đan trở lên)
+  if(S.ri>=3)c.push({l:S.ownForce?`👑 Thế lực ${S.ownForce.name} (${S.ownForce.members} bộ hạ)`:'👑 Kiến lập thế lực riêng',act:()=>{setScene(sceneForce());}});
+  // Phi thăng vượt giới
+  if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n} (mở khóa phẩm cao)`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
   c.push({l:'🗺️ Xuất quan — bước vào thế gian hiểm ác (event)',act:()=>{setScene(rollEvent());}});
   if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Bế quan tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
   if(S.ri>=100)c.unshift({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
@@ -943,6 +990,8 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Nhân quả:</b> ${S.karma} · <b>Danh tiếng:</b> ${S.fame} · <b>Lộ diện:</b> ${Math.round(S.att)}${geniusTitle()?' · <span class="good">🏅 '+esc(geniusTitle().n)+'</span>':''}</p>
    <p><b>Cơ duyên ẩn:</b> ${S.hidden?(S.hidden.shown?esc(S.hidden.name)+' — '+esc(S.hidden.desc):'<i>bí ẩn...</i>'):'không'}</p>
    <p><b>Dị biến:</b> ${S.mutations.length?S.mutations.map(m=>`<span class="chip">${esc(m)}</span>`).join(''):'chưa có'}</p>
+   <p><b>Thế giới:</b> ${esc(S.world.name)} <span class="muted">(giới cấp ${S.world.tier}/${WORLDS.length}, trần phẩm ${maxGrade(S.world.tier)})</span></p>
+   <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Thông Thiên Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
    <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>
    ${(()=>{const cap=maxGrade(S.world.tier);const hard=Math.min(12,cap+2);return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">📖 Thiên Phẩm Lục — 12 phẩm (pháp bảo · công pháp · thể chất · thiên phú · đan · linh dược · cơ duyên · trận pháp · linh thú)</div>
