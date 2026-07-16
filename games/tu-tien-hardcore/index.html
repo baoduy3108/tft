@@ -248,27 +248,47 @@ const LUCK=[
 const WORLDS=[
  {tier:1,n:'Phàm Giới'},{tier:2,n:'Linh Giới'},{tier:3,n:'Tiên Giới'},{tier:4,n:'Thánh Giới'},{tier:5,n:'Đế Vực'},{tier:6,n:'Hồng Hoang'},{tier:7,n:'Hỗn Độn Hải'},{tier:8,n:'Hồng Mông Hải'},{tier:9,n:'Vô Hạn Ngoại Vực'}];
 
+/* ===== TÔNG MÔN ===== */
+const SECT_TIER=['Phàm cấp','Linh cấp','Huyền cấp','Địa cấp','Thiên cấp','Vương cấp','Thánh Địa','Đế Tông']; // 8 cấp
+const SECT_POS=['Tạp Dịch Đệ Tử','Ngoại Môn Đệ Tử','Nội Môn Đệ Tử','Chân Truyền Đệ Tử','Thánh Tử','Đạo Tử','Thiếu Tông Chủ','Tông Chủ']; // 8 vị trí
+const SECT_TYPES=[
+ {id:'kiem',n:'Kiếm Tông',favor:['kim','loi'],buff:'atk',d:'Vạn kiếm quy tông, một kiếm phá vạn pháp. Đệ tử lấy kiếm ý làm mệnh, hiếu chiến và kiêu ngạo.'},
+ {id:'the',n:'Thể Tu Môn',favor:['tho','kim'],buff:'hp',d:'Luyện thể tới cực hạn, nhục thân địch pháp bảo. Không tin thần thông hoa mỹ, chỉ tin nắm đấm của mình.'},
+ {id:'dan',n:'Đan Các',favor:['moc','hoa'],buff:'cult',d:'Đứng đầu về luyện đan, tài nguyên đan dược cực dồi dào — cũng là nơi vô số kẻ dòm ngó và tranh đoạt.'},
+ {id:'tran',n:'Trận Môn',favor:['tho','thuy'],buff:'def',d:'Chuyên trận pháp và cơ quan. Một mình có thể thủ vững một tòa thành, hoặc phá nát một đại trận.'},
+ {id:'hon',n:'Hồn Điện',favor:['am','bang'],buff:'soul',d:'Tu luyện nguyên thần và thần hồn, tinh thông cấm thuật đoạt xá — bước vào đây, giữ chặt lấy linh hồn của ngươi.'},
+ {id:'ma',n:'Ma Giáo',favor:['am','hoa'],buff:'atk',d:'Tà đạo bàng môn, mạnh lên nhanh bằng mọi giá. Ở đây không có đạo nghĩa, chỉ có mạnh và yếu — vào là nhuốm nhân quả.'},
+ {id:'dao',n:'Đạo Tông',favor:['thien','hondon'],buff:'cmp',d:'Chính đạo ngàn năm, truyền thừa thâm hậu, trọng ngộ tính và đạo tâm. Quy củ nghiêm minh — nhưng người mạnh vẫn có đặc quyền.'},
+];
+const SECT_PRE=['Thanh Vân','Thiên Kiếm','Huyết Ma','Vạn Đan','Cửu U','Bích Lạc','Tử Tiêu','Huyền Thiên','Lưu Vân','Bắc Minh','Vô Cực','Thái Hư','Linh Tiêu','Ngọc Hư','Diệt Thế','Hạo Thiên','Cổ Nguyệt','Phần Thiên'];
+function sectMaxTier(worldTier){return clamp(Math.floor((worldTier-1)*1.0),0,7);} // thế giới thấp chỉ có tông môn cấp thấp
+function genSect(worldTier,forceType){const maxT=sectMaxTier(worldTier);const tier=RNG.int(0,maxT);const type=forceType||RNG.pick(SECT_TYPES);
+  return {name:RNG.pick(SECT_PRE)+' '+type.n,tierId:tier,tier:SECT_TIER[tier],typeId:type.id,type:type.n,typeDesc:type.d,buff:type.buff,favor:type.favor,pos:0,posName:SECT_POS[0],contrib:0};}
+const SECT_RULES='⚖ LUẬT TÔNG MÔN (hardcore): Đệ tử được phép tỉ thí SINH TỬ — giết nhau hợp pháp nếu ký sinh tử trạng. Tông môn KHÔNG bảo vệ tuyệt đối: mạnh được yếu thua, chết ráng chịu. Thiên tài vị trí cao dễ bị trưởng lão hắc tâm hoặc kẻ thù nhắm ĐOẠT XÁ (chiếm thân xác). Cống hiến đổi tài nguyên; địa vị càng cao tài nguyên càng lớn — nhưng mục tiêu trên lưng cũng càng lớn.';
+
 /* ---------- Generators ---------- */
 const IT_PRE=['Huyền Thiết','Tử Kim','Bích Ngọc','Cửu Long','Phá Quân','Trảm Tiên','Đồ Thần','Hỗn Nguyên','Thái Cổ','Vạn Yêu','U Minh','Lôi Đình'];
 const IT_KIND=['Kiếm','Đao','Thương','Chung','Tháp','Đỉnh','Kính','Phiến','Châu','Ấn','Phướn','Giáp','Thuẫn'];
 const HB_PRE=['Thanh','Huyết','Tử','Bích','Kim','Hắc','Băng','Viêm','Cửu Diệp','Thiên Niên','Vạn Niên','U Minh','Địa Tâm','Long'];
 const HB_KIND=['Linh Thảo','Linh Chi','Hoa','Quả','Sâm','Liên','Trúc','Đằng','Đan Sa','Tủy'];
-const TE_PRE=['Huyền','Cửu','Thái','Thiên','Vô Cực','Hỗn Nguyên','Tử Hà','Bích Hải','Lôi Đình','Viêm Long','Băng Tâm','U Minh','Đại La','Vạn Cổ'];
-const TE_SUF=['Quyết','Công','Kinh','Pháp','Chân Giải','Đạo','Bí Lục'];
-const TE_TYPE=['kiếm đạo','đao đạo','thể tu','ngộ đạo','pháp tắc','nhân quả','tà đạo','huyễn thuật','độc công','đan tu','bộ pháp','thân pháp','hồn tu','trận pháp'];
+const TE_PRE=['Huyền','Cửu','Thái','Thiên','Vô Cực','Hỗn Nguyên','Tử Hà','Bích Hải','Lôi Đình','Viêm Long','Băng Tâm','U Minh','Đại La','Vạn Cổ','Thái Thượng','Cửu Chuyển','Hạo Thiên','Tru Tiên','Phần Thiên','Huyết Hải','Bắc Minh','Tiêu Dao','Vạn Kiếm','Hỗn Độn'];
+const TE_SUF=['Quyết','Công','Kinh','Pháp','Chân Giải','Đạo','Bí Lục','Thần Công','Chân Kinh','Đại Pháp','Tâm Pháp','Bảo Điển'];
+const TE_TYPE=['kiếm đạo','đao đạo','thương pháp','thể tu','ngộ đạo','pháp tắc','nhân quả','tà đạo','huyễn thuật','độc công','đan tu','bộ pháp','thân pháp','hồn tu','trận pháp','luyện khí','ngự thú','phù lục','âm luật','kiếm trận','huyết luyện','lôi pháp','băng đạo','không gian'];
+const TE_TYPE_DESC={'kiếm đạo':'Vạn kiếm quy tông, lấy sát phạt luận đạo.','đao đạo':'Một đao chém tà, cương mãnh vô song.','thương pháp':'Nhất thương định thiên hạ, cương nhu tịnh tiến.','thể tu':'Luyện nhục thân tới cực hạn, thân là pháp bảo.','ngộ đạo':'Trọng ngộ tính, đại đạo tự thông.','pháp tắc':'Nắm giữ quy luật thiên địa, cách không thi pháp.','nhân quả':'Thao túng nhân quả nghiệp lực — cực nguy hiểm.','tà đạo':'Bàng môn tà thuật, mạnh nhanh nhưng chiêu nhân quả.','huyễn thuật':'Mê hoặc tâm trí, thắng địch trong vô hình.','độc công':'Dụng độc sát nhân, phòng bất thắng phòng.','đan tu':'Kết hợp luyện đan, tự cung tự cấp đan dược.','bộ pháp':'Thân pháp quỷ dị, đến đi vô ảnh.','thân pháp':'Khinh công tuyệt đỉnh, tránh né vô song.','hồn tu':'Tu luyện thần hồn, thần thức công kích trực diện.','trận pháp':'Bố trận sát địch, một người thủ vạn quân.','luyện khí':'Chuyên chế tạo pháp bảo, tự rèn thần binh.','ngự thú':'Khống chế linh thú vạn yêu ra trận.','phù lục':'Luyện phù tùy thân, biến hóa khôn lường.','âm luật':'Lấy âm thanh làm binh khí, sát nhân vô hình.','kiếm trận':'Kết hợp kiếm và trận, vạn kiếm thành đại trận.','huyết luyện':'Đốt máu tăng lực — cấm thuật hao thọ.','lôi pháp':'Dẫn thiên lôi diệt tà, uy lực bạo liệt.','băng đạo':'Đóng băng vạn vật, khống chế tuyệt đối.','không gian':'Chưởng khống không gian, dịch chuyển và cấm cố.'};
 let ITEM_SEQ=0;
 function genTreasure(g){const gr=PHAM[g-1];let special=null;if(g>=5&&RNG.chance(0.15))special=RNG.pick(['Sinh Mệnh pháp bảo (có linh hồn)','Nguyền rủa pháp bảo (mạnh nhưng phản chủ)']);if(g>=11)special='Hồng Mông chí bảo (1 món hủy đa vũ trụ)';
   return{uid:++ITEM_SEQ,type:'treasure',name:`${RNG.pick(IT_PRE)} ${RNG.pick(IT_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,power:TREASURE_POWER[g],mult:1+g*0.25,special,desc:`Pháp bảo phẩm ${g} - ${gr.n}: ${TREASURE_POWER[g]}.`};}
 function genHerb(worldTier){const g=rollGrade(worldTier);const age=Math.round(Math.pow(10,g)*(1+RNG.range(0,5)));const gr=PHAM[g-1];return{uid:++ITEM_SEQ,type:'herb',name:`${RNG.pick(HB_PRE)} ${RNG.pick(HB_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,age,sentient:g>=5,desc:`Linh dược phẩm ${g}, ~${age.toLocaleString('vi-VN')} năm.`};}
-function genTech(g){const type=RNG.pick(TE_TYPE);const gr=PHAM[g-1];return{uid:++ITEM_SEQ,type:'tech',name:`${RNG.pick(TE_PRE)} ${RNG.pick(TE_SUF)}`,grade:g,gradeName:gr.n,color:gr.c,tech:type,mult:0.6+g*0.25,danger:type.includes('tà')?g:Math.max(0,g-3),desc:`Công pháp ${type} phẩm ${g}.`};}
+function genTech(g){const type=RNG.pick(TE_TYPE);const gr=PHAM[g-1];return{uid:++ITEM_SEQ,type:'tech',name:`${RNG.pick(TE_PRE)} ${RNG.pick(TE_SUF)}`,grade:g,gradeName:gr.n,color:gr.c,tech:type,mult:0.6+g*0.25,danger:type.includes('tà')||type.includes('huyết')?g:Math.max(0,g-3),desc:`Công pháp ${type} phẩm ${g} — ${TE_TYPE_DESC[type]||''}`};}
 const FM_PRE=['Thái Ất','Cửu Cung','Chu Thiên','Hỗn Nguyên','Bát Quái','Vạn Kiếm','Huyền Thiên','Ngũ Hành','Âm Dương','Tru Tiên','Càn Khôn','Thái Cực'];
 const FM_KIND=['Hộ Sơn Đại Trận','Sát Trận','Huyễn Trận','Khốn Tiên Trận','Tụ Linh Trận','Truyền Tống Trận','Phong Ấn Trận','Trảm Tiên Trận','Đảo Hải Trận','Mê Tung Trận'];
-const BS_PRE=['Huyết','Hắc','Kim','Bạch','Thiên','U Minh','Viêm','Băng','Lôi','Hư Không'];
-const BS_KIND=['Hỏa Lân','Huyền Vũ','Kim Bằng','Thanh Loan','Bạch Trạch','Cửu Vĩ Hồ','Giao Long','Lôi Điêu','Thôn Thiên Thử','Mặc Kỳ Lân','Tị Ngạn Xà','Bĩ Ngạn Điểu','Đế Giang','Thao Thiết'];
+const BS_PRE=['Huyết','Hắc','Kim','Bạch','Thiên','U Minh','Viêm','Băng','Lôi','Hư Không','Cửu U','Thái Cổ','Hỗn Độn','Tử Kim','Huyền','Cuồng','Vẫn Thiên','Thôn Nhật'];
+const BS_KIND=['Hỏa Lân','Huyền Vũ','Kim Bằng','Thanh Loan','Bạch Trạch','Cửu Vĩ Hồ','Giao Long','Lôi Điêu','Thôn Thiên Thử','Mặc Kỳ Lân','Tị Ngạn Xà','Bĩ Ngạn Điểu','Đế Giang','Thao Thiết','Chân Long','Phượng Hoàng','Côn Bằng','Bạch Hổ','Chu Tước','Đảo Huyền Điểu','Cửu Anh','Tương Liễu','Cùng Kỳ','Trù Ngọc','Ngân Nguyệt Lang','Hống','Tị Tà','Long Quy'];
+const BS_TRAIT=['tính tình hung bạo, khó thuần','trung thành tuyệt đối một khi quy phục','kiêu ngạo, chỉ phục kẻ mạnh','giảo hoạt, giỏi ẩn nấp','thượng cổ huyết mạch, tiềm lực vô hạn','đã khai linh trí, biết nói tiếng người','háu ăn, nuốt vạn vật để tiến hóa','ôn hòa nhưng nổi giận thì kinh thiên'];
 // Sách trận pháp — 12 phẩm, gating như mọi loại
 function genFormation(g){const gr=PHAM[g-1];return{uid:++ITEM_SEQ,type:'formation',name:`${RNG.pick(FM_PRE)} ${RNG.pick(FM_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,mult:1+g*0.18,desc:`Trận đồ phẩm ${g}: bố trí để hộ thân, sát địch, tụ linh hoặc khốn địch.`};}
 // Linh thú — 12 phẩm; cảnh giới linh thú tỉ lệ theo phẩm, có thể trợ chiến
-function genBeast(g){const gr=PHAM[g-1];const ri=clamp((g-1)*8+RNG.int(0,7),1,100);return{uid:++ITEM_SEQ,type:'beast',name:`${RNG.pick(BS_PRE)} ${RNG.pick(BS_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,ri,bond:0,mult:1+g*0.2,desc:`Linh thú phẩm ${g}, tương đương ${realmName(ri,0)}. Đồng hành trợ chiến.`};}
+function genBeast(g){const gr=PHAM[g-1];const ri=clamp((g-1)*8+RNG.int(0,7),1,100);const trait=RNG.pick(BS_TRAIT);return{uid:++ITEM_SEQ,type:'beast',name:`${RNG.pick(BS_PRE)} ${RNG.pick(BS_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,ri,bond:0,mult:1+g*0.2,trait,desc:`Linh thú phẩm ${g}, tương đương ${realmName(ri,0)} — ${trait}. Đồng hành trợ chiến.`};}
 const PILL_DEF={
  tu_khi:{n:'Tụ Khí Đan',g:1,use:(S)=>{S.progress=Math.min(1,S.progress+0.06);return'Tiến độ tu luyện +6%.';}},
  hoi_nguyen:{n:'Hồi Nguyên Đan',g:1,use:(S)=>{S.hp=Math.min(S.hpMax,S.hp+S.hpMax*0.5);return'Hồi phục thương thế.';}},
@@ -396,7 +416,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
 function cultRate(){const tech=S.tech?(0.6+S.tech.grade*0.25):0.3;const taint=Math.max(0.2,1-S.taint*0.02);const diff=S.ri<=0?0.8:(1+S.ri*0.25)*Math.pow(1.06,S.ri);
-  return 6*(S.root.spd)*(S.cultMul)*(S.tc.buff.cult||1)*machQi()*(S.world.qiMod||1)*tech*taint/diff;}
+  return 6*(S.root.spd)*(S.cultMul)*(S.tc.buff.cult||1)*machQi()*(S.world.qiMod||1)*sectCultBonus()*tech*taint/diff;}
 function cultivate(years,hard){const gain=cultRate()*years*(hard?2.6:1);S.progress=Math.min(1,S.progress+gain);
   const taint=(1-[0.5,0.55,0.65,0.72,0.8,0.86,0.9,0.93,0.95,0.97,0.985,1][clamp((S.world.machId||1)-1,0,11)])*0.5*years*(hard?2.5:1);S.taint+=taint;
   advance(years*(hard?2.6:1));if(hard)deductLife(years*0.6,'khổ tu');
@@ -451,6 +471,57 @@ function loot(minG){const got=[];S.linhThach+=Math.round(Math.pow(10,(S.ri||1)*0
   if(RNG.chance(0.08)){const b=genBeast(rollGrade(S.world.tier));(S.beasts=S.beasts||[]).push(b);got.push('linh thú '+b.name);}
   return got;}
 
+/* ===== HỆ THỐNG TÔNG MÔN ===== */
+function talentScore(){return (S.root.pham||1)+(S.tc.t||1)+luckOf().id+(S.hidden?2:0);}
+function sectCultBonus(){if(!S.sect)return 1;return 1+S.sect.tierId*0.12+S.sect.pos*0.1;} // tài nguyên/linh mạch tông môn → tu nhanh hơn
+function sectPromoteReq(){if(!S.sect)return null;const p=S.sect.pos;if(p>=7)return null;return{contrib:Math.round(100*Math.pow(2.2,p)),ri:Math.max(1,(p+1)*4)};}
+function offerPos(sect){const t=talentScore();let base=t>=17?4:t>=13?3:t>=9?2:t>=6?1:0;if(sect.typeId==='ma'&&RNG.chance(0.3))base=Math.min(4,base+1);return base;}
+// Bái nhập
+function sceneJoinSect(){const sect=genSect(S.world.tier);const pos=offerPos(sect);sect.pos=pos;sect.posName=SECT_POS[pos];const rootFav=sect.favor.includes(S.root.id);
+  const assess=pos>=4?`Trưởng lão vừa liếc qua căn cốt ngươi đã biến sắc: "Tư chất này... phải thu làm ${SECT_POS[pos]}!" Vinh quang tột đỉnh — và một tấm bia ngắm sau lưng.`:pos>=2?`Chấp sự gật gù: "Tư chất khá, vào thẳng ${SECT_POS[pos]}."`:`Chấp sự phất tay lạnh nhạt: "Tư chất tầm thường, làm ${SECT_POS[pos]} đi, tự lo lấy thân."`;
+  return{title:'TÔNG MÔN · Bái Nhập',narr:`Ngươi tìm tới ${sect.name} — một ${sect.tier} ${sect.type}. ${sect.typeDesc}\n\n${rootFav?'Linh căn của ngươi hợp với sở trường bản môn — cơ hội hiếm có.\n\n':''}${assess}\n\n${SECT_RULES}`,choices:[
+    {l:`Bái nhập, nhận vị trí ${SECT_POS[pos]}.`,cls:'primary',act:()=>{S.sect=sect;S.flags.sectJoinYear=S.time.y;if(sect.typeId==='ma')addKarma(-3,'gia nhập ma đạo');const t=genTech(clamp(2+(pos>=3?1:0)+RNG.int(0,1),1,maxGrade(S.world.tier)));S.techs.push(t);S.inv.tu_khi=(S.inv.tu_khi||0)+3;S.contribShown=true;log(`Bái nhập ${sect.name} với thân phận ${SECT_POS[pos]}.`,'good');setResult(`Ngươi chính thức là ${SECT_POS[pos]} của ${sect.name}. Bản môn ban công pháp «${t.name}» và 3 Tụ Khí Đan làm lễ nhập môn.${pos>=4?' Nhưng từ giây phút này, vô số ánh mắt ghen ghét đã dán chặt vào ngươi.':''}`);}},
+    {l:'Từ chối — làm tán tu tự do, không ai quản cũng không ai che.',act:()=>setResult('Ngươi quay lưng với tông môn. Tự do tuyệt đối, và cô độc tuyệt đối. Con đường tán tu gian nan hơn, nhưng không ai đâm ngươi sau lưng vì một câu "vì bản môn".')}]};}
+// Đại điện tông môn: đổi cống hiến
+function sceneSectHall(){const s=S.sect;const c=[
+  {l:'📿 Đổi 50 cống hiến lấy đan dược.',show:()=>s.contrib>=50,act:()=>{s.contrib-=50;const k=RNG.pick(['tu_khi','thanh_linh','pha_canh','ho_menh']);S.inv[k]=(S.inv[k]||0)+2;setResult('Ngươi đổi được 2 viên '+PILL_DEF[k].n+' từ Công Đức Đường.');}},
+  {l:'📜 Đổi 120 cống hiến lấy công pháp bản môn.',show:()=>s.contrib>=120,act:()=>{s.contrib-=120;const t=genTech(clamp(3+RNG.int(0,1),1,maxGrade(S.world.tier)));t.tech=s.buff==='cmp'?'ngộ đạo':s.buff==='soul'?'hồn tu':s.buff==='atk'&&s.typeId==='kiem'?'kiếm đạo':t.tech;S.techs.push(t);setResult('Ngươi thỉnh được công pháp «'+t.name+'» ('+pham(t.grade).replace(/<[^>]+>/g,'')+') từ Tàng Kinh Các.');}},
+  {l:'⚡ Đổi 300 cống hiến vào Tụ Linh Đại Trận bế quan (tu nhanh).',show:()=>s.contrib>=300,act:()=>{s.contrib-=300;let g=0;while(S.alive&&S.progress<1&&g<8){cultivate(1,false);g++;}log('Ngươi bế quan trong Tụ Linh Đại Trận, linh khí nồng gấp bội.','good');afterAct();}},
+  {l:'↩ Rời khỏi đại điện.',act:()=>{S.scene=null;render();save();}},
+];
+  return{title:'TÔNG MÔN · Công Đức Đường',narr:`Ngươi đứng trong Công Đức Đường của ${s.name}. Cống hiến hiện có: ${s.contrib}. Thân phận: ${s.posName}.\n\n"Cống hiến đổi lấy tất cả — ở tông môn, không có gì miễn phí, kể cả với người nhà."`,choices:c};}
+// Nhiệm vụ tông môn
+function sceneSectTask(){const s=S.sect;const kind=RNG.pick(['san','ho','do']);
+  if(kind==='san')return{title:'NHIỆM VỤ · Săn Yêu',narr:'Chấp sự giao ngươi đi tiễu trừ một con yêu thú quấy phá linh dược viên bản môn.',choices:[
+    {l:'Nhận lệnh xuất phát.',cls:'primary',act:()=>{const b=genBoss();b.ri=Math.max(1,S.ri+RNG.int(-1,1));const r=fight(b);if(r==='win'){s.contrib+=40;const g=loot(1);setResult('Ngươi hạ được yêu thú, lập công! +40 cống hiến. Thu thêm: '+g.join(', ')+'.');}else setResult(r==='dead'?S.cause:'Nhiệm vụ thất bại ('+r+'), ngươi trở về tay không, còn bị chấp sự khiển trách.');}},
+    {l:'Từ chối, cáo bệnh.',act:()=>{s.contrib=Math.max(0,s.contrib-5);setResult('Ngươi thoái thác. Chấp sự cau mày, trừ 5 cống hiến vì "lười biếng".');}}]};
+  if(kind==='ho')return{title:'NHIỆM VỤ · Hộ Tống',narr:'Ngươi được cử hộ tống một trưởng lão vận chuyển linh thạch qua vùng loạn.',choices:[
+    {l:'Lên đường hộ tống.',cls:'primary',act:()=>{if(RNG.chance(0.55)){s.contrib+=30;S.linhThach+=Math.round(Math.pow(10,1+S.ri*0.2));setResult('Chuyến đi suôn sẻ. +30 cống hiến và một túi linh thạch thưởng.');}else{const b=genBoss();const r=fight(b);setResult(r==='dead'?('Đạo tặc phục kích, '+S.cause):('Bị đạo tặc phục kích! Ngươi liều mạng hộ tống ('+r+'), giữ được hàng và +25 cống hiến.'));if(S.alive&&r!=='dead')s.contrib+=25;}}},
+    {l:'Từ chối.',act:()=>setResult('Ngươi từ chối nhiệm vụ, chấp sự lắc đầu bỏ đi.')}]};
+  return{title:'NHIỆM VỤ · Trực Ban',narr:'Một nhiệm vụ tạp dịch nhàm chán: canh giữ Tàng Kinh Các một thời gian.',choices:[
+    {l:'Nhận việc, tiện thể lén học lỏm.',cls:'primary',act:()=>{s.contrib+=15;advance(1);if(RNG.chance(0.25)){S.cmp=Math.round((S.cmp+0.05)*100)/100;setResult('+15 cống hiến. Lén đọc trộm được vài trang tâm pháp, ngộ tính tăng chút ít.');}else setResult('+15 cống hiến. Một năm trực ban trôi qua tẻ nhạt.');}},
+    {l:'Bỏ trực, trốn đi tu luyện.',act:()=>{s.contrib=Math.max(0,s.contrib-10);setResult('Ngươi bỏ trực. Bị phát hiện, trừ 10 cống hiến.');}}]};}
+function sectPromote(){const s=S.sect;const req=sectPromoteReq();if(!req){log('Ngươi đã là Tông Chủ — không còn gì để thăng.','lore');return;}
+  if(s.contrib<req.contrib||S.ri<req.ri){log(`Chưa đủ điều kiện thăng chức (cần ${req.contrib} cống hiến & cảnh giới ${req.ri>0?REALMS[req.ri-1].name:'—'}).`,'warn');return;}
+  s.contrib-=req.contrib;s.pos++;s.posName=SECT_POS[s.pos];log(`✦ Thăng chức! Ngươi nay là ${s.posName} của ${s.name}.`,'good');
+  if(s.pos>=4){S.att+=4;log('Địa vị càng cao, ánh mắt ghen ghét và dã tâm nhắm vào ngươi càng nhiều.','warn');}}
+// Sự kiện tông môn (gọi từ rollEvent khi đang ở trong tông môn)
+function evSect(){const s=S.sect;const roll=RNG.next();
+  // Đoạt xá: thiên tài vị trí cao, nguyên thần yếu → bị nhắm chiếm thân xác
+  if((s.pos>=3||talentScore()>=13)&&S.soul<S.ri*0.5&&roll<0.4){return{title:'TÔNG MÔN · Nguy Cơ Đoạt Xá',narr:`Một trưởng lão Hồn tu của ${s.name} lâu nay vẫn nhìn ngươi bằng ánh mắt tham lam khó hiểu. Đêm nay, thần thức lão lặng lẽ vươn tới, định chiếm lấy thân xác thiên tài của ngươi làm của riêng — cấm thuật ĐOẠT XÁ!`,choices:[
+    {l:'Liều mạng phản kháng bằng nguyên thần.',hint:'Nguyên thần yếu thì cực nguy.',act:()=>{const p=0.3+S.soul*0.06+(S.dao-50)*0.004;if(RNG.chance(clamp(p,0.1,0.9))){s.contrib+=0;S.soul+=1;log('Ngươi đẩy lùi được thần thức lão, nguyên thần tôi luyện thêm cứng cỏi.','good');setResult('Trong sát na sinh tử, ngươi cắn răng phản kích, đánh bật thần thức trưởng lão ra! Lão hậm hực rút lui — nhưng mối họa này chưa dứt.');}else{S.alive=false;S.cause=`Bị một trưởng lão Hồn tu của ${s.name} đoạt xá. Linh hồn ngươi bị nghiền nát, thân xác thành lồng giam cho kẻ khác.`;setResult(S.cause);}}},
+    {l:'Bỏ chạy khỏi tông môn ngay trong đêm.',act:()=>{S.att+=3;const old=s.name;S.sect=null;setResult(`Ngươi vứt bỏ tất cả, liều chết đào tẩu khỏi ${old} trong đêm. Từ nay là kẻ phản đồ bị truy sát, nhưng ít ra linh hồn còn là của ngươi.`);}},
+    {l:'Cầu cứu Tông Chủ / phe cánh của mình.',show:()=>s.pos>=4,act:()=>{if(RNG.chance(0.6)){log('Tông Chủ ra mặt trấn áp, lão trưởng lão bị phế.','good');setResult('Thân phận Thánh Tử phát huy tác dụng — Tông Chủ đích thân ra mặt, phế bỏ lão trưởng lão dám động vào ngươi. Lần này, địa vị đã cứu mạng ngươi.');}else{S.alive=false;S.cause='Ngươi cầu cứu, nhưng phe trưởng lão mạnh hơn. Không ai tới kịp. Ngươi bị đoạt xá.';setResult(S.cause);}}}]};}
+  if(roll<0.4){const rival=makeNPC(RNG.int(0,2));rival.traits=['đố kỵ'];remember(rival,'ganh ghét địa vị của ngươi',-40);return{title:'TÔNG MÔN · Tranh Đấu Nội Bộ',narr:`${rival.name}, một đồng môn ganh ghét ngươi, công khai khiêu chiến tỉ thí — và đưa ra một tờ SINH TỬ TRẠNG. Trong ${s.name}, đệ tử giết nhau trên đài tỉ thí là hợp pháp.`,choices:[
+    {l:'Ký sinh tử trạng, quyết một trận.',cls:'primary',act:()=>{const r=fight({name:rival.name,ri:rival.ri,si:rival.si,mightBonus:0.1});if(r==='win'){S.stats.kills++;s.contrib+=30;S.fame=clamp(S.fame+5,-100,1000);setResult('Ngươi hạ gục '+rival.name+' trên đài, danh chấn nội môn. +30 cống hiến. Không ai dám coi thường ngươi nữa.');}else setResult(r==='dead'?('Ngươi bỏ mạng trên đài tỉ thí. '+S.cause):('Ngươi bại trận ('+r+'), mất mặt trước toàn môn.'));}},
+    {l:'Từ chối tỉ thí, nuốt nhục.',act:()=>{S.fame=clamp(S.fame-5,-100,1000);remember(rival,'ngươi hèn nhát né tránh',-10);setResult('Ngươi từ chối. Giữ được mạng nhưng mất mặt; '+rival.name+' càng lấn tới, đồng môn xì xào khinh thường.');}}]};}
+  if(roll<0.62){return{title:'TÔNG MÔN · Ban Thưởng',narr:`Nhờ biểu hiện gần đây, ${s.name} ban thưởng cho ngươi.`,choices:[
+    {l:'Bái tạ nhận thưởng.',cls:'primary',act:()=>{s.contrib+=25;if(RNG.chance(0.5)){const k=RNG.pick(['pha_canh','ho_menh','ngo_dao']);S.inv[k]=(S.inv[k]||0)+1;setResult('+25 cống hiến và một viên '+PILL_DEF[k].n+'.');}else{S.linhThach+=Math.round(Math.pow(10,1+S.ri*0.25));setResult('+25 cống hiến và một túi linh thạch.');}}}]};}
+  // Tông môn đại chiến
+  return{title:'TÔNG MÔN · Tông Chiến',narr:`${s.name} khai chiến với một tông môn địch. Toàn môn đệ tử buộc phải ra trận — kể cả ngươi.`,choices:[
+    {l:'Xông pha tiền tuyến lập công.',cls:'primary',hint:'Công lớn, nhưng dễ chết.',act:()=>{const b=genBoss();b.ri=Math.max(1,S.ri+RNG.int(0,2));const r=fight(b);if(r==='win'){s.contrib+=60;S.fame=clamp(S.fame+10,-100,1000);setResult('Ngươi chém tướng địch giữa vạn quân, đại công! +60 cống hiến, danh vang khắp môn.');}else setResult(r==='dead'?('Ngươi tử trận. '+S.cause):('Ngươi trọng thương lui về ('+r+'), nhưng giữ được mạng giữa loạn chiến.'));}},
+    {l:'Nấp phía sau, giữ mạng là chính.',act:()=>{s.contrib+=5;S.fame=clamp(S.fame-3,-100,1000);setResult('Ngươi nấp sau lưng đồng môn, sống sót qua trận chiến nhưng bị coi là hèn nhát (+5 cống hiến gọi là).');}}]};}
+
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
 function sceneReveal(){
@@ -485,6 +556,11 @@ function sceneHub(){
   c.push({l:'🧠 Luyện nguyên thần (~2 năm)',act:()=>{advance(2);S.soul+=0.4+(S.tc.buff.soul||1)*0.1;log('Nguyên thần ngưng luyện, cường độ đạt '+Math.floor(S.soul)+'.','good');afterAct();}});
   if((S.inv.thanh_linh||0)>0)c.push({l:'💧 Dùng Thanh Linh Đan tẩy chướng tính',act:()=>{usePill('thanh_linh');afterAct();}});
   if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập BÍ CẢNH đang mở (cơ duyên lớn · sát cơ lớn · phẩm cao)',cls:'primary',act:()=>{setScene(evSecretRealm());}});
+  if(!S.sect&&S.ri>=1)c.push({l:'🏯 Tìm tông môn để bái nhập',act:()=>{setScene(sceneJoinSect());}});
+  if(S.sect){c.push({l:`🏯 Vào Công Đức Đường ${S.sect.name} (cống hiến: ${S.sect.contrib})`,act:()=>{setScene(sceneSectHall());}});
+    c.push({l:'📋 Nhận nhiệm vụ tông môn',act:()=>{setScene(sceneSectTask());}});
+    const rq=sectPromoteReq();if(rq)c.push({l:`⬆ Thăng chức (cần ${rq.contrib} cống hiến · ${rq.ri>0?REALMS[rq.ri-1].name:'—'})`,act:()=>{sectPromote();afterAct();}});
+    c.push({l:'🚪 Rời tông môn (thành tán tu)',act:()=>{const nm=S.sect.name;S.sect=null;log('Ngươi rời khỏi '+nm+', trở lại kiếp tán tu.','warn');afterAct();}});}
   c.push({l:'🗺️ Xuất quan — bước vào thế gian hiểm ác (event)',act:()=>{setScene(rollEvent());}});
   if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Bế quan tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
   if(S.ri>=100)c.unshift({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
@@ -508,6 +584,7 @@ function rollEvent(){worldPulse();
   if(debts.length&&RNG.chance(Math.min(0.5,0.15+debts.length*0.08)))return evRevenge();
   const goods=S.ledger.filter(x=>x.n>=2);
   if(goods.length&&RNG.chance(0.12))return evReward();
+  if(S.sect&&RNG.chance(0.3))return evSect();
   const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
   if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.15)return sceneNgoDao();if(r<dis+fort+0.22&&Object.keys(S.npcs).length)return evBetray();return RNG.pick([evFortune,evCombat])();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
@@ -677,6 +754,7 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Khí vận:</b> ${S.luckShown?esc(l.n)+' — '+esc(l.d):'<i>chưa rõ</i>'}</p>
    <p><b>Ngộ tính:</b> ×${(S.cmp).toFixed(2)} · <b>Đạo tâm:</b> ${Math.round(S.dao)} · <b>Nguyên thần:</b> ${Math.floor(S.soul)}${S.soul<1?' <span class="warn">(chưa luyện — dễ chết vì công kích linh hồn!)</span>':''}</p>
    <p><b>Công pháp đang tu:</b> ${S.tech?esc(S.tech.name)+' '+pham(S.tech.grade):'<i>không</i>'}</p>
+   <p><b>Tông môn:</b> ${S.sect?`${esc(S.sect.name)} <span class="muted">(${esc(S.sect.tier)} ${esc(S.sect.type)})</span> · <b>${esc(S.sect.posName)}</b> · cống hiến ${S.sect.contrib} · tu ×${sectCultBonus().toFixed(2)}<br><span class="muted" style="font-size:.78rem">${esc(S.sect.typeDesc)}</span>`:'<i>tán tu (không tông môn)</i>'}</p>
    <p><b>Nhân quả:</b> ${S.karma} · <b>Danh tiếng:</b> ${S.fame} · <b>Lộ diện:</b> ${Math.round(S.att)}</p>
    <p><b>Cơ duyên ẩn:</b> ${S.hidden?(S.hidden.shown?esc(S.hidden.name)+' — '+esc(S.hidden.desc):'<i>bí ẩn...</i>'):'không'}</p>
    <p><b>Dị biến:</b> ${S.mutations.length?S.mutations.map(m=>`<span class="chip">${esc(m)}</span>`).join(''):'chưa có'}</p>
@@ -699,7 +777,7 @@ function invTab(){const pills=Object.keys(S.inv).filter(k=>PILL_DEF[k]&&S.inv[k]
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🔯 Trận pháp</div>
    ${(S.arrays&&S.arrays.length)?S.arrays.map(a=>`<div class="item"><span>${esc(a.name)} ${pham(a.grade)}<br><span class="muted" style="font-size:.76rem">${esc(a.desc)}</span></span></div>`).join(''):'<p class="muted">Chưa có trận đồ nào.</p>'}
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🐉 Linh thú</div>
-   ${(S.beasts&&S.beasts.length)?S.beasts.map(b=>`<div class="item"><span>${esc(b.name)} ${pham(b.grade)}<br><span class="muted" style="font-size:.76rem">${esc(realmName(b.ri,0))} · trợ chiến ×${(b.mult||1).toFixed(2)}</span></span></div>`).join(''):'<p class="muted">Chưa thu phục linh thú nào.</p>'}
+   ${(S.beasts&&S.beasts.length)?S.beasts.map(b=>`<div class="item"><span>${esc(b.name)} ${pham(b.grade)}<br><span class="muted" style="font-size:.76rem">${esc(realmName(b.ri,0))} · trợ chiến ×${(b.mult||1).toFixed(2)}${b.trait?' · '+esc(b.trait):''}</span></span></div>`).join(''):'<p class="muted">Chưa thu phục linh thú nào.</p>'}
    </div>`;}
 function npcTab(){const ids=Object.keys(S.npcs);
   $('#view').innerHTML=`<div class="npc"><h2>Quan Hệ NPC</h2>${ids.length?ids.map(i=>{const n=S.npcs[i];const rel=n.relation>=50?'<span class="good">Thân thiết</span>':n.relation<=-50?'<span class="bad">Thù địch</span>':'Trung lập';return `<div class="item" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between"><b style="color:var(--cyan)">${esc(n.name)}</b><span>${rel} (${n.relation})</span></div><div class="muted" style="font-size:.78rem;margin-top:3px">${esc(realmName(n.ri,n.si))} · ${esc(n.traits.join(', '))} · mục tiêu: ${esc(n.goal)}${!n.alive?' · <span class="bad">đã chết</span>':''}</div>${n.memory.length?`<div style="font-size:.76rem;margin-top:4px">Ký ức: ${n.memory.map(m=>`<span class="chip">${esc(m)}</span>`).join('')}</div>`:''}</div>`;}).join(''):'<p class="muted">Ngươi chưa kết giao hay kết thù với ai. Con đường tu tiên vốn cô độc.</p>'}</div>`;}
