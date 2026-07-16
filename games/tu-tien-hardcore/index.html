@@ -296,6 +296,17 @@ function practiceProf(){const p=S.prof;if(!p)return;advance(1);const gain=6+RNG.
   if(p.xp>=req&&p.rankId<8){p.xp-=req;p.rankId++;S.fame=clamp(S.fame+3,-100,1000);msg+=' ✦ Thăng bậc: '+PROF_RANK[p.rankId]+' '+p.n+'!';}
   log(msg,'good');}
 
+/* ===== CHỦNG TỘC ===== */
+const RACES=[
+ {id:'nhan',n:'Nhân Tộc',d:'Chủng tộc đông đảo nhất — ngộ tính cao, đoàn kết mà cũng tàn nhẫn. Cân bằng mọi mặt, tiềm lực vô hạn.',fx:{}},
+ {id:'yeu',n:'Yêu Tộc',d:'Thú tu hóa hình — nhục thân cường hãn, thọ nguyên dài. Nhưng bị nhân tộc kỳ thị, săn lùng lấy yêu đan.',fx:{hp:1.3,atk:1.15,lifeMul:1.5},att:2},
+ {id:'ma',n:'Ma Tộc',d:'Sinh linh ma đạo — tu luyện cực nhanh bằng sát lục & thôn phệ, nhưng nghiệp chướng đầy thân, chính đạo truy diệt.',fx:{cult:1.25,atk:1.2},karma:-5,att:3},
+ {id:'vu',n:'Vu Tộc',d:'Cổ tộc luyện thể & huyết mạch — không luyện thần thức, nhưng nhục thân địch được thần ma.',fx:{hp:1.6,atk:1.35},nosoul:true},
+ {id:'quy',n:'U Quỷ Tộc',d:'Âm hồn sinh linh — thần thức mạnh mẽ, tinh thông hồn thuật & đoạt xá. Sợ dương quang & chính đạo.',fx:{cmp:1.15},soulAdd:3},
+ {id:'long',n:'Long Tộc',d:'Hậu duệ chân long viễn cổ — huyết mạch chí tôn, sinh ra đã là bá chủ. Cực hiếm, cả thiên hạ thèm khát long huyết.',fx:{hp:1.5,atk:1.5,cult:1.3,lifeMul:2},att:4},
+];
+function pickRace(flags){if(flags.demon_heir||flags.demon_seed)return RACES[2];if(flags.chaos_root||flags.dragon_body)return RACES[5];return RACES[RNG.weight([[92,0],[3.5,1],[1.5,4],[2,3],[0.9,5]])];}
+
 /* ---------- Generators ---------- */
 const IT_PRE=['Huyền Thiết','Tử Kim','Bích Ngọc','Cửu Long','Phá Quân','Trảm Tiên','Đồ Thần','Hỗn Nguyên','Thái Cổ','Vạn Yêu','U Minh','Lôi Đình'];
 const IT_KIND=['Kiếm','Đao','Thương','Chung','Tháp','Đỉnh','Kính','Phiến','Châu','Ấn','Phướn','Giáp','Thuẫn'];
@@ -488,13 +499,19 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
     time:{y:0,m:1,d:1},stats:{kills:0,break:0,pills:0,ngodao:0,betray:0},
     scene:null,alive:true,cause:null,
   };
+  // Chủng tộc: đa số Nhân tộc, hiếm khi Yêu/Ma/Vu/Quỷ/Long
+  const race=pickRace(S.flags);S.race=race.id;S.raceName=race.n;const rf=race.fx||{};
+  if(rf.hp)S.hpMul*=rf.hp;if(rf.atk)S.atkMul*=rf.atk;if(rf.cult)S.cultMul*=rf.cult;if(rf.cmp)S.cmp*=rf.cmp;
+  if(rf.lifeMul){S.lifeMax=Math.round(S.lifeMax*rf.lifeMul);S.life=Math.round(S.life*rf.lifeMul);}
+  if(race.soulAdd)S.soul+=race.soulAdd;if(race.karma)S.karma+=race.karma;if(race.att)S.att+=race.att;
+  if(rf.nosoul)S.flags.vu_nosoul=true;
   S.hpMax=Math.round(100*S.hpMul);S.hp=S.hpMax;
   if(fx.items)for(const k in fx.items)S.inv[k]=(S.inv[k]||0)+fx.items[k];
   if(fx.treasureGrade)S.treasures.push(genTreasure(fx.treasureGrade));
@@ -728,6 +745,38 @@ function sceneForce(){
     {l:'↩ Rời sảnh nghị sự.',act:()=>{S.scene=null;render();save();}},
   ];
   return{title:'THẾ LỰC · '+f.name,narr:`«${f.name}» — thế lực của ngươi. Bộ hạ: ${f.members} · Danh vọng: ${f.rep}. Bộ hạ đông, thu nhập lớn, nhưng cũng dễ chiêu kẻ thù nhòm ngó.`,choices:c};}
+/* ===== WORLD BOSS — hung thú viễn cổ ===== */
+const WORLD_BOSSES=['Thượng Cổ Hung Long','Cửu Anh Quỷ Vương','Thôn Thiên Ma Tổ','Bất Tử Yêu Đế','Hỗn Độn Cổ Thú','Tru Thiên Cương Thi Vương','Vẫn Lạc Thần Ma','Cửu U Minh Xà','Phần Thiên Kim Ô','Đế Cấp Yêu Thánh'];
+function evWorldBoss(){const nm=RNG.pick(WORLD_BOSSES);const b=genBoss();b.name=nm;b.ri=Math.min(100,S.ri+RNG.int(3,10));b.boss=true;b.soul=true;b.mightBonus=0.3;
+  return{title:'THẾ GIỚI · Hung Thú Viễn Cổ Xuất Thế',narr:`${nm} — một tồn tại viễn cổ khủng bố — vừa phá phong ấn, tàn phá bốn cõi. Vô số tu sĩ kéo tới vây săn, cũng vô số kẻ bỏ mạng. Vật liệu trên thân nó là cực phẩm — nếu ngươi đủ mạng mà lấy.`,choices:[
+    {l:'Nhập cuộc vây săn hung thú!',cls:'primary',hint:'Cường địch vượt cấp — cực nguy.',act:()=>{const r=fight(b);if(r==='win'){S.stats.kills++;S.fame=clamp(S.fame+15,-100,1000);const t=genTreasure(Math.min(12,maxGrade(S.world.tier)+1+RNG.int(0,1)));S.treasures.push(t);const g=loot(6);setResult('KHÔNG THỂ TIN NỔI — ngươi bồi nhát kết liễu '+nm+'! Danh chấn thiên hạ (+15 danh tiếng). Đoạt được '+t.name+' ('+t.gradeName+') và: '+g.join(', ')+'.');}else if(r==='dead')setResult(S.cause);else setResult('Ngươi không địch nổi uy áp của '+nm+' ('+r+'), đành lui về giữ mạng giữa biển người tan tác.');}},
+    {l:'Núp xa quan sát, nhặt nhạnh tàn cục.',act:()=>{if(RNG.chance(0.5)){const g=loot(2);setResult('Ngươi nhặt nhạnh vật rơi vãi từ những kẻ bỏ mạng: '+g.join(', ')+'. Khôn ngoan hơn liều chết.');}else setResult('Ngươi đứng ngoài nhìn trận vây săn kinh thiên động địa. Nhìn thôi cũng đủ chấn động đạo tâm.');}}]};}
+/* ===== CẤM ĐỊA / HUNG ĐỊA ===== */
+function evForbiddenZone(){const rw=RNG.pick(['treasure','tech','herb','formation','beast','natal']);
+  return{title:'CẤM ĐỊA · Tuyệt Địa Hung Hiểm',narr:'Trước mắt ngươi là một CẤM ĐỊA cổ xưa — nơi ngay cả đại năng cũng kiêng dè. Tử khí ngập trời, xương trắng chất thành núi. Nhưng nơi càng chết chóc, bảo vật càng kinh người.',choices:[
+    {l:'Xông vào cấm địa!',cls:'primary',hint:'Tỉ lệ chết rất cao.',act:()=>{const risk=clamp(0.45+S.att*0.004-(luckOf().surv-1)*0.12-profBonus('tran')*0.5,0.2,0.9);if(RNG.chance(risk)){S.alive=false;S.cause='Bỏ mạng trong cấm địa cổ, thi thể hóa một trong vô số bộ xương trắng nơi tuyệt địa.';setResult(S.cause);return;}const g=Math.min(12,maxGrade(S.world.tier)+1+RNG.int(0,1));let name='';if(rw==='treasure'){const t=genTreasure(g);S.treasures.push(t);name=t.name;}else if(rw==='tech'){const t=genTech(g);S.techs.push(t);name='công pháp '+t.name;}else if(rw==='herb'){const h=genHerb(S.world.tier);h.grade=g;h.gradeName=PHAM[g-1].n;S.inv['herb_'+h.uid]=1;S.invMeta=S.invMeta||{};S.invMeta['herb_'+h.uid]=h;name=h.name;}else if(rw==='formation'){const f=genFormation(g);(S.arrays=S.arrays||[]).push(f);name='trận đồ '+f.name;}else if(rw==='beast'){const bb=genBeast(g);(S.beasts=S.beasts||[]).push(bb);name='linh thú '+bb.name;}else{const t=genTreasure(Math.max(4,g));t.lifesave=true;t.special='Luân Hồi Hộ Mệnh (giữ mạng 1 lần)';S.treasures.push(t);name=t.name+' (giữ mạng trùng sinh)';}grantWithPrice(name,g);setResult('Ngươi sống sót ra khỏi cấm địa với chiến lợi phẩm vạn người mơ không được: '+name+'!');}},
+    {l:'Đứng ngoài — có nơi không đáng đánh đổi mạng.',act:()=>setResult('Ngươi nhìn cấm địa hồi lâu rồi quay đi. Tham thì thâm; sống sót mới là căn bản của tu tiên.')}]};}
+/* ===== ĐẤU GIÁ HỘI (tương tác) ===== */
+function evAuction(){const it=RNG.chance(0.5)?genTreasure(clamp(3+RNG.int(0,2),1,maxGrade(S.world.tier)+1)):genTech(clamp(3+RNG.int(0,2),1,maxGrade(S.world.tier)));const base=Math.round(Math.pow(10,1.5+S.ri*0.3)*it.grade);const rival=Math.round(base*(1.25+RNG.range(0,1.35)));const lo=Math.round(base*1.4),hi=Math.round(base*2.4);
+  const bid=(amt)=>{if(S.linhThach<amt){setResult('Ngươi không đủ linh thạch.');return;}if(amt>=rival){S.linhThach-=amt;if(it.type==='tech')S.techs.push(it);else S.treasures.push(it);setResult('Tiếng búa cuối cùng gõ xuống — '+it.name+' về tay ngươi với giá '+amt.toLocaleString('vi-VN')+' linh thạch!');}else{setResult('Ngươi trả '+amt.toLocaleString('vi-VN')+', nhưng một vị khách bí ẩn trong phòng riêng nhấc giá cao ngất. Ngươi đành buông — bảo vật vuột khỏi tay.');}};
+  return{title:'ĐẤU GIÁ HỘI',narr:`Bảo vật đấu giá: ${it.name} (${it.gradeName||'phẩm '+it.grade}). Giá khởi điểm ${base.toLocaleString('vi-VN')} linh thạch. Các phú hào & đại năng cũng đang nhòm ngó...`,choices:[
+    {l:`Trả giá vừa (${lo.toLocaleString('vi-VN')})`,show:()=>S.linhThach>=lo,act:()=>bid(lo)},
+    {l:`Trả giá cao (${hi.toLocaleString('vi-VN')})`,show:()=>S.linhThach>=hi,act:()=>bid(hi)},
+    {l:'Bỏ qua, không tranh.',act:()=>setResult('Ngươi lắc đầu bỏ qua. Món đó về tay một lão quái nào đó với giá trên trời.')}]};}
+/* ===== VẤN ĐẠO ĐẠI HỘI ===== */
+function evDaoConference(){const rivals=2+RNG.int(0,3);
+  return{title:'VẤN ĐẠO ĐẠI HỘI',narr:`Vấn Đạo Đại Hội — thiên kiêu vạn tộc tụ hội luận đạo, tranh tài. ${rivals} yêu nghiệt đồng đại đang nhìn ngươi bằng ánh mắt khiêu khích. Đây là nơi lập danh, kết giao — và kết thù.`,choices:[
+    {l:'Đăng đài luận đạo, tranh ngôi đầu.',cls:'primary',hint:'Thắng thì danh chấn, bại thì mất mặt.',act:()=>{const win=clamp(0.3+(S.cmp-1)*0.15+(S.dao-50)*0.004+((S.laws||[]).length*0.05),0.1,0.9);if(RNG.chance(win)){S.fame=clamp(S.fame+25,-100,1000);const k=RNG.pick(['pha_canh','ngo_dao']);S.inv[k]=(S.inv[k]||0)+1;S.flags.ngoDao=0.15;setResult('Ngươi biện đảo quần hùng, đoạt khôi nguyên Vấn Đạo Đại Hội! Danh chấn thiên hạ (+25 danh tiếng), được ban '+PILL_DEF[k].n+' và một tia đạo vận cho đột phá tới.');}else{S.fame=clamp(S.fame-5,-100,1000);const rv=makeNPC(RNG.int(0,2));remember(rv,'thắng ngươi ở Vấn Đạo Đại Hội',-30);setResult('Ngươi bị một yêu nghiệt đè bẹp trên đài luận đạo, mất mặt trước thiên hạ. Từ đây có thêm một kẻ khinh ngươi ra mặt.');}}},
+    {l:'Lặng lẽ quan sát, kết giao thiên kiêu.',act:()=>{if(RNG.chance(0.5)){const n=makeNPC(RNG.int(0,2));n.relation=30;setResult('Ngươi kết giao được '+n.name+', một thiên kiêu đồng đại — quan hệ có thể hữu dụng về sau.');}else setResult('Ngươi lặng lẽ quan sát quần hùng, ghi nhớ mặt mũi các đối thủ tương lai. Tri kỷ tri bỉ, trăm trận trăm thắng.');}}]};}
+/* ===== SƯ ĐỒ / THU ĐỒ ĐỆ ===== */
+function sceneDisciple(){
+  if(!S.disciple)return{title:'SƯ ĐỒ · Thu Đồ Đệ',narr:'Với thân phận hiện tại, ngươi có thể thu nhận một đồ đệ — truyền thừa y bát, có người nối nghiệp & trợ giúp. Nhưng đồ đệ cũng có thể phản sư, hoặc bị kẻ khác lợi dụng để hại ngươi.',choices:[
+    {l:'Thu một đồ đệ tư chất tốt.',cls:'primary',act:()=>{const n=makeNPC(-2);S.disciple={name:n.name,ri:Math.max(1,n.ri),loyal:60,talent:1+RNG.int(0,2)};log('Ngươi thu '+n.name+' làm đồ đệ.','good');setResult('Ngươi thu nhận '+n.name+' làm đồ đệ. Hãy dạy dỗ tử tế — đồ đệ trung thành là chỗ dựa, đồ đệ phản bội là con dao sau lưng.');}},
+    {l:'Đường tu cô độc, không vướng bận.',act:()=>{S.scene=null;render();save();}}]};
+  const d=S.disciple;return{title:'SƯ ĐỒ · '+d.name,narr:`Đồ đệ ${d.name} (${realmName(d.ri,0)}) · Trung thành: ${d.loyal} · Tư chất: ${['','thường','khá','ưu tú'][d.talent]||'ưu tú'}.`,choices:[
+    {l:'Truyền thụ công pháp, dạy dỗ (~2 năm)',act:()=>{advance(2);d.ri=Math.min(100,d.ri+d.talent);d.loyal=Math.min(100,d.loyal+5);setResult('Ngươi tận tâm chỉ dạy, '+d.name+' tiến bộ rõ rệt, càng thêm kính phục ngươi.');}},
+    {l:'Sai đồ đệ đi làm nhiệm vụ (~1 năm)',act:()=>{advance(1);if(RNG.chance(0.7)){const inc=Math.round(Math.pow(10,1+d.ri*0.15));S.linhThach+=inc;d.loyal=Math.min(100,d.loyal+2);setResult(d.name+' hoàn thành nhiệm vụ, mang về '+inc.toLocaleString('vi-VN')+' linh thạch cho sư môn.');}else if(RNG.chance(0.3)){S.disciple=null;setResult(d.name+' gặp cường địch, bỏ mạng ngoài kia. Ngươi mất một đồ đệ, lòng nặng trĩu.');}else setResult(d.name+' trở về tay không, còn bị thương nhẹ.');}},
+    {l:'↩ Thôi.',act:()=>{S.scene=null;render();save();}}]};}
 
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
@@ -783,6 +832,8 @@ function sceneHub(){
   if(S.ri>=1)c.push({l:`🗼 Thí luyện Thông Thiên Tháp (kỷ lục: tầng ${(S.tower&&S.tower.best)||0})`,act:()=>{S._towerFloor=0;setScene(sceneTower());}});
   // Kiến lập thế lực (Kim Đan trở lên)
   if(S.ri>=3)c.push({l:S.ownForce?`👑 Thế lực ${S.ownForce.name} (${S.ownForce.members} bộ hạ)`:'👑 Kiến lập thế lực riêng',act:()=>{setScene(sceneForce());}});
+  // Sư đồ (Nguyên Anh trở lên)
+  if(S.ri>=4)c.push({l:S.disciple?`🧑‍🎓 Đồ đệ ${S.disciple.name} (${realmName(S.disciple.ri,0)})`:'🧑‍🎓 Thu đồ đệ',act:()=>{setScene(sceneDisciple());}});
   // Phi thăng vượt giới
   if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n} (mở khóa phẩm cao)`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
   c.push({l:'🗺️ Xuất quan — bước vào thế gian hiểm ác (event)',act:()=>{setScene(rollEvent());}});
@@ -809,9 +860,13 @@ function rollEvent(){worldPulse();
   if(debts.length&&RNG.chance(Math.min(0.5,0.15+debts.length*0.08)))return evRevenge();
   const goods=S.ledger.filter(x=>x.n>=2);
   if(goods.length&&RNG.chance(0.12))return evReward();
-  if(S.sect&&RNG.chance(0.28))return evSect();
+  if(S.sect&&RNG.chance(0.24))return evSect();
   if(S.daolu&&RNG.chance(0.1))return evDaoluPeril();
   if(!S.daolu&&S.ri>=1&&S.dao>=45&&RNG.chance(0.06))return evDaolu();
+  if(RNG.chance(0.05))return evWorldBoss();
+  if(RNG.chance(0.05))return evForbiddenZone();
+  if(RNG.chance(0.05))return evAuction();
+  if(S.fame>=30&&RNG.chance(0.05))return evDaoConference();
   const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
   if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.13)return sceneNgoDao();if(r<dis+fort+0.19&&Object.keys(S.npcs).length)return evBetray();if(r<dis+fort+0.24&&RNG.chance(0.5))return evBloodline();return RNG.pick([evFortune,evCombat])();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
@@ -991,7 +1046,8 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Cơ duyên ẩn:</b> ${S.hidden?(S.hidden.shown?esc(S.hidden.name)+' — '+esc(S.hidden.desc):'<i>bí ẩn...</i>'):'không'}</p>
    <p><b>Dị biến:</b> ${S.mutations.length?S.mutations.map(m=>`<span class="chip">${esc(m)}</span>`).join(''):'chưa có'}</p>
    <p><b>Thế giới:</b> ${esc(S.world.name)} <span class="muted">(giới cấp ${S.world.tier}/${WORLDS.length}, trần phẩm ${maxGrade(S.world.tier)})</span></p>
-   <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Thông Thiên Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
+   <p><b>Chủng tộc:</b> ${esc(S.raceName||'Nhân Tộc')} <span class="muted" style="font-size:.78rem">${esc((RACES.find(r=>r.id===S.race)||RACES[0]).d)}</span></p>
+   <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Đồ đệ:</b> ${S.disciple?esc(S.disciple.name):'<i>không</i>'} · <b>Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
    <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>
    ${(()=>{const cap=maxGrade(S.world.tier);const hard=Math.min(12,cap+2);return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">📖 Thiên Phẩm Lục — 12 phẩm (pháp bảo · công pháp · thể chất · thiên phú · đan · linh dược · cơ duyên · trận pháp · linh thú)</div>
