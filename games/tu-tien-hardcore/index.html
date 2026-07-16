@@ -307,6 +307,29 @@ const RACES=[
 ];
 function pickRace(flags){if(flags.demon_heir||flags.demon_seed)return RACES[2];if(flags.chaos_root||flags.dragon_body)return RACES[5];return RACES[RNG.weight([[92,0],[3.5,1],[1.5,4],[2,3],[0.9,5]])];}
 
+/* ===== THÀNH TỰU / DANH HIỆU ===== */
+const ACHIEVEMENTS=[
+ ['nhap_dao','Nhập Đạo Chi Nhân',s=>s.ri>=1],['truc_co','Trúc Cơ Tu Sĩ',s=>s.ri>=2],['kim_dan','Kim Đan Chân Nhân',s=>s.ri>=3],
+ ['nguyen_anh','Nguyên Anh Lão Quái',s=>s.ri>=4],['hoa_than','Hóa Thần Đại Năng',s=>s.ri>=5],['dai_thua','Đại Thừa Cao Nhân',s=>s.ri>=8],
+ ['chan_tien','Chân Tiên',s=>s.ri>=10],['de_cap','Đế Cấp Tồn Tại',s=>s.ri>=21],['dao_cap','Đạo Cấp Chi Thượng',s=>s.ri>=41],
+ ['phi_thang','✧ Phi Thăng Giả',s=>s.flags&&s.flags.ascended],
+ ['sat_than','Sát Thần (giết 100)',s=>s.stats.kills>=100],['ngo_dao_gia','Ngộ Đạo Giả (10 lần)',s=>s.stats.ngodao>=10],
+ ['nhat_pham','Nhất Phẩm Đại Sư',s=>s.prof&&s.prof.rankId>=8],['tong_chu','Nhất Tông Chi Chủ',s=>s.sect&&s.sect.pos>=7],
+ ['ba_chu','Nhất Phương Bá Chủ',s=>!!s.ownForce],['vuot_gioi','Vượt Giới Giả',s=>s.world.tier>=2],['thuong_gioi','Đăng Lâm Tiên Giới',s=>s.world.tier>=3],
+ ['ngoai_vuc','Vô Hạn Ngoại Vực Chi Khách',s=>s.world.tier>=9],['trung_sinh','Chuyển Thế Trùng Sinh',s=>s.flags&&s.flags.reborn],
+ ['ma_de','☠ Đại Ma Đầu',s=>s.ri>=20&&s.karma<=-20],['chinh_de','Chính Đạo Đại Đế',s=>s.ri>=20&&s.karma>=20],
+ ['co_dao','Cô Đạo Độc Hành',s=>s.ri>=8&&!s.sect&&!s.daolu],['thap_50','Thông Thiên 50 Tầng',s=>s.tower&&s.tower.best>=50],
+ ['phap_tac','Pháp Tắc Đại Sư',s=>(s.laws||[]).length>=5],['long_toc','Long Tộc Truyền Nhân',s=>s.race==='long'],
+ ['menh_dich','Trảm Sát Mệnh Địch',s=>s.flags&&s.flags.rivalSlain],['dao_lu','Thần Tiên Quyến Lữ',s=>!!s.daolu],
+ ['ban_menh','Nhân Khí Tương Liên',s=>!!s.natal],['huyet_mach','Huyết Mạch Giác Tỉnh',s=>s.flags&&s.flags.bloodline],
+];
+function checkAchievements(){if(!S)return;S.achievements=S.achievements||[];for(const a of ACHIEVEMENTS){if(!S.achievements.includes(a[0])&&a[2](S)){S.achievements.push(a[0]);log('🏆 THÀNH TỰU MỞ KHÓA: '+a[1],'good');}}}
+function achTitle(id){const a=ACHIEVEMENTS.find(x=>x[0]===id);return a?a[1]:id;}
+
+/* ===== ĐỐI THỦ MỆNH ĐỊNH (thiên mệnh chi tử khác — quy tắc 5) ===== */
+function ensureRival(){if(S.rival)return;S.rival={name:RNG.pick(SUR)+' '+RNG.pick(GIV),ri:Math.max(1,S.ri+RNG.int(0,1)),si:RNG.int(0,3),grudge:10,encounters:0,alive:true,trait:RNG.pick(['kiêu ngạo','âm hiểm','chính trực','tàn nhẫn','cuồng vọng','thâm trầm']),race:RNG.pick(['nhan','nhan','yeu','ma','long']),luck:1+RNG.range(0,1.6)};}
+function rivalGrow(years){const r=S.rival;if(!r||!r.alive)return;if(RNG.chance(Math.min(0.5,years*0.04*r.luck))){r.ri=Math.min(100,r.ri+1);r.si=0;}else if(RNG.chance(years*0.02))r.si=Math.min(3,r.si+1);}
+
 /* ---------- Generators ---------- */
 const IT_PRE=['Huyền Thiết','Tử Kim','Bích Ngọc','Cửu Long','Phá Quân','Trảm Tiên','Đồ Thần','Hỗn Nguyên','Thái Cổ','Vạn Yêu','U Minh','Lôi Đình'];
 const IT_KIND=['Kiếm','Đao','Thương','Chung','Tháp','Đỉnh','Kính','Phiến','Châu','Ấn','Phướn','Giáp','Thuẫn'];
@@ -499,7 +522,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -550,6 +573,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
   // thế giới tự diễn tiến bất kể người chơi: linh khí hồi về mức nền, bí cảnh dần đóng
   if(S.world.qiMod&&S.world.qiMod!==1){S.world.qiMod+=(1-S.world.qiMod)*Math.min(1,years*0.12);if(Math.abs(S.world.qiMod-1)<0.03)S.world.qiMod=1;}
   if(S.world.secretRealm>0){S.world.secretRealm-=years;if(S.world.secretRealm<=0){S.world.secretRealm=0;log('『THẾ GIỚI』 Cửa bí cảnh cổ đã khép lại. Cơ duyên trong đó, từ nay thành truyền thuyết.','lore');}}
+  if(S.rival)rivalGrow(years); // đối thủ mệnh định cũng tu luyện, cũng đột phá
   if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên cạn kiệt. Ngươi ngồi kiết già, hóa thành tro tàn theo lẽ trời đất.';log('☠ Thọ nguyên cạn.',' death');}}
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
@@ -777,6 +801,12 @@ function sceneDisciple(){
     {l:'Truyền thụ công pháp, dạy dỗ (~2 năm)',act:()=>{advance(2);d.ri=Math.min(100,d.ri+d.talent);d.loyal=Math.min(100,d.loyal+5);setResult('Ngươi tận tâm chỉ dạy, '+d.name+' tiến bộ rõ rệt, càng thêm kính phục ngươi.');}},
     {l:'Sai đồ đệ đi làm nhiệm vụ (~1 năm)',act:()=>{advance(1);if(RNG.chance(0.7)){const inc=Math.round(Math.pow(10,1+d.ri*0.15));S.linhThach+=inc;d.loyal=Math.min(100,d.loyal+2);setResult(d.name+' hoàn thành nhiệm vụ, mang về '+inc.toLocaleString('vi-VN')+' linh thạch cho sư môn.');}else if(RNG.chance(0.3)){S.disciple=null;setResult(d.name+' gặp cường địch, bỏ mạng ngoài kia. Ngươi mất một đồ đệ, lòng nặng trĩu.');}else setResult(d.name+' trở về tay không, còn bị thương nhẹ.');}},
     {l:'↩ Thôi.',act:()=>{S.scene=null;render();save();}}]};}
+/* ===== ĐỐI THỦ MỆNH ĐỊNH — sự kiện tái ngộ ===== */
+function evRival(){ensureRival();const r=S.rival;if(!r||!r.alive)return evCombat();r.encounters++;r.grudge+=8;
+  return{title:'MỆNH ĐỊNH · Đối Thủ Tái Ngộ',narr:`Lại là ${r.name} (${realmName(r.ri,r.si)}, tính ${r.trait}) — kẻ đối đầu định mệnh của ngươi, một "thiên mệnh chi tử" khác của thời đại này. Lần thứ ${r.encounters} hai người chạm mặt, ân oán chồng chất. ${r.ri>S.ri?'Hắn đã đi trước ngươi một bước, ánh mắt đầy khinh miệt.':r.ri<S.ri?'Lần này ngươi đã vượt hắn — nhưng hắn tuyệt không cam tâm.':'Hai người vẫn kẻ tám lạng người nửa cân.'}`,choices:[
+    {l:'Quyết sinh tử, chấm dứt ân oán!',cls:'primary',hint:'Một mất một còn.',act:()=>{const res=fight({name:r.name,ri:r.ri,si:r.si,mightBonus:0.15});if(res==='win'){r.alive=false;S.flags.rivalSlain=true;S.stats.kills++;S.luck=Math.min(5,S.luck+1);S.luckShown=true;S.fame=clamp(S.fame+20,-100,1000);addKarma(-1,'trảm sát mệnh địch');setResult('Sau bao năm ân oán, ngươi chém gục '+r.name+'! Khí vận của hắn tan vỡ hòa vào ngươi (khí vận +1), danh chấn thiên hạ. Một thiên mệnh chi tử đã ngã xuống dưới tay ngươi.');}else if(res==='dead'){S.cause=r.name+' — đối thủ định mệnh — cuối cùng đã kết liễu ngươi. "Thiên mệnh chi tử của thời đại này, chỉ có thể là một người."';setResult(S.cause);}else setResult('Trận chiến bất phân thắng bại ('+res+'). '+r.name+' để lại một câu lạnh lẽo: "Lần sau, ta sẽ chôn ngươi." Ân oán chưa dứt, chỉ càng thêm sâu.');}},
+    {l:'Đấu khẩu, dằn mặt rồi lui.',act:()=>{r.grudge+=5;S.fame=clamp(S.fame+2,-100,1000);setResult('Hai người khẩu chiến nảy lửa trước bàn dân thiên hạ. Chưa động thủ, nhưng oán khí giữa hai người lại dày thêm một tầng.');}},
+    {l:'Tạm gác thù, ai đi đường nấy.',show:()=>r.grudge<60,act:()=>{setResult('Ngươi nén cơn giận quay lưng. '+r.name+' cười khẩy sau lưng — ân oán này, sớm muộn cũng phải một phen sống chết.');}}]};}
 
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
@@ -867,6 +897,7 @@ function rollEvent(){worldPulse();
   if(RNG.chance(0.05))return evForbiddenZone();
   if(RNG.chance(0.05))return evAuction();
   if(S.fame>=30&&RNG.chance(0.05))return evDaoConference();
+  if(S.ri>=1&&RNG.chance(0.07))return evRival();
   const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
   if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.13)return sceneNgoDao();if(r<dis+fort+0.19&&Object.keys(S.npcs).length)return evBetray();if(r<dis+fort+0.24&&RNG.chance(0.5))return evBloodline();return RNG.pick([evFortune,evCombat])();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
@@ -979,8 +1010,8 @@ function doFree(){const inp=$('#freetext');const text=inp?inp.value.trim():'';if
 
 /* ---- scene helpers ---- */
 function setScene(sc){S.scene=sc;freeRes=null;TAB='story';render();save();if(S&&!S.alive)render();}
-function setResult(text){S.scene={result:text,fromHub:true};freeRes=null;render();save();}
-function afterAct(){if(S&&!S.alive){render();save();return;}render();save();}
+function setResult(text){checkAchievements();S.scene={result:text,fromHub:true};freeRes=null;render();save();}
+function afterAct(){checkAchievements();if(S&&!S.alive){render();save();return;}render();save();}
 
 /* =========================================================================
    RENDER
@@ -1048,7 +1079,9 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Thế giới:</b> ${esc(S.world.name)} <span class="muted">(giới cấp ${S.world.tier}/${WORLDS.length}, trần phẩm ${maxGrade(S.world.tier)})</span></p>
    <p><b>Chủng tộc:</b> ${esc(S.raceName||'Nhân Tộc')} <span class="muted" style="font-size:.78rem">${esc((RACES.find(r=>r.id===S.race)||RACES[0]).d)}</span></p>
    <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Đồ đệ:</b> ${S.disciple?esc(S.disciple.name):'<i>không</i>'} · <b>Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
+   <p><b>Đối thủ mệnh định:</b> ${S.rival?(S.rival.alive?esc(S.rival.name)+' <span class="muted">('+esc(realmName(S.rival.ri,S.rival.si))+', ân oán '+S.rival.grudge+', chạm mặt '+S.rival.encounters+' lần)</span>':'<span class="good">đã bị ngươi trảm sát</span>'):'<i>chưa xuất hiện</i>'}</p>
    <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>
+   <p><b>Thành tựu (${(S.achievements||[]).length}/${ACHIEVEMENTS.length}):</b> ${(S.achievements||[]).length?S.achievements.map(id=>`<span class="chip">🏆 ${esc(achTitle(id))}</span>`).join(''):'<i>chưa mở khóa</i>'}</p>
    ${(()=>{const cap=maxGrade(S.world.tier);const hard=Math.min(12,cap+2);return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">📖 Thiên Phẩm Lục — 12 phẩm (pháp bảo · công pháp · thể chất · thiên phú · đan · linh dược · cơ duyên · trận pháp · linh thú)</div>
    <div style="font-size:.74rem;line-height:1.5">${PHAM.map(p=>{const st=p.id>hard?'<span class="bad">không tồn tại</span>':p.id>cap?'<span class="warn">gần như bằng 0</span>':'<span class="good">có thể gặp</span>';return `<div style="display:flex;justify-content:space-between;gap:8px"><span>${pham(p.id)} <span class="muted">tỉ lệ gốc ${p.pct}</span></span>${st}</div>`;}).join('')}</div>
