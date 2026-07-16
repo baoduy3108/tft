@@ -807,6 +807,20 @@ function evRival(){ensureRival();const r=S.rival;if(!r||!r.alive)return evCombat
     {l:'Quyết sinh tử, chấm dứt ân oán!',cls:'primary',hint:'Một mất một còn.',act:()=>{const res=fight({name:r.name,ri:r.ri,si:r.si,mightBonus:0.15});if(res==='win'){r.alive=false;S.flags.rivalSlain=true;S.stats.kills++;S.luck=Math.min(5,S.luck+1);S.luckShown=true;S.fame=clamp(S.fame+20,-100,1000);addKarma(-1,'trảm sát mệnh địch');setResult('Sau bao năm ân oán, ngươi chém gục '+r.name+'! Khí vận của hắn tan vỡ hòa vào ngươi (khí vận +1), danh chấn thiên hạ. Một thiên mệnh chi tử đã ngã xuống dưới tay ngươi.');}else if(res==='dead'){S.cause=r.name+' — đối thủ định mệnh — cuối cùng đã kết liễu ngươi. "Thiên mệnh chi tử của thời đại này, chỉ có thể là một người."';setResult(S.cause);}else setResult('Trận chiến bất phân thắng bại ('+res+'). '+r.name+' để lại một câu lạnh lẽo: "Lần sau, ta sẽ chôn ngươi." Ân oán chưa dứt, chỉ càng thêm sâu.');}},
     {l:'Đấu khẩu, dằn mặt rồi lui.',act:()=>{r.grudge+=5;S.fame=clamp(S.fame+2,-100,1000);setResult('Hai người khẩu chiến nảy lửa trước bàn dân thiên hạ. Chưa động thủ, nhưng oán khí giữa hai người lại dày thêm một tầng.');}},
     {l:'Tạm gác thù, ai đi đường nấy.',show:()=>r.grudge<60,act:()=>{setResult('Ngươi nén cơn giận quay lưng. '+r.name+' cười khẩy sau lưng — ân oán này, sớm muộn cũng phải một phen sống chết.');}}]};}
+/* ===== PHÁP BẢO TIẾN HÓA ===== */
+function evolveCost(g){return Math.round(Math.pow(10,2+g*0.5));}
+function sceneEvolve(){const pool=(S.natal?[{t:S.natal,natal:true}]:[]).concat(S.treasures.filter(t=>t.grade<12).map(t=>({t,natal:false})));const c=[];
+  pool.forEach(e=>{const t=e.t;const cost=Math.round(evolveCost(t.grade)*(e.natal?0.5:1));c.push({l:`Tiến hóa ${t.name} (phẩm ${t.grade}→${t.grade+1}, ${cost.toLocaleString('vi-VN')} linh thạch)`,show:()=>S.linhThach>=cost&&t.grade<12,act:()=>{S.linhThach-=cost;const succ=clamp(0.72-t.grade*0.06+profBonus('khi')+(e.natal?0.1:0),0.1,0.95);if(RNG.chance(succ)){t.grade++;t.gradeName=PHAM[t.grade-1].n;t.color=PHAM[t.grade-1].c;t.mult=1+t.grade*0.25;setResult('✦ Tiến hóa thành công! '+t.name+' thăng lên phẩm '+t.grade+' ('+t.gradeName+'), uy lực tăng vọt.');}else{setResult('Tiến hóa thất bại — linh khí phản phệ, vật liệu tan thành hư vô. Pháp bảo may không hư hại.');}}});});
+  c.push({l:'↩ Thôi.',act:()=>{S.scene=null;render();save();}});
+  return{title:'LUYỆN KHÍ · Tiến Hóa Pháp Bảo',narr:'Bằng thủ đoạn luyện khí, ngươi có thể tế luyện nâng phẩm pháp bảo — phẩm càng cao càng khó, thất bại thì mất vật liệu. Bản mệnh pháp bảo dễ tiến hóa hơn nhờ khế hợp. (Luyện Khí Sư thành công cao hơn.)',choices:c};}
+/* ===== TÂM MA KHẢO NGHIỆM ===== */
+function evInnerDemon(){const tempt=RNG.pick([
+  {t:'Một giọng nói mang chính giọng ngươi thì thầm: "Giết kẻ đó đi, đoạt lấy cơ duyên của hắn. Ngươi xứng đáng hơn nó."',y:()=>{S.atkMul*=1.08;addKarma(-3,'thuận theo tâm ma');S.dao=Math.max(0,S.dao-8);return'Ngươi buông cho hắc ám dẫn lối — thực lực tăng vọt, nhưng đạo tâm nhuốm đen thêm một mảng.';}},
+  {t:'"Trường sinh bất tử... chỉ cần nuốt chửng linh hồn kẻ khác. Chỉ một lần thôi mà, có ai biết đâu."',y:()=>{S.soul+=1;S.taint+=10;addKarma(-4,'nuốt hồn theo tâm ma');return'Ngươi nghe theo, nguyên thần cường hóa — nhưng chướng tính & nghiệp chướng dâng cao ngùn ngụt.';}},
+  {t:'"Cả thế giới này nợ ngươi. Hãy bắt chúng phải trả bằng máu."',y:()=>{S.att+=5;S.cultMul*=1.05;addKarma(-3,'ôm hận theo tâm ma');S.dao=Math.max(0,S.dao-6);return'Cơn thịnh nộ cho ngươi động lực tu luyện đáng sợ — nhưng ngươi ngày một giống một con quái vật.';}}]);
+  return{title:'TÂM MA KHẢO NGHIỆM',narr:'Giữa lúc tĩnh tọa, một bóng đen mang gương mặt của chính ngươi hiện lên trong tâm hải. TÂM MA. '+tempt.t,choices:[
+    {l:'Trảm tâm ma, giữ vững đạo tâm.',cls:'primary',hint:'Củng cố đạo tâm.',act:()=>{const win=clamp(0.4+(S.dao-50)*0.008+S.cmp*0.05,0.15,0.95);if(RNG.chance(win)){S.dao=Math.min(100,S.dao+8);S.flags.ngoDao=Math.max(S.flags.ngoDao||0,0.1);setResult('Ngươi vung ý chí chém tan tâm ma! Đạo tâm càng kiên định, một tia linh cảm lóe lên cho đột phá tới.');}else{S.taint+=6;S.dao=Math.max(0,S.dao-5);setResult('Tâm ma quá mạnh, ngươi chưa diệt được hoàn toàn — nó lẩn sâu vào tâm hải chờ thời cơ. Chướng tính tăng.');}}},
+    {l:'Thuận theo tâm ma, đổi lấy sức mạnh.',hint:'Mạnh lên nhưng sa đọa.',act:()=>{setResult(tempt.y());}}]};}
 
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
@@ -856,6 +870,8 @@ function sceneHub(){
   if(S.ri>=3&&!S.natal&&S.treasures.length)c.push({l:'⚜ Tế luyện bản mệnh pháp bảo',act:()=>{setScene(sceneNatal());}});
   // Phường thị
   c.push({l:'🏪 Tới phường thị (mua/bán)',act:()=>{setScene(sceneMarket());}});
+  // Tiến hóa pháp bảo
+  if(S.natal||S.treasures.some(t=>t.grade<12))c.push({l:'🔧 Tiến hóa pháp bảo (nâng phẩm)',act:()=>{setScene(sceneEvolve());}});
   // Động phủ + linh điền
   c.push({l:S.cave?`🏔️ Vào động phủ (cấp ${S.cave.level})`:'🏔️ Tậu động phủ + linh điền',act:()=>{setScene(sceneCave());}});
   // Thông Thiên Tháp
@@ -898,6 +914,7 @@ function rollEvent(){worldPulse();
   if(RNG.chance(0.05))return evAuction();
   if(S.fame>=30&&RNG.chance(0.05))return evDaoConference();
   if(S.ri>=1&&RNG.chance(0.07))return evRival();
+  if(RNG.chance(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)))return evInnerDemon();
   const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
   if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.13)return sceneNgoDao();if(r<dis+fort+0.19&&Object.keys(S.npcs).length)return evBetray();if(r<dis+fort+0.24&&RNG.chance(0.5))return evBloodline();return RNG.pick([evFortune,evCombat])();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
