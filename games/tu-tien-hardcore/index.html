@@ -79,6 +79,8 @@ h2{color:var(--gold);font-size:1.15rem;margin-bottom:10px}
    ========================================================================= */
 const SAVE_KEY='tutien_vohando_v1';
 const LEGACY_KEY='tutien_legacy_v1'; // di sản mang qua kiếp sau khi trùng sinh
+// Kho lưu an toàn: localStorage có thể bị chặn/ném lỗi trong iframe sandbox (Artifact) → fallback bộ nhớ tạm để game vẫn chạy
+const LS=(function(){try{const k='__tt_probe';window.localStorage.setItem(k,'1');window.localStorage.removeItem(k);return window.localStorage;}catch(e){const m=Object.create(null);return{getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>{m[k]=String(v);},removeItem:k=>{delete m[k];}};}})();
 const $=(s)=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -146,6 +148,17 @@ const REALM_POWER={
  'Đại Thừa':'Đỉnh phong của nhân tiên, chuẩn bị đón lôi kiếp phi thăng. Cử động dẫn động linh khí thiên địa, uy áp khiến vạn linh cấp thấp phủ phục.',
  'Bán Tiên':'Nửa bước sang bờ tiên, thân đã nhiễm tiên khí, phàm binh phàm pháp khó tổn thương. Một niệm có thể định sinh tử vô số phàm nhân.',
  'Chân Tiên':'Chân chính thành tiên, thoát ly luân hồi, thọ nguyên gần như bất tận. Một niệm diệt được cả một tòa phàm thành; bắt đầu ganh đua nơi tiên giới.',
+ // — Tiên Nhân giới (cảnh 11–20) —
+ 'Huyền Tiên':'Sơ nhập tiên đạo, luyện hóa tiên nguyên. Có thể khai mở tiểu động thiên riêng, ngưng tụ tiên khí thành binh, một tay che kín cả một tòa núi.',
+ 'Kim Tiên':'Thân bất hoại như kim, kiếp số khó tổn. Cước đạp hư không xuyên tinh vực, ngôn xuất pháp tùy, lời nói mang theo uy quyền pháp tắc.',
+ 'Thái Ất Tiên':'Luyện thành Thái Ất chân thân, dung hợp nhiều pháp tắc thành một. Vung tay là tinh thần chuyển dịch, có thể trấn thủ một phương tiên vực.',
+ 'Đại La Tiên':'Chứng Đại La đạo quả, thoát khỏi trường hà thời gian — quá khứ vị lai khó trói buộc. Một niệm sinh diệt vạn vật trong lãnh vực của mình.',
+ 'Chuẩn Thánh':'Nửa bước thánh nhân, thân mang thánh uy sơ hiện. Cử động dẫn động đại đạo cộng hưởng; một hơi thở, vạn tiên phủ phục.',
+ 'Thánh Nhân':'Thánh nhân bất tử bất diệt, cùng thiên địa đồng thọ. Bàn tay lật là một phương thế giới sinh, úp là một phương thế giới diệt.',
+ 'Thánh Vương':'Thánh nhân chi vương, thống lĩnh vô số thánh. Đại đạo pháp tắc theo ý mà cong; nơi ngươi đứng, chính là trung tâm của một tầng trời.',
+ 'Thánh Hoàng':'Uy lâm vạn thánh, một lời định tôn ti thiên địa. Khai thiên tịch địa như trở bàn tay, nắm giữ vận mệnh của cả một đại thiên thế giới.',
+ 'Thánh Đế':'Thánh đạo đăng đỉnh, đế uy trùm vũ trụ. Một ánh mắt xuyên thấu vạn giới, một tiếng nói vang vọng khắp chư thiên.',
+ 'Thiên Đế':'Đế lâm chư thiên vạn giới, đứng trên tuyệt đại đa số sinh linh. Bước tới ngưỡng cửa của Đế Cấp — nơi một niệm có thể khai mở hoặc nghiền nát cả một vũ trụ.',
 };
 const GROUP_POWER={
  'Tiên Phàm Giới':'Từ phàm nhân leo dần tới tiên — mỗi cảnh giới là một lần lột xác của thân thể, linh hồn và thọ nguyên.',
@@ -336,6 +349,7 @@ const IT_KIND=['Kiếm','Đao','Thương','Chung','Tháp','Đỉnh','Kính','Phi
 const HB_PRE=['Thanh','Huyết','Tử','Bích','Kim','Hắc','Băng','Viêm','Cửu Diệp','Thiên Niên','Vạn Niên','U Minh','Địa Tâm','Long'];
 const HB_KIND=['Linh Thảo','Linh Chi','Hoa','Quả','Sâm','Liên','Trúc','Đằng','Đan Sa','Tủy'];
 const TE_PRE=['Huyền','Cửu','Thái','Thiên','Vô Cực','Hỗn Nguyên','Tử Hà','Bích Hải','Lôi Đình','Viêm Long','Băng Tâm','U Minh','Đại La','Vạn Cổ','Thái Thượng','Cửu Chuyển','Hạo Thiên','Tru Tiên','Phần Thiên','Huyết Hải','Bắc Minh','Tiêu Dao','Vạn Kiếm','Hỗn Độn'];
+const TE_MID=['Thiên','Long','Phượng','Kiếm','Ma','Thần','Huyền','Cửu Thiên','Tử Cực','Hạo Nhiên','Vô Tướng','Bát Hoang','Càn Khôn','Tinh Thần','Nhật Nguyệt','Âm Dương','Ngũ Hành','Hỗn Thiên','Bất Diệt','Trảm Thần','Diệt Thế','Chân Long','Huyết Thần','Vạn Tượng'];
 const TE_SUF=['Quyết','Công','Kinh','Pháp','Chân Giải','Đạo','Bí Lục','Thần Công','Chân Kinh','Đại Pháp','Tâm Pháp','Bảo Điển'];
 // 50+ loại công pháp (gồm đủ các hệ chính + phụ trợ). danger:true = tà/cấm, chiêu nhân quả & tác dụng phụ
 const TE_CATS=[
@@ -416,7 +430,8 @@ const TE_HIGH=['Thần thông','Thời gian pháp','Luân hồi pháp','Hỗn Đ
 function genTech(g,forceCat){let c=forceCat?(TE_CAT_MAP[forceCat]||RNG.pick(TE_CATS)):RNG.pick(TE_CATS);
   if(!forceCat&&g<4&&TE_HIGH.includes(c.n))c=RNG.pick(TE_CATS); // thần thông/đại đạo pháp cần phẩm cao mới ngộ được
   const gr=PHAM[g-1];const giai=RNG.int(0,2);
-  return{uid:++ITEM_SEQ,type:'tech',name:`${RNG.pick(TE_PRE)} ${RNG.pick(TE_SUF)}`,grade:g,gradeName:gr.n,giai,giaiName:TE_GIAI[giai],color:gr.c,tech:c.n,mult:0.6+g*0.25+giai*0.06,danger:c.danger?g:Math.max(0,g-3),desc:`${c.n} · phẩm ${g} ${TE_GIAI[giai]} — ${c.d}`};}
+  const nm=RNG.chance(0.6)?`${RNG.pick(TE_PRE)} ${RNG.pick(TE_MID)} ${RNG.pick(TE_SUF)}`:`${RNG.pick(TE_PRE)} ${RNG.pick(TE_SUF)}`;
+  return{uid:++ITEM_SEQ,type:'tech',name:nm,grade:g,gradeName:gr.n,giai,giaiName:TE_GIAI[giai],color:gr.c,tech:c.n,mult:0.6+g*0.25+giai*0.06,danger:c.danger?g:Math.max(0,g-3),desc:`${c.n} · phẩm ${g} ${TE_GIAI[giai]} — ${c.d}`};}
 const FM_PRE=['Thái Ất','Cửu Cung','Chu Thiên','Hỗn Nguyên','Bát Quái','Vạn Kiếm','Huyền Thiên','Ngũ Hành','Âm Dương','Tru Tiên','Càn Khôn','Thái Cực'];
 const FM_KIND=['Hộ Sơn Đại Trận','Sát Trận','Huyễn Trận','Khốn Tiên Trận','Tụ Linh Trận','Truyền Tống Trận','Phong Ấn Trận','Trảm Tiên Trận','Đảo Hải Trận','Mê Tung Trận'];
 // Linh thú: BS_PRE (24) × BS_KIND (60) = 1440+ loài định danh, đủ "cả ngàn loài"
@@ -542,7 +557,7 @@ function newState(originId){
   applyLegacy(); // di sản kiếp trước (nếu vừa trùng sinh)
 }
 // ===== TRÙNG SINH: giữ lại 1 di sản (công pháp / khí vận / pháp bảo) qua kiếp sau =====
-function applyLegacy(){let lg;try{lg=JSON.parse(localStorage.getItem(LEGACY_KEY)||'null');}catch(e){lg=null;}if(!lg)return;localStorage.removeItem(LEGACY_KEY);S.flags.reborn=true;
+function applyLegacy(){let lg;try{lg=JSON.parse(LS.getItem(LEGACY_KEY)||'null');}catch(e){lg=null;}if(!lg)return;LS.removeItem(LEGACY_KEY);S.flags.reborn=true;
   if(lg.type==='tech'&&lg.data){S.techs.push(lg.data);log('【TRÙNG SINH】 Ký ức kiếp trước bừng tỉnh — ngươi vẫn khắc cốt công pháp «'+lg.data.name+'».','good');}
   else if(lg.type==='treasure'&&lg.data){S.treasures.push(lg.data);log('【TRÙNG SINH】 Pháp bảo «'+lg.data.name+'» xuyên qua luân hồi, theo ngươi tái thế.','good');}
   else if(lg.type==='luck'){S.luck=clamp(lg.data|0,0,5);S.luckShown=true;log('【TRÙNG SINH】 Khí vận kiếp trước vẫn đeo bám: '+LUCK[S.luck].n+'.','good');}
@@ -554,13 +569,13 @@ function computeRebirth(){if(S._reborn)return S._reborn;
   if(ok){const opts=[];if(S.tech)opts.push({type:'tech',data:S.tech,desc:'công pháp «'+S.tech.name+'»'});
     const bestT=(S.treasures||[]).slice().sort((a,b)=>b.grade-a.grade)[0];if(bestT)opts.push({type:'treasure',data:bestT,desc:'pháp bảo «'+bestT.name+'»'});
     opts.push({type:'luck',data:Math.max(2,S.luck),desc:'khí vận «'+LUCK[clamp(Math.max(2,S.luck),0,5)].n+'»'});
-    legacy=RNG.pick(opts);try{localStorage.setItem(LEGACY_KEY,JSON.stringify({type:legacy.type,data:legacy.data}));}catch(e){}}
+    legacy=RNG.pick(opts);try{LS.setItem(LEGACY_KEY,JSON.stringify({type:legacy.type,data:legacy.data}));}catch(e){}}
   S._reborn={ok,legacy};return S._reborn;
 }
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({S,LOG}));}catch(e){}}
-function load(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(!o||!o.S)return false;S=o.S;LOG=o.LOG||[];RNG=makeRNG((S.seed^(Date.now()&0xffff))>>>0);THECHAT=buildTheChat();return true;}catch(e){return false;}}
-function hasSave(){return !!localStorage.getItem(SAVE_KEY);}
-function wipe(){localStorage.removeItem(SAVE_KEY);}
+function save(){try{LS.setItem(SAVE_KEY,JSON.stringify({S,LOG}));}catch(e){}}
+function load(){try{const o=JSON.parse(LS.getItem(SAVE_KEY));if(!o||!o.S)return false;S=o.S;LOG=o.LOG||[];RNG=makeRNG((S.seed^(Date.now()&0xffff))>>>0);THECHAT=buildTheChat();return true;}catch(e){return false;}}
+function hasSave(){try{return !!LS.getItem(SAVE_KEY);}catch(e){return false;}}
+function wipe(){try{LS.removeItem(SAVE_KEY);}catch(e){}}
 function log(t,c){LOG.push({t,c:c||''});if(LOG.length>300)LOG.shift();}
 
 /* =========================================================================
@@ -821,6 +836,14 @@ function evInnerDemon(){const tempt=RNG.pick([
   return{title:'TÂM MA KHẢO NGHIỆM',narr:'Giữa lúc tĩnh tọa, một bóng đen mang gương mặt của chính ngươi hiện lên trong tâm hải. TÂM MA. '+tempt.t,choices:[
     {l:'Trảm tâm ma, giữ vững đạo tâm.',cls:'primary',hint:'Củng cố đạo tâm.',act:()=>{const win=clamp(0.4+(S.dao-50)*0.008+S.cmp*0.05,0.15,0.95);if(RNG.chance(win)){S.dao=Math.min(100,S.dao+8);S.flags.ngoDao=Math.max(S.flags.ngoDao||0,0.1);setResult('Ngươi vung ý chí chém tan tâm ma! Đạo tâm càng kiên định, một tia linh cảm lóe lên cho đột phá tới.');}else{S.taint+=6;S.dao=Math.max(0,S.dao-5);setResult('Tâm ma quá mạnh, ngươi chưa diệt được hoàn toàn — nó lẩn sâu vào tâm hải chờ thời cơ. Chướng tính tăng.');}}},
     {l:'Thuận theo tâm ma, đổi lấy sức mạnh.',hint:'Mạnh lên nhưng sa đọa.',act:()=>{setResult(tempt.y());}}]};}
+/* ===== NHÂN QUẢ THEO TỪNG NHÂN VẬT — cố nhân tầm thù / báo ân (dùng NPC & ký ức có thật) ===== */
+function evConsequence(){const ids=Object.keys(S.npcs).filter(i=>S.npcs[i].alive&&Math.abs(S.npcs[i].relation)>=40);if(!ids.length)return evCombat();const n=S.npcs[RNG.pick(ids)];const mem=(n.memory&&n.memory.length)?n.memory[n.memory.length-1]:'chuyện cũ giữa hai ta';
+  if(n.relation<=-40){n.ri=Math.max(n.ri,Math.min(100,S.ri+RNG.int(-1,1)));remember(n,'tìm ngươi thanh toán ân oán',0);
+    return{title:'NHÂN QUẢ · Cố Nhân Tầm Thù',narr:`${n.name} (${esc(realmName(n.ri,n.si))}, ${esc(n.traits.join(', '))}) tìm tới tận cửa. Ân oán giữa hai người vẫn còn nguyên trong ký ức hắn: "${esc(mem)}". Bao năm hắn cũng đã lớn mạnh — ánh mắt chất chứa hận thù dồn nén. "Món nợ năm xưa, hôm nay ta tới đòi."`,choices:[
+      {l:'Nghênh chiến, dứt điểm ân oán.',cls:'primary',act:()=>{const r=fight({name:n.name,ri:n.ri,si:n.si,mightBonus:0.15});if(r==='win'){n.alive=false;S.stats.kills++;addKarma(-1,'lại thêm một mạng vào nợ máu');setResult('Ngươi kết liễu '+n.name+', chấm dứt một mối oán — nhưng vòng xoáy nhân quả chỉ càng thêm sâu.');}else setResult(r==='dead'?S.cause:'Kết quả: '+r+'. '+n.name+' ôm hận rút lui, thề sẽ còn quay lại.');}},
+      {l:'Cúi mình hòa giải, bồi thường (1000 linh thạch).',show:()=>S.linhThach>=1000,hint:'Chuộc lại nhân quả.',act:()=>{S.linhThach-=1000;if(RNG.chance(0.55)){remember(n,'ngươi thành khẩn bồi thường, hóa giải oán cừu',80);addKarma(1,'chuộc lỗi với cố nhân');setResult('Ngươi thành khẩn tạ lỗi và bồi thường. '+n.name+' trầm mặc hồi lâu rồi thu kiếm: "Coi như xong." Kẻ thù hóa người dưng — có khi thành bằng hữu.');}else setResult(n.name+' hất túi linh thạch xuống đất: "Tưởng vài đồng bạc là xong? Ngươi coi thường ta quá!" Hắn bỏ đi, hận càng khắc sâu.');}}]};}
+  return{title:'NHÂN QUẢ · Cố Nhân Báo Ân',narr:`${n.name} (${esc(realmName(n.ri,n.si))}) tìm tới. Hắn vẫn nhớ như in: "${esc(mem)}". "Ân tình xưa chưa từng quên. Hôm nay, cho ta báo đáp."`,choices:[
+    {l:'Cảm tạ, hàn huyên cố nhân.',cls:'primary',act:()=>{remember(n,'tái ngộ, tình nghĩa thêm bền chặt',10);if(RNG.chance(0.5)){const k=RNG.pick(['pha_canh','ngo_dao','ho_menh','tho_dan']);S.inv[k]=(S.inv[k]||0)+1;setResult(n.name+' tặng ngươi một viên '+PILL_DEF[k].n+' cùng một lời hứa: "Khi ngươi lâm nguy, ta nhất định có mặt."');}else{S.linhThach+=Math.round(Math.pow(10,1+S.ri*0.25));setResult(n.name+' để lại một túi linh thạch hậu hĩnh rồi cáo từ, không quên dặn ngươi bảo trọng.');}}}]};}
 
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
@@ -914,11 +937,15 @@ function rollEvent(){worldPulse();
   if(RNG.chance(0.05))return evAuction();
   if(S.fame>=30&&RNG.chance(0.05))return evDaoConference();
   if(S.ri>=1&&RNG.chance(0.07))return evRival();
+  if(Object.keys(S.npcs).some(i=>S.npcs[i].alive&&Math.abs(S.npcs[i].relation)>=40)&&RNG.chance(0.12))return evConsequence();
   if(RNG.chance(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)))return evInnerDemon();
   const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
   if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.13)return sceneNgoDao();if(r<dis+fort+0.19&&Object.keys(S.npcs).length)return evBetray();if(r<dis+fort+0.24&&RNG.chance(0.5))return evBloodline();return RNG.pick([evFortune,evCombat])();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
-const LAWS=['Kim chi Pháp Tắc','Mộc chi Pháp Tắc','Thủy chi Pháp Tắc','Hỏa chi Pháp Tắc','Thổ chi Pháp Tắc','Lôi Đình Pháp Tắc','Không Gian Pháp Tắc','Thời Gian Pháp Tắc','Sinh Tử Pháp Tắc','Luân Hồi Pháp Tắc','Nhân Quả Pháp Tắc','Hủy Diệt Pháp Tắc','Sáng Thế Pháp Tắc','Ánh Sáng Pháp Tắc','Hắc Ám Pháp Tắc','Hỗn Độn Pháp Tắc'];
+// Pháp tắc đại đạo: 55 bản nguyên × 6 tầng lĩnh ngộ = 330 pháp tắc phân biệt
+const LAW_BASE=['Kim','Mộc','Thủy','Hỏa','Thổ','Lôi Đình','Cuồng Phong','Băng Sương','Viêm Diễm','Đại Địa','Quang Minh','Hắc Ám','Kịch Độc','Huyết Sát','Kiếm','Đao','Thương','Không Gian','Thời Gian','Trọng Lực','Sinh Mệnh','Tử Vong','Luân Hồi','Nhân Quả','Nghiệp Lực','Vận Mệnh','Hủy Diệt','Sáng Thế','Hỗn Độn','Âm','Dương','Ngũ Hành','Tinh Thần','Linh Hồn','Mộng Cảnh','Cấm Chế','Thôn Phệ','Bất Diệt','Hư Vô','Thực Tại','Nhật','Nguyệt','Tinh Thần','Sơn Nhạc','Thương Hải','Cương','Nhu','Tốc Độ','Phong Ấn','Ôn Dịch','Cổ Độc','Thần Lôi','Vẫn Tinh','Hồng Hoang','Chân Thực'];
+const LAW_TIER=['chi Ý','chi Tắc','Tiểu Thành','Đại Thành','Bản Nguyên','Đại Đạo Viên Mãn'];
+const LAWS=(function(){const o=[];for(const b of LAW_BASE)for(const t of LAW_TIER)o.push(b+' Pháp Tắc · '+t);return o;})();
 function worldPulse(){const r=RNG.next();if(r<0.15)worldEvent();else if(r<0.5)log('· '+RNG.pick(LEGENDS),'lore');}
 // SỰ KIỆN THẾ GIỚI — xảy ra bất kể người chơi (quy tắc 5), có hệ quả thật lên trạng thái thế giới
 function worldEvent(){const roll=RNG.next();
@@ -1202,7 +1229,8 @@ document.addEventListener('click',(e)=>{
 document.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&e.target&&e.target.id==='freetext'){e.preventDefault();doFree();}});
 
 /* khởi động */
-render();
+window.addEventListener('error',function(ev){try{const v=document.getElementById('view');if(v&&!v.innerHTML.trim())v.innerHTML='<div class="menu-wrap"><h1>Lỗi tải</h1><p class="muted">Có lỗi khi khởi động. Thử tải lại trang. Nếu vẫn lỗi, báo lại giúp: '+(ev.message||'')+'</p><button class="btn" data-m="new">✦ Bắt đầu</button></div>';}catch(_){}});
+try{render();}catch(e){try{document.getElementById('view').innerHTML='<div class="menu-wrap"><h1>TU TIÊN</h1><p class="muted">Không khởi động được ('+(e&&e.message||e)+'). Bấm để bắt đầu.</p><button class="btn primary" data-m="new">✦ Bắt đầu</button></div>';}catch(_){}}
 </script>
 </body>
 </html>
