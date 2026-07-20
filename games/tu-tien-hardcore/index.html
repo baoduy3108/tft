@@ -706,7 +706,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -1014,6 +1014,68 @@ function evConsequence(){const ids=Object.keys(S.npcs).filter(i=>S.npcs[i].alive
   return{title:'NHÂN QUẢ · Cố Nhân Báo Ân',narr:`${n.name} (${esc(realmName(n.ri,n.si))}) tìm tới. Hắn vẫn nhớ như in: "${esc(mem)}". "Ân tình xưa chưa từng quên. Hôm nay, cho ta báo đáp."`,choices:[
     {l:'Cảm tạ, hàn huyên cố nhân.',cls:'primary',act:()=>{remember(n,'tái ngộ, tình nghĩa thêm bền chặt',10);if(RNG.chance(0.5)){const k=RNG.pick(['pha_canh','ngo_dao','ho_menh','tho_dan']);S.inv[k]=(S.inv[k]||0)+1;setResult(n.name+' tặng ngươi một viên '+PILL_DEF[k].n+' cùng một lời hứa: "Khi ngươi lâm nguy, ta nhất định có mặt."');}else{S.linhThach+=Math.round(Math.pow(10,1+S.ri*0.25));setResult(n.name+' để lại một túi linh thạch hậu hĩnh rồi cáo từ, không quên dặn ngươi bảo trọng.');}}}]};}
 
+/* ===== A. BÍ ẨN & ĐẠI KẾ NGÀN NĂM (xương sống cốt truyện) ===== */
+const MYSTERIES=[
+ {id:'truongsinh',t:'Trường Sinh Là Dối Trá',clues:['Ngươi đọc được một đoạn cổ văn khắc vội: "Cổ Đế... cũng chết." Ba chữ ấy khiến ngươi lạnh sống lưng.','Một lão nhân hấp hối nắm tay ngươi thì thầm: "Đừng tin trường sinh. Càng lên cao, thọ nguyên càng là xiềng xích."','Ngươi thấy một cỗ quan tài khắc tên một vị Đại Đế — kẻ mà sử sách nói là bất tử.','Một tàn hồn gào lên trước khi tan biến: "Bọn ta đều bị lừa! Con đường này không có điểm cuối!"'],reveal:'Trường sinh bất tử là một lời nói dối vĩ đại. Ngay cả Đại Đế cũng phải chết — tồn tại một "sinh mệnh cấm khu" không ai vượt qua. Con đường tu tiên là một cái bẫy đếm ngược, và ai đó đã cố tình thiết kế nó như vậy.'},
+ {id:'bautroigia',t:'Bầu Trời Giả & Thực Tại Tầng Sâu',clues:['Có đêm ngươi ngước lên và thấy bầu trời khẽ "rung" một cái, như một tấm màn.','Một dị nhân điên loạn hét giữa chợ: "Bầu trời là giả! Chúng ta bị nhốt trong một cái lồng!"','Ngươi phát hiện linh khí của thế giới này đang bị hút đi đâu đó — như bị ai rút cạn từ từ.','Một cổ trận đồ vẽ chín tầng trời lồng vào nhau, tầng ngoài cùng là một con mắt khổng lồ.'],reveal:'Bầu trời thế giới này là một tầng phong ấn nhân tạo. Mỗi "giới" cao hơn chỉ là một lớp thực tại sâu hơn của cùng một cái lồng. Có một thứ ở tầng ngoài cùng đang lặng lẽ quan sát — và nuôi dưỡng tất cả như nuôi gia súc.'},
+ {id:'codetim',t:'Thi Thể Cổ Đế & Hoang Cổ Cấm Khu',clues:['Đồn rằng nơi Hoang Cổ có những cỗ thi thể Cổ Đế vẫn rỉ ra uy áp diệt thế.','Ngươi nghe kể về một cấm khu nơi thời gian ngừng chảy, chất đầy xác cường giả thượng cổ.','Một mảnh xương cổ ngươi vừa chạm truyền tới ký ức về một trận chiến giữa các vì sao.','"Kẻ nào đánh thức thi thể Cổ Đế, kẻ đó gánh lấy nghiệp chướng của cả một thời đại."'],reveal:'Các Hoang Cổ Cấm Khu là mộ địa của những Cổ Đế đã tử chiến chống lại "kẻ trên bầu trời". Thi thể họ vẫn giữ truyền thừa vô thượng — và cả lời nguyền lẫn thủ vệ. Họ đã thua. Còn ngươi, đang đi lại chính con đường của họ.'},
+ {id:'matu',t:'Đại Kế Ngàn Năm Của Ma Tổ',clues:['Phong ấn dưới Hoàng Tuyền đang lỏng dần — một thứ cổ xưa sắp thức tỉnh.','Ngươi giật mình nhận ra vô số "cơ duyên" của mình đến quá đúng lúc, như được sắp đặt sẵn.','Một tà tu cười man dại: "Tất cả chúng ta đều là quân cờ trong ván cờ ngàn năm của Người."','Một dòng chữ máu trên vách đá cổ: "Khi kẻ được chọn đủ mạnh, phong ấn sẽ vỡ."'],reveal:'Một Ma Tổ bị phong ấn từ vạn kiếp trước đã bày ra một đại kế ngàn năm: nuôi dưỡng vô số tu sĩ (gồm cả ngươi) làm "chìa khóa sống". Mỗi bước ngươi mạnh lên là một bước phong ấn của hắn lỏng ra. Cơ duyên của ngươi — có lẽ chưa từng là của ngươi.'},
+ {id:'luanhoi',t:'Ngươi Là Ai — Luân Hồi Cổ Đế',clues:['Có những khoảnh khắc ngươi thấy cảnh tượng xa lạ mà lại quen thuộc đến nhói lòng.','Trong mơ, ngươi ngồi trên một ngai vàng giữa mây, vạn người quỳ lạy dưới chân.','Một tướng sư nhìn ngươi rồi tái mặt bỏ chạy: "Không thể nào... Người đã chuyển thế?!"','Nguyên thần ngươi thi thoảng vang lên một cái tên — tên của một Cổ Đế đã mất tích.'],reveal:'Ngươi có thể là chuyển thế của một Cổ Đế đã ngã xuống trong trận chiến chống "kẻ trên bầu trời". Ký ức bị phong ấn để ngươi tái sinh mà không bị phát hiện. Nhưng khi ngươi mạnh trở lại — kẻ thù cũ, và cả cố nhân năm xưa, đều sẽ nhận ra ngươi.'},
+];
+function clueCount(id){return (S.clues&&S.clues[id])||0;}
+function evClue(){const pool=MYSTERIES.filter(m=>clueCount(m.id)<m.clues.length);if(!pool.length)return evFortune();const m=RNG.pick(pool);const idx=clueCount(m.id);S.clues=S.clues||{};S.clues[m.id]=idx+1;const done=idx+1>=m.clues.length;
+  return{title:'THIÊN CƠ · Một Tia Chân Tướng',narr:`Giữa lúc nhập định, một mảnh thiên cơ lọt vào tâm trí ngươi, lạnh buốt:\n\n"${m.clues[idx]}"\n\n(Bí ẩn: ${m.t} — manh mối ${idx+1}/${m.clues.length})${done?'\n\n✦ Ngươi đã ghép đủ manh mối cho bí ẩn này!':''}`,choices:[
+    {l:done?'Chiêm nghiệm chân tướng.':'Ghi khắc vào tâm, đi tiếp.',cls:'primary',act:()=>{if(done){S.flags['mystery_'+m.id]=true;S.dao=Math.min(100,S.dao+3);S.cmp=Math.round((S.cmp+0.03)*100)/100;setResult('【'+m.t+'】\n\n'+m.reveal+'\n\n(Chân tướng đã mở khóa — xem Thiên Cơ Lục ở tab Nhân Vật. Đạo tâm & ngộ tính chấn động thăng hoa.)');}else setResult('Ngươi khắc mảnh thiên cơ vào tận xương tủy. Bức tranh lớn vẫn mờ mịt, nhưng ngươi vừa thấy một góc của sự thật.');}},
+    {l:'Cố quên đi — biết quá nhiều có khi là họa sát thân.',act:()=>{S.clues[m.id]=idx;setResult('Ngươi cố xua mảnh thiên cơ khỏi đầu. Có những sự thật, không biết còn hơn.');}}]};}
+
+/* ===== B. ĐẠO TÂM: TÌNH ↔ VÔ TÌNH + MỘT NIỆM ===== */
+function evHeartTrial(){const sc=RNG.pick(['Một người ngươi từng thân thiết đang lâm nguy trước mắt — cứu thì chậm lại và nguy hiểm, bỏ mặc thì chuyên tâm cầu đạo.','Một cố nhân quỳ xuống cầu xin ngươi vì tình xưa. Đáp lại tình, hay dứt khoát vô tình để đạo tâm không lay động?','Đạo tâm ngươi vang lên một câu hỏi lạnh người: muốn thành tiên, phải chăng trước hết phải giết chết phần "người" trong chính mình?']);
+  return{title:'ĐẠO TÂM · Tình Kiếp — Một Niệm',narr:'Trên con đường trường sinh cô độc, một khảo nghiệm đạo tâm giáng xuống.\n\n'+sc+'\n\nNhất niệm thành ma, nhất niệm thành phật.',choices:[
+    {l:'Đoạn tình cầu đạo (Vô Tình).',hint:'Tu nhanh & lạnh lùng hơn, nhưng mất dần nhân tính.',act:()=>{S.heart-=2;S.cultMul=Math.round(S.cultMul*1.04*1000)/1000;S.atkMul=Math.round(S.atkMul*1.03*1000)/1000;S.dao=Math.max(0,S.dao-4);setResult('Ngươi chặt đứt một mối tình duyên trong lòng. Đạo tâm lạnh đi, tu vi tinh tiến — nhưng ngươi lại xa "người" thêm một bước. Vô Tình Đạo mở ra trước mắt.');}},
+    {l:'Giữ lấy tình (Hữu Tình).',hint:'Đạo tâm nhân bản, vững nhưng có điểm yếu.',act:()=>{S.heart+=2;S.dao=Math.min(100,S.dao+6);setResult('Ngươi chọn giữ lấy phần người trong mình. Đạo tâm không lạnh lẽo mà ấm áp kiên định — dù trên con đường này, có tình là có điểm yếu, có thứ để mất, có kẻ để bảo vệ.');}},
+    {l:'Không đoạn không chấp — một niệm giữa hai bờ.',act:()=>{S.dao=Math.min(100,S.dao+2);setResult('Ngươi không chọn cực đoan nào, giữ tâm ở lằn ranh mong manh giữa tình và đạo. Khó nhất, nhưng có lẽ là con đường trung dung của bậc đại trí.');}}]};}
+
+/* ===== C. TRƯỜNG SINH LỘ — TẦNG SÂU & NGUY HIỂM BÍ ẨN (hardcore) ===== */
+function evForbiddenTruth(){return{title:'CẤM KỴ · Chân Tướng Không Nên Biết',narr:'Ngươi vô tình chạm phải một tầng chân tướng bị phong cấm — một sự thật mà thiên đạo không muốn bất kỳ ai biết. Càng nhìn, thần hồn càng đau như bị xé toạc.',choices:[
+    {l:'Nhìn thẳng vào sự thật.',cls:'primary',hint:'Thêm manh mối bí ẩn, nhưng trả giá bằng thọ nguyên.',act:()=>{deductLife(6+RNG.int(0,10),'gánh chân tướng cấm kỵ');if(!S.alive){setResult(S.cause);return;}const m=RNG.pick(MYSTERIES);S.clues=S.clues||{};S.clues[m.id]=Math.min(m.clues.length,(S.clues[m.id]||0)+1);setResult('Ngươi cắn răng nhìn thẳng. Một mảnh bí ẩn hằn vào tâm trí (+1 manh mối: '+m.t+') — nhưng thiên đạo giáng một phần trừng phạt lên thọ nguyên ngươi. Biết sự thật, chưa bao giờ miễn phí.');}},
+    {l:'Nhắm mắt lại, chối bỏ.',act:()=>{setResult('Ngươi vội nhắm mắt, đẩy sự thật ra khỏi tâm trí. Sống sót — nhưng bức màn bí ẩn vẫn treo lơ lửng trên đầu.');}}]};}
+function evHeavenSuppress(){const bolts=Math.min(9,3+Math.floor(S.ri/8));return{title:'THIÊN ĐẠO ÁP CHẾ · Kẻ Cầu Trường Sinh',narr:'Ngươi đã đi quá xa trên con đường nghịch thiên. Thiên đạo cảm nhận được, và nó KHÔNG ưa. Một tầng uy áp vô hình giáng xuống — cả thế giới này đang cố nghiền ngươi như nghiền một mầm mống phản nghịch.',choices:[
+    {l:'Đứng thẳng, chống lại thiên uy!',cls:'primary',hint:'Nghịch thiên mà sống, hoặc chết.',act:()=>{const def=S.soul*0.4+(S.dao-50)*0.02+profBonus('tran')*3+((S.laws||[]).length*0.3);let hit=0;for(let i=0;i<bolts;i++)if(RNG.chance(clamp(0.16-def*0.006,0.03,0.55)))hit++;if(hit>=Math.ceil(bolts*0.6)){S.alive=false;S.cause='Thiên đạo áp chế — ngươi bị chính quy luật của thế giới này nghiền nát vì dám cầu trường sinh chân chính.';setResult(S.cause);return;}if(hit>0)deductLife(hit*4,'thiên đạo áp chế');S.flags.defiedHeaven=true;S.fame=clamp(S.fame+10,-100,1000);setResult('Ngươi gồng mình đứng thẳng dưới thiên uy, KHÔNG quỳ! Thiên đạo lùi lại một bước — ngươi vừa chứng minh mình là một biến số nó không kiểm soát nổi. Càng gần trường sinh, cả thế giới càng muốn giết ngươi — và ngươi vẫn sống.');}},
+    {l:'Cúi đầu thuận theo, thu liễm.',act:()=>{S.att=Math.max(0,S.att-4);S.progress=Math.max(0,S.progress-0.08);setResult('Ngươi cúi đầu, thu liễm khí tức, giả vờ an phận thủ thường. Thiên đạo bỏ qua ngươi — lần này. Nhưng thu mình cũng là chậm lại.');}}]};}
+
+/* ===== D. CỐT TRUYỆN THEO XUẤT THÂN (nhánh nhiều bước theo cơ duyên ẩn) ===== */
+function evOriginArc(){const f=S.flags;
+  if(f.remnant_soul&&(f.arc_remnant||0)<3){const st=(f.arc_remnant||0);f.arc_remnant=st+1;const beats=[
+    {n:'Mảnh tàn hồn cường giả trong nguyên thần ngươi bỗng khuấy động, rót vào đầu ngươi một đoạn khẩu quyết cổ xưa.',a:()=>{const t=genTech(clamp(4,1,maxGrade(S.world.tier)+1));S.techs.push(t);setResult('Tàn hồn truyền cho ngươi một môn công pháp: '+t.name+'! Nhưng ngươi cảm thấy nó đang tỉnh dần...');}},
+    {n:'Tàn hồn đã tỉnh hẳn, giọng lạnh lẽo vang trong đầu: "Thân xác này... hợp để ta trùng sinh."',a:()=>{if(S.soul>=3||RNG.chance(0.5)){S.soul+=1;setResult('Ngươi vận nguyên thần trấn áp, ép tàn hồn quy phục làm dưỡng liệu. Nguyên thần ngươi mạnh lên — ngươi đã thắng cuộc đấu tranh trong chính hồn mình.');}else{S.alive=false;S.cause='Tàn hồn cường giả đoạt xá thành công. Ngươi biến mất, thân xác thành lồng giam cho một kẻ đã chết.';setResult(S.cause);}}},
+    {n:'Dư âm cuối của tàn hồn tan đi, để lại cho ngươi một mảnh ký ức: một cái tên, một mối thù, và một manh mối.',a:()=>{const m=MYSTERIES.find(x=>x.id==='luanhoi')||RNG.pick(MYSTERIES);S.clues=S.clues||{};S.clues[m.id]=Math.min(m.clues.length,(S.clues[m.id]||0)+1);setResult('Tàn hồn để lại di sản cuối: một mảnh chân tướng về '+m.t+'. Ngươi thừa hưởng cả sức mạnh lẫn ân oán của một kẻ đã chết.');}}];
+    const b=beats[st];return{title:'CỐT TRUYỆN · Tàn Hồn Thức Tỉnh',narr:b.n,choices:[{l:'Đối mặt.',cls:'primary',act:b.a}]};}
+  if((f.demon_seed||f.demon_heir)&&(f.arc_machung||0)<3){const st=(f.arc_machung||0);f.arc_machung=st+1;const beats=[
+    {n:'Con mắt đỏ trong lồng ngực ngươi mở ra một khe. Ma chủng đang lớn lên, cho ngươi sức mạnh tà đạo dồi dào.',a:()=>{S.atkMul=Math.round(S.atkMul*1.1*1000)/1000;S.cultMul=Math.round(S.cultMul*1.08*1000)/1000;addKarma(-2,'nuôi lớn ma chủng');setResult('Ngươi để ma chủng lớn thêm, thực lực tăng vọt — nhưng đồng hồ đếm ngược cũng nhích thêm một nấc.');}},
+    {n:'Ma chủng thì thầm cám dỗ: "Nuốt thêm sinh linh đi. Ta với ngươi, sẽ vô địch." Nó đang muốn chiếm lấy ngươi.',a:()=>{S.heart-=2;S.taint+=8;addKarma(-3,'thuận theo ma chủng');setResult('Ngươi thuận theo ma chủng thêm một bước. Sức mạnh khủng khiếp — nhưng ngươi ngày càng không phân biệt được đâu là mình, đâu là nó.');}},
+    {n:'Ma chủng đã chín. Đêm nay, nó sẽ nuốt chửng ngươi để tái sinh. Đây là cửa sinh tử của kiếp ma chủng.',a:()=>{const win=clamp(0.35+(S.dao-50)*0.008+S.soul*0.05-(S.heart<0?0.1:0),0.1,0.9);if(RNG.chance(win)){delete f.demon_seed;S.flags.tamedSeed=true;S.atkMul=Math.round(S.atkMul*1.2*1000)/1000;setResult('Trong đêm sinh tử, ngươi dùng đạo tâm chưa vỡ vụn của mình trấn áp và LÀM CHỦ ma chủng! Từ nô lệ của nó, ngươi thành chủ nhân — sức mạnh tà đạo nay là của riêng ngươi.');}else{S.alive=false;S.cause='Ma chủng nuốt chửng ngươi để tái sinh. Kẻ bước ra khỏi xác ngươi, không còn là ngươi nữa.';setResult(S.cause);}}}];
+    const b=beats[st];return{title:'CỐT TRUYỆN · Ma Chủng Đếm Ngược',narr:b.n,choices:[{l:'Đối mặt.',cls:'primary',act:b.a}]};}
+  if(f.has_ring&&(f.arc_ring||0)<2){const st=(f.arc_ring||0);f.arc_ring=st+1;const beats=[
+    {n:'Lão hồn trong chiếc giới chỉ cổ lên tiếng: "Nhóc con, muốn mạnh không? Ta chỉ ngươi một cơ duyên — nhưng phải trả giá."',a:()=>{deductLife(5,'giao dịch với lão hồn');if(!S.alive){setResult(S.cause);return;}const t=genTreasure(clamp(4,1,maxGrade(S.world.tier)+1));S.treasures.push(t);setResult('Lão hồn dẫn ngươi tới một di bảo: '+t.name+'! Nhưng lão lấy đi 5 năm thọ nguyên làm "học phí". Không có gì miễn phí, kể cả từ ân nhân.');}},
+    {n:'Lão hồn bỗng đổi giọng: "Ta đã dạy ngươi đủ rồi. Giờ, trả lại thân xác cho ta." Lão định đoạt xá!',a:()=>{if(S.soul>=2&&RNG.chance(0.6)){S.natal=S.natal||genTreasure(5);setResult('Ngươi sớm đề phòng, phản kích đúng lúc lão hồn ra tay! Lão bại, tan vào chiếc nhẫn — để lại toàn bộ truyền thừa cho ngươi. Kẻ dạy ngươi, cuối cùng thành bệ đỡ cho ngươi.');}else{S.alive=false;S.cause='Lão hồn trong giới chỉ đoạt xá thành công. Hắn đã kiên nhẫn nuôi ngươi bao năm chỉ để chờ khoảnh khắc này.';setResult(S.cause);}}}];
+    const b=beats[st];return{title:'CỐT TRUYỆN · Lão Hồn Giới Chỉ',narr:b.n,choices:[{l:'Đối mặt.',cls:'primary',act:b.a}]};}
+  if(f.reborn_saint&&(f.arc_saint||0)<2){const st=(f.arc_saint||0);f.arc_saint=st+1;const beats=[
+    {n:'Một mảnh ký ức Thánh Tử kiếp trước sống dậy, dẫn ngươi tới một gia sản mà chỉ ngươi biết đường tìm.',a:()=>{S.linhThach+=Math.round(Math.pow(10,2+S.ri*0.2));const t=genTreasure(clamp(4,1,maxGrade(S.world.tier)+1));S.treasures.push(t);setResult('Theo ký ức kiếp trước, ngươi tìm được gia sản: một túi linh thạch lớn và '+t.name+'! Vinh quang kiếp trước bắt đầu trở về.');}},
+    {n:'Ký ức về cái chết kiếp trước ùa về — kẻ đã đâm ngươi một kiếm xuyên tim. Và ngươi nhận ra: hắn vẫn còn sống.',a:()=>{ensureRival();S.rival.name=RNG.pick(SUR)+' '+RNG.pick(GIV);S.rival.grudge=80;const m=MYSTERIES.find(x=>x.id==='luanhoi')||RNG.pick(MYSTERIES);S.clues=S.clues||{};S.clues[m.id]=Math.min(m.clues.length,(S.clues[m.id]||0)+1);setResult('Kẻ giết ngươi kiếp trước nay là '+S.rival.name+' — mối thù xuyên hai kiếp. Ngươi cũng hiểu thêm về '+m.t+'. Kiếp này, ngươi sẽ đòi lại tất cả.');}}];
+    const b=beats[st];return{title:'CỐT TRUYỆN · Ký Ức Thánh Tử',narr:b.n,choices:[{l:'Đối mặt.',cls:'primary',act:b.a}]};}
+  return null;}
+
+/* ===== E. LỊCH SỬ & KỶ NGUYÊN + THẾ GIỚI TẦNG THỰC TẠI ===== */
+const ERAS=[
+ ['Hồng Mông Kỷ','Thuở hỗn độn chưa phân, một tia Hồng Mông khai thiên tịch địa, chia hỗn độn thành tam thiên đại thiên thế giới.'],
+ ['Thượng Cổ Kỷ','Chư thần vạn tộc cùng tồn tại, đại đạo hưng thịnh. Nhưng mầm mống của "cái lồng" đã được gieo từ đây.'],
+ ['Thái Cổ Kỷ','Thập Đế Tranh Phong — mười vị Cổ Đế cùng thời quyết đấu. Chín người hóa xương trắng, một người bước lên rồi cũng biến mất.'],
+ ['Hoang Cổ Kỷ','Đại chiến chống "kẻ trên bầu trời". Vô số Cổ Đế tử chiến, để lại các Hoang Cổ Cấm Khu đầy thi thể và truyền thừa.'],
+ ['Mạt Pháp Kỷ (hiện tại)','Linh khí suy tàn, đại đạo có khuyết, thọ nguyên bị bó. Trường sinh thành truyền thuyết, và cũng thành dối trá lớn nhất.'],
+];
+const REALITY_LAYER=['Lớp thực tại nông nhất — phàm trần, nơi đa số chúng sinh sống và chết mà không biết có gì ở trên.','Một tầng sâu hơn, linh khí nồng hơn, quy luật cứng hơn.','Càng lên cao, thực tại càng "thật", và uy áp của bầu trời càng nặng.','Nơi pháp tắc lộ diện, cường giả có thể chạm vào quy luật thế giới.','Tầng thực tại mà "bầu trời giả" bắt đầu mỏng đi — sự thật gần hơn.','Gần tầng ngoài cùng của cái lồng — nơi kẻ quan sát ở rất gần.','Tầng sâu của các Cổ Đế đã ngã.','Ngưỡng cửa của chân thực tại.','Vô Hạn Ngoại Vực — bên ngoài cái lồng, nơi không còn bầu trời giả che mắt.'];
+function eraNow(){return ERAS[Math.min(ERAS.length-1,Math.max(0,ERAS.length-1))];} // hiện tại = Mạt Pháp
+
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
 function sceneReveal(){
@@ -1098,6 +1160,15 @@ function rollEvent(){worldPulse();
   if(debts.length&&RNG.chance(Math.min(0.5,0.15+debts.length*0.08)))return evRevenge();
   const goods=S.ledger.filter(x=>x.n>=2);
   if(goods.length&&RNG.chance(0.12))return evReward();
+  // (D) CỐT TRUYỆN THEO XUẤT THÂN — các arc riêng kích hoạt dần khi tu luyện
+  if(S.ri>=2&&RNG.chance(0.07)){const arc=evOriginArc();if(arc)return arc;}
+  // (B) ĐẠO TÂM · tình kiếp — một niệm
+  if(S.ri>=2&&RNG.chance(0.05))return evHeartTrial();
+  // (A) THIÊN CƠ · manh mối bí ẩn ngàn năm
+  if(RNG.chance(0.055))return evClue();
+  // (C) TRƯỜNG SINH LỘ · càng cao/càng sâu, thiên đạo càng muốn diệt kẻ cầu trường sinh
+  const peril=clamp((S.ri-6)*0.014+(S.world.tier-1)*0.02,0,0.32);
+  if(peril>0&&RNG.chance(peril))return RNG.chance(0.5)?evHeavenSuppress():evForbiddenTruth();
   if(S.sect&&RNG.chance(0.24))return evSect();
   if(S.daolu&&RNG.chance(0.1))return evDaoluPeril();
   if(!S.daolu&&S.ri>=1&&S.dao>=45&&RNG.chance(0.06))return evDaolu();
@@ -1302,6 +1373,18 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <div style="font-size:.74rem;line-height:1.5">${PHAM.map(p=>{const st=p.id>hard?'<span class="bad">không tồn tại</span>':p.id>cap?'<span class="warn">gần như bằng 0</span>':'<span class="good">có thể gặp</span>';return `<div style="display:flex;justify-content:space-between;gap:8px"><span>${pham(p.id)} <span class="muted">tỉ lệ gốc ${p.pct}</span></span>${st}</div>`;}).join('')}</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px">Thế giới hiện tại <b>${esc(S.world.name)}</b> (cấp ${S.world.tier}/${WORLDS.length}): trần phẩm thường ${cap}, tối đa cưỡng cầu ${hard}. Phẩm ≥${cap+1} càng lên càng gần như không tồn tại; phẩm ≥${hard+1} <b>không tồn tại</b> ở tầng vũ trụ này — muốn có phải phi thăng lên thế giới cao hơn.</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">📜 <b>Quy mô sinh thủ tục:</b> ${TE_CATS.length} hệ công pháp × ${TECH_NAME_SHELLS.toLocaleString('vi-VN')} tổ hợp tên × 12 phẩm × 3 giai = <b>${TECH_DISTINCT.toLocaleString('vi-VN')}</b> công pháp phân biệt · ${LAWS.length} pháp tắc đại đạo · ${BS_PRE.length*BS_KIND.length} loài linh thú · ${ORIGINS.length} xuất thân × ${REALMS.length} cảnh × ${WORLDS.length} giới — nhân với cơ duyên/nhân quả/lựa chọn là <b>thực tế vô hạn</b>.</div></div>`;})()}
+   ${(()=>{const heartTxt=S.heart<=-8?'❄ Vô Tình Đạo (đạo tâm băng lãnh, không còn là người)':S.heart<=-3?'lạnh dần về phía Vô Tình':S.heart>=8?'❤ Chân Tình Đạo (giữ trọn phần người)':S.heart>=3?'ấm dần về phía Hữu Tình':'⚖ Một niệm giữa hai bờ — chưa nghiêng về đâu';
+   const layer=REALITY_LAYER[Math.min(REALITY_LAYER.length-1,Math.max(0,S.world.tier-1))];
+   const known=MYSTERIES.filter(m=>S.flags&&S.flags['mystery_'+m.id]);
+   const mysHtml=MYSTERIES.map(m=>{const c=clueCount(m.id);const done=c>=m.clues.length;return `<div style="margin:3px 0"><span style="${done?'color:var(--gold)':''}">${done?'✦':'○'} ${esc(m.t)}</span> <span class="muted">${c}/${m.clues.length} manh mối</span>${done?'<div class="muted" style="font-size:.72rem;font-style:italic;margin:2px 0 4px;border-left:2px solid var(--gold);padding-left:6px">'+esc(m.reveal)+'</div>':''}</div>`;}).join('');
+   return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
+   <p><b>Đạo tâm (Tình ↔ Vô Tình):</b> ${esc(heartTxt)} <span class="muted">(${S.heart>0?'+':''}${S.heart})</span></p>
+   <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:6px 0 4px">🔮 Thiên Cơ Lục — bí ẩn & đại kế ngàn năm (${known.length}/${MYSTERIES.length} chân tướng đã mở)</div>
+   <div style="font-size:.76rem;line-height:1.5">${mysHtml}</div>
+   <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">📜 Sử · Kỷ Nguyên (từ khai thiên đến hiện tại)</div>
+   <div style="font-size:.74rem;line-height:1.5">${ERAS.map(e=>`<div style="margin:2px 0"><b>${esc(e[0])}</b> — <span class="muted">${esc(e[1])}</span></div>`).join('')}</div>
+   <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">🌀 <b>Tầng thực tại hiện tại</b> (giới cấp ${S.world.tier}/${WORLDS.length}): ${esc(layer)}<br><i>Mỗi giới cao hơn là một lớp thực tại sâu hơn — và một tầng nguy hiểm hơn. Càng gần trường sinh, cả thế giới càng muốn nghiền ngươi.</i></div>
+   </div>`;})()}
    <p class="muted" style="font-size:.74rem;margin-top:6px">💾 Tự động lưu — không cần bấm lưu.</p></div>`;}
 function invTab(){const pills=Object.keys(S.inv).filter(k=>PILL_DEF[k]&&S.inv[k]>0);const herbs=Object.keys(S.inv).filter(k=>k.startsWith('herb_')&&S.inv[k]>0);
   $('#view').innerHTML=`<div class="inv"><h2>Túi Đồ</h2>
@@ -1344,6 +1427,10 @@ function computeEnding(){const k=S.karma,dao=S.dao,ri=S.ri,mut=S.mutations.lengt
     poem='Ngươi bước qua lôi kiếp cuối cùng. Thân xác tan thành vạn điểm tinh quang, bay lên khỏi phàm trần — nơi này đã không còn giữ nổi ngươi. Truyền thuyết về ngươi sẽ được kể mãi ở '+esc(S.world.name)+'.';}
   else if(mut>=8){title='☍ NHÂN TÍNH TIÊU VONG';epithet='Một dị vật không còn nhớ mình từng là người';tone='warn';
     poem=`Sau ${mut} lần dị biến, ngươi soi mình xuống mặt nước và không nhận ra thứ đang nhìn lại. Sức mạnh đã đổi bằng chính linh hồn ngươi. Cái chết này, có lẽ là một sự giải thoát.`;}
+  else if(S.heart<=-12&&tier>=2){title='❄ VÔ TÌNH ĐẠO QUÂN';epithet='Kẻ đã chặt đứt mọi tình duyên để cầu đạo — đạo tâm băng lãnh, không còn là người';tone='';
+    poem='Ngươi đã đoạn tuyệt hết thảy: ái, hận, bi, hoan. Đạo tâm ngươi trong suốt như băng vạn năm, không một gợn sóng. Trên đại đạo, ngươi đi rất xa. Nhưng khi nhắm mắt, không một ai rơi lệ — và ngươi cũng chẳng cần. Thành đạo, hay chỉ là đã chết từ lâu?';}
+  else if(S.heart>=12&&tier>=2){title='❤ CHÂN TÌNH NHẬP ĐẠO';epithet='Kẻ giữ trọn phần người giữa con đường trường sinh cô độc, lấy tình chứng đạo';tone='good';
+    poem='Người ta nói tu tiên phải vô tình. Ngươi chứng minh điều ngược lại: chính vì có kẻ để bảo vệ, có tình để gìn giữ, đạo tâm ngươi mới kiên định đến thế. Khi ngươi ra đi, có những người thật lòng khóc thương — thứ mà vô số Vô Tình Đạo Quân vĩnh viễn không có được.';}
   else if(tier>=3&&moral<=-2){title='☠ MA ĐẾ NGÃ XUỐNG';epithet=`Đại Ma Đầu tay nhuốm máu ${kills} sinh linh, bị chính đạo vây diệt`;tone='warn';
     poem='Ngươi đã đứng trên đỉnh bằng xương máu vô số kẻ khác. Nhưng nợ máu tất phải trả — vạn tu sĩ chính đạo hợp lực, và ngay cả ngươi cũng không chống nổi nhân quả của cả một thời đại.';}
   else if(tier>=3&&moral>=2){title='✦ ĐẠI NĂNG VIÊN TỊCH';epithet='Một vị chính đạo tiền bối được vạn người kính ngưỡng, ngồi hóa mà đi';tone='good';
