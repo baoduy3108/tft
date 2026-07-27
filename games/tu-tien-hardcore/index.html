@@ -8,66 +8,113 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <style>
 :root{
-  --bg:#0a0e14;--card:#141922;--card2:#1a2029;--line:#26303d;--txt:#d8dee7;--muted:#7f8b9c;
-  --cyan:#00e5ff;--gold:#ffab40;--good:#6fdc8c;--bad:#ff6b6b;--warn:#ffd54f;--lore:#b39ddb;--accent:#ff6f00;
+  --bg:#080a10;--card:rgba(20,26,37,.72);--card2:rgba(28,35,48,.66);--line:#2b3547;--line2:#3c4a60;
+  --txt:#dce3ee;--muted:#8794a8;
+  --cyan:#54e6ff;--gold:#e9bd74;--gold2:#ffd98a;--jade:#7fe6c4;--good:#7fe0a0;--bad:#ff7b7b;--warn:#ffd86b;--lore:#c3aee6;--accent:#ff8a3d;
+  --ink:#0b0f16;--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--bg);color:var(--txt)}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.55;font-size:15px;max-width:760px;margin:0 auto;min-height:100vh;padding:8px 8px 68px}
-#status{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#141922,#10151d);border:1px solid var(--line);border-radius:12px;padding:9px 12px;box-shadow:0 3px 12px rgba(0,0,0,.5);margin-bottom:10px}
-.st-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-.st-name{font-weight:700;color:var(--cyan);font-size:1.02rem}
-.st-realm{color:var(--gold);font-weight:600;text-align:right}
-.bar{position:relative;height:16px;background:#0c1118;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:7px}
-.bar>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#0288d1,#00e5ff);transition:width .4s}
-.bar>span{position:relative;z-index:1;display:block;text-align:center;line-height:16px;font-size:.72rem;text-shadow:0 1px 2px #000}
-.st-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 12px;font-size:.8rem}
-.st-grid>div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px dotted #202833;padding:1px 0}
+html,body{background:var(--ink);color:var(--txt)}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;font-size:15px;max-width:780px;margin:0 auto;min-height:100vh;padding:10px 10px 74px;position:relative;z-index:1}
+/* ===== NỀN TRANH THỦY MẶC (SVG + hiệu ứng linh khí) ===== */
+#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+   radial-gradient(120% 80% at 50% -10%, #16233b 0%, #0d1424 42%, #080a10 100%);}
+#bg .moon{position:absolute;top:7%;left:50%;transform:translateX(-50%);width:150px;height:150px;border-radius:50%;
+   background:radial-gradient(circle at 38% 35%, #fff6e0 0%, #f0d69a 45%, #caa25e 72%, rgba(180,140,80,0) 73%);
+   box-shadow:0 0 80px 30px rgba(233,189,116,.14),0 0 160px 60px rgba(120,150,210,.08);opacity:.85;animation:moonPulse 9s ease-in-out infinite}
+@keyframes moonPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+#bg .mtn{position:absolute;left:0;right:0;bottom:0;height:62%;background-repeat:no-repeat;background-position:bottom center;background-size:cover;
+   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='620' viewBox='0 0 1200 620' preserveAspectRatio='xMidYMax slice'><defs><linearGradient id='a' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23223burl'/></linearGradient></defs><g fill='%23101a2e' opacity='0.55'><path d='M0 430 L160 300 L300 400 L430 250 L560 380 L700 260 L860 400 L1000 300 L1200 420 L1200 620 L0 620 Z'/></g><g fill='%230c1526' opacity='0.8'><path d='M0 520 L120 430 L260 510 L400 400 L520 500 L680 380 L820 500 L980 420 L1120 510 L1200 470 L1200 620 L0 620 Z'/></g><g fill='%23070c17'><path d='M0 580 L200 520 L360 575 L520 500 L680 570 L840 505 L1020 575 L1200 540 L1200 620 L0 620 Z'/></g></svg>");}
+#bg .mist{position:absolute;left:-20%;right:-20%;bottom:20%;height:34%;
+   background:linear-gradient(0deg,rgba(150,175,215,0) 0%,rgba(150,175,215,.05) 45%,rgba(160,185,220,.09) 60%,rgba(150,175,215,0) 100%);
+   filter:blur(8px);animation:mistDrift 26s ease-in-out infinite alternate}
+@keyframes mistDrift{0%{transform:translateX(-4%)}100%{transform:translateX(4%)}}
+#bg .motes{position:absolute;inset:0}
+#bg .motes b{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--gold2);opacity:.5;box-shadow:0 0 6px 1px rgba(233,189,116,.5);animation:mote linear infinite}
+@keyframes mote{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.6}90%{opacity:.5}100%{transform:translateY(-96vh) translateX(24px);opacity:0}}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;box-shadow:inset 0 0 220px 40px rgba(0,0,0,.75)}
+@media (prefers-reduced-motion:reduce){#bg .moon,#bg .mist,#bg .motes b,.view-anim{animation:none!important}}
+
+/* ===== STATUS (bảng nhân vật RPG) ===== */
+#status{position:sticky;top:6px;z-index:20;background:linear-gradient(180deg,rgba(22,29,42,.9),rgba(14,19,29,.9));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:11px 13px;box-shadow:0 6px 22px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);margin-bottom:11px;position:sticky}
+.st-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px}
+.st-name{font-family:var(--serif);font-weight:700;color:var(--gold2);font-size:1.12rem;letter-spacing:.5px;text-shadow:0 1px 8px rgba(233,189,116,.25)}
+.st-realm{font-family:var(--serif);color:var(--jade);font-weight:600;text-align:right;font-size:.96rem}
+.bar{position:relative;height:15px;background:rgba(6,10,17,.85);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:6px;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+.bar>i{position:absolute;inset:0 auto 0 0;border-radius:8px 0 0 8px;transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.bar>i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.25),rgba(255,255,255,0));transform:translateX(-100%);animation:sheen 3.4s ease-in-out infinite}
+@keyframes sheen{0%,60%{transform:translateX(-100%)}100%{transform:translateX(220%)}}
+.bar.cult>i{background:linear-gradient(90deg,#0e6fae,#54e6ff)}
+.bar.hp>i{background:linear-gradient(90deg,#7a1f2b,#ff6b6b)}
+.bar.life>i{background:linear-gradient(90deg,#4a7a2f,#a8e063)}
+.bar>span{position:relative;z-index:1;display:block;text-align:center;line-height:15px;font-size:.7rem;font-weight:600;text-shadow:0 1px 2px #000;letter-spacing:.3px}
+.st-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;font-size:.8rem;margin-top:3px}
+.st-grid>div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px dotted rgba(255,255,255,.06);padding:2px 0}
 .st-grid b{color:var(--muted);font-weight:500}
 .st-grid .bad{color:var(--bad)}.st-grid .good{color:var(--good)}.st-grid .warn{color:var(--warn)}
-#view{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-height:200px}
-h1{color:var(--cyan);text-align:center;font-size:1.5rem;margin-bottom:8px}
-h2{color:var(--gold);font-size:1.15rem;margin-bottom:10px}
-.narr{white-space:pre-wrap;margin-bottom:14px;font-size:.98rem}
-.choices{display:flex;flex-direction:column;gap:8px}
-.btn{display:flex;align-items:center;gap:10px;width:100%;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:11px 13px;border-radius:10px;font-size:.9rem;cursor:pointer;text-align:left;transition:.12s;font-family:inherit}
-.btn:hover{border-color:#3a4a5e;background:#1f2732}
+.st-loc{margin-top:8px;font-size:.74rem;color:var(--muted);border-top:1px solid var(--line);padding-top:7px}
+
+/* ===== VIEW (khung cảnh) ===== */
+#view{position:relative;background:var(--card);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border:1px solid var(--line);border-radius:14px;padding:16px 15px;min-height:200px;box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.03)}
+#view::before,#view::after{content:"";position:absolute;width:16px;height:16px;border:1px solid var(--gold);opacity:.5;pointer-events:none}
+#view::before{top:7px;left:7px;border-right:0;border-bottom:0;border-radius:4px 0 0 0}
+#view::after{bottom:7px;right:7px;border-left:0;border-top:0;border-radius:0 0 4px 0}
+.view-anim{animation:fadeUp .38s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1{font-family:var(--serif);color:var(--gold2);text-align:center;font-size:1.7rem;letter-spacing:2px;margin-bottom:10px;text-shadow:0 2px 16px rgba(233,189,116,.3)}
+h2{font-family:var(--serif);color:var(--gold);font-size:1.24rem;letter-spacing:.6px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(233,189,116,.18)}
+.narr{white-space:pre-wrap;margin-bottom:15px;font-size:1rem;line-height:1.72}
+.narr::first-letter{font-family:var(--serif);font-size:1.05em;color:var(--gold)}
+.choices{display:flex;flex-direction:column;gap:9px}
+.btn{position:relative;display:flex;align-items:center;gap:11px;width:100%;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:12px 14px;border-radius:11px;font-size:.92rem;cursor:pointer;text-align:left;transition:.15s ease;font-family:inherit}
+.btn:hover{border-color:var(--line2);background:rgba(38,48,66,.8);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .btn:active{transform:scale(.99)}
-.btn.primary{background:linear-gradient(90deg,#e65100,#ff6f00);border:none;color:#fff;font-weight:700;justify-content:center}
-.btn.small{width:auto;padding:6px 12px;font-size:.82rem}
-.btn.disabled,.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.hidden-choice{border-color:#6d4bb3;background:#241a33}
-.ch-key{flex:none;width:26px;height:26px;border-radius:6px;background:#0c1118;border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--gold);font-size:.85rem}
-.ch-l{flex:1}.ch-h{display:block;font-size:.74rem;color:var(--muted);margin-top:2px;font-style:italic}
-.freeform{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+.btn.primary{background:linear-gradient(100deg,#a4741f,#e9bd74 55%,#c8973f);border:1px solid #f0d18a;color:#20160a;font-weight:800;justify-content:center;letter-spacing:.4px;box-shadow:0 4px 18px rgba(233,189,116,.28)}
+.btn.primary:hover{filter:brightness(1.07);box-shadow:0 6px 24px rgba(233,189,116,.42)}
+.btn.small{width:auto;padding:7px 13px;font-size:.82rem}
+.btn.disabled,.btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4)}
+.btn.hidden-choice{border-color:#6d4bb3;background:linear-gradient(100deg,rgba(45,30,66,.75),rgba(36,26,51,.75))}
+.ch-key{flex:none;width:28px;height:28px;border-radius:7px;background:rgba(6,10,17,.8);border:1px solid var(--gold);display:grid;place-items:center;font-family:var(--serif);font-weight:700;color:var(--gold);font-size:.9rem}
+.btn.primary .ch-key{background:rgba(0,0,0,.18);border-color:rgba(0,0,0,.3);color:#3a2a12}
+.ch-l{flex:1}.ch-h{display:block;font-size:.75rem;color:var(--muted);margin-top:2px;font-style:italic}
+.btn.primary .ch-h{color:#5c451f}
+.freeform{margin-top:15px;border-top:1px dashed var(--line);padding-top:11px}
 .ff-l{font-size:.78rem;color:var(--muted);margin-bottom:6px;font-style:italic}
 .ff-row{display:flex;gap:6px}
-.ff-in{flex:1;background:#0c1118;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 11px;font-size:.85rem;font-family:inherit}
-.ff-in:focus{outline:none;border-color:var(--cyan)}
-.free-res{background:#12181f;border-left:3px solid var(--lore);border-radius:6px;padding:9px 11px;margin-bottom:12px;font-size:.9rem;font-style:italic}
-.log{background:#0c1118;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:180px;overflow-y:auto;font-size:.82rem;margin-top:10px}
-.log div{padding:2px 0;border-bottom:1px dotted #1a212b}
+.ff-in{flex:1;background:rgba(6,10,17,.8);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:10px 12px;font-size:.85rem;font-family:inherit}
+.ff-in:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(233,189,116,.15)}
+.free-res{background:rgba(18,24,31,.7);border-left:3px solid var(--lore);border-radius:7px;padding:10px 12px;margin-bottom:13px;font-size:.92rem;font-style:italic}
+.log{background:rgba(6,10,17,.7);border:1px solid var(--line);border-radius:9px;padding:9px 10px;max-height:190px;overflow-y:auto;font-size:.82rem;margin-top:12px}
+.log div{padding:3px 0;border-bottom:1px dotted rgba(255,255,255,.05);line-height:1.5}
 .good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}.lore{color:var(--lore);font-style:italic}.death{color:var(--bad);font-weight:700}
 .muted{color:var(--muted)}
-.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:760px;margin:0 auto;display:flex;background:#10151d;border-top:1px solid var(--line);z-index:30}
-.tab{flex:1;background:none;border:none;color:var(--muted);padding:8px 4px 7px;font-size:.72rem;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;border-top:2px solid transparent}
-.tab span{font-size:1.15rem}
-.tab.active{color:var(--cyan);border-top-color:var(--cyan);background:#131a24}
-.item{display:flex;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:6px;font-size:.85rem;align-items:center}
-.pill{display:inline-block;font-size:.68rem;padding:1px 7px;border-radius:20px;font-weight:700;color:#0a0e14}
-.chip{display:inline-block;font-size:.72rem;padding:2px 8px;border:1px solid var(--line);border-radius:12px;margin:2px 3px 0 0}
-.sheet p{margin-bottom:7px;font-size:.9rem}
-.menu-wrap{text-align:center;padding:16px 6px}
-.menu-wrap .btn{max-width:340px;margin:8px auto;justify-content:center}
-.rar{font-size:.7rem;padding:1px 7px;border-radius:10px;font-weight:700}
-.origin-card{border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px;background:var(--card2);cursor:pointer}
-.origin-card:hover{border-color:#3a4a5e}
-.origin-card .nm{font-weight:700;color:var(--cyan)}
-.origin-card .ds{font-size:.8rem;color:var(--muted);margin-top:3px}
-.warn-note{color:var(--bad);font-size:.82rem;margin-top:12px}
+/* ===== TAB BAR ===== */
+.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:780px;margin:0 auto;display:flex;background:linear-gradient(180deg,rgba(16,21,29,.92),rgba(10,14,20,.96));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--gold);box-shadow:0 -4px 20px rgba(0,0,0,.5);z-index:30}
+.tab{flex:1;background:none;border:none;color:var(--muted);padding:9px 4px 8px;font-size:.7rem;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent;transition:.15s;letter-spacing:.3px}
+.tab span{font-size:1.2rem;filter:grayscale(.5);transition:.15s}
+.tab.active{color:var(--gold2);border-top-color:var(--gold);background:linear-gradient(180deg,rgba(233,189,116,.12),transparent)}
+.tab.active span{filter:none;transform:translateY(-1px)}
+.tab:active{transform:scale(.96)}
+/* ===== ITEMS / CHIPS / CARDS ===== */
+.item{display:flex;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:7px;font-size:.85rem;align-items:center;transition:.12s}
+.item:hover{border-color:var(--line2)}
+.pill{display:inline-block;font-size:.68rem;padding:1px 8px;border-radius:20px;font-weight:700;color:#0a0e14}
+.chip{display:inline-block;font-size:.72rem;padding:2px 9px;border:1px solid var(--line);border-radius:12px;margin:2px 3px 0 0;background:rgba(255,255,255,.02)}
+.sheet p{margin-bottom:8px;font-size:.9rem}
+.sheet b{color:var(--gold)}
+.menu-wrap{text-align:center;padding:22px 6px}
+.menu-wrap .btn{max-width:350px;margin:9px auto;justify-content:center}
+.rar{font-size:.7rem;padding:1px 8px;border-radius:10px;font-weight:700}
+.origin-card{position:relative;border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:11px;padding:12px 13px;margin-bottom:9px;background:var(--card2);cursor:pointer;transition:.15s}
+.origin-card:hover{border-color:var(--gold);transform:translateY(-1px);box-shadow:0 5px 18px rgba(0,0,0,.4)}
+.origin-card .nm{font-family:var(--serif);font-weight:700;color:var(--gold2);font-size:1.02rem;letter-spacing:.3px}
+.origin-card .ds{font-size:.8rem;color:var(--muted);margin-top:4px;line-height:1.5}
+.warn-note{color:var(--bad);font-size:.82rem;margin-top:14px;font-style:italic}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
 </style>
 </head>
 <body>
+<div id="bg" aria-hidden="true"><span class="moon"></span><span class="mtn"></span><span class="mist"></span><span class="motes" id="motes"></span></div>
 <div id="status"></div>
 <div id="view"></div>
 <nav class="tabbar" id="tabbar"></nav>
@@ -785,7 +832,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -1228,6 +1275,62 @@ function evPlaceMystery(){const pool=availPlaces().filter(p=>placeCount(p.id)<p.
     {l:done?'Chiêm nghiệm chân tướng nơi này.':'Ghi nhớ, lần theo tiếp.',cls:'primary',act:()=>{if(done){S.flags['place_'+p.id]=true;if((S.placesFound||[]).indexOf(p.id)<0)(S.placesFound=S.placesFound||[]).push(p.id);S.dao=Math.min(100,S.dao+2);S.linhThach+=Math.round(Math.pow(10,1+(S.world.tier||1)*0.3));setResult('【'+p.t+'】\n\n'+p.reveal+'\n\n(Chân tướng địa phương đã ghi vào Địa Phương Bí Sử — tab Nhân Vật. Ngươi cũng nhặt được chút di trạch nơi này.)');}else setResult('Ngươi ghi khắc dấu tích vừa tìm được. Bức tranh về nơi này còn dang dở — nhưng ngươi đã đánh hơi thấy điều gì đó lớn lao ẩn dưới bề mặt.');}},
     {l:'Rời đi — có những nơi tốt nhất đừng đào sâu.',act:()=>{S.placeClues[p.id]=idx;setResult('Ngươi quyết định không đụng tới bí mật nơi này. Trực giác mách bảo: có những cánh cửa, mở ra là không đóng lại được.');}}]};}
 
+/* ===== BÍ CẢNH ĐẠI NĂNG ĐÃ NGÃ — di tích cường giả tử vong, truyền thừa & sát cơ ===== */
+// mỗi đại năng: cách họ ngã (đều nối vào chân tướng: trường sinh là dối trá / bị thu hoạch),
+// thứ trấn giữ truyền thừa, và loại di sản để lại.
+const FALLEN_ONES=[
+ {id:'f_kiemma',w:1,n:'Kiếm Ma Tàn Dương',tt:'Tán tu nghịch thiên một thời',boon:'tech',fall:'Một kiếm tu cô độc chém tới cảnh giới cùng cực của tán tu, rồi tự phế đan điền khi nhận ra càng mạnh càng bị "thứ trên trời" dòm ngó. Hắn chọn chết như một con người, thay vì sống như một quân cờ.',guard:'Kiếm ý tàn hồn của hắn vẫn tuần du quanh mộ, chém mọi kẻ tham lam không đủ tư cách.'},
+ {id:'f_dansu',w:1,n:'Dược Cuồng Vô Trần',tt:'Đan sư điên đổi mệnh',boon:'treasure',fall:'Một đan sư dành cả đời luyện "trường sinh đan", đốt sạch thọ nguyên và cả một tòa thành để rồi hiểu ra: không có đan nào cải được cái chết mà thiên đạo đã định sẵn cho kẻ tu hành. Ông nuốt mẻ đan cuối, cười mà chết.',guard:'Đan hỏa còn sót thiêu rụi kẻ thò tay ẩu; dược khí độc địa nhấn chìm động phủ.'},
+ {id:'f_thesu',w:1,n:'Thể Tu Cương Liệt',tt:'Nắm đấm nứt núi',boon:'natal',fall:'Một thể tu tin rằng nhục thân đủ mạnh sẽ đấm thủng cả trời. Hắn đấm nát chín tầng phòng ngự của một cấm địa — rồi bị chính lớp thứ mười, một tầng quy luật vô hình, nghiền thành thịt vụn. Nắm đấm mạnh nhất cũng không phá nổi cái lồng.',guard:'Thi thể kim cương bất hoại của hắn vẫn đứng gác, phản đòn kẻ động vào.'},
+ {id:'f_transu',w:2,n:'Trận Thánh Cửu U',tt:'Kẻ giam cả một vì sao',boon:'formation',fall:'Một trận sư bày đại trận hòng "khóa" cả thế giới lại để trốn con mắt trên trời. Trận thành, nhưng khóa luôn cả chính ông bên trong — ông chết già trong chiếc lồng do tự tay mình dựng, một phiên bản thu nhỏ của bi kịch cả thế giới.',guard:'Đại trận di tích vẫn vận hành, nhốt và nghiền kẻ giải trận sai một bước.'},
+ {id:'f_nguthu',w:2,n:'Vạn Thú Chi Vương',tt:'Kẻ nói chuyện với muông thú',boon:'beast',fall:'Một ngự thú sư thống lĩnh vạn linh thú chống lại một cuộc "thu hoạch" của thiên đạo. Bầy thú của ông chết sạch để ông chạy thoát, rồi ông tự chôn mình cùng chúng, không nỡ sống một mình. Trung thành, hóa ra là thứ thiên đạo không hiểu nổi.',guard:'Hồn phách bầy linh thú cổ vẫn canh mộ chủ, thử lòng kẻ tới.'},
+ {id:'f_matu',w:2,n:'Huyết Ma Sát Đế',tt:'Ma đầu tắm máu vạn dặm',boon:'tech',fall:'Một ma tu giết chóc để tu, mạnh tới mức tưởng có thể nghịch thiên. Đúng lúc đắc ý nhất, hắn bị chính "đại kế ngàn năm" của Ma Tổ nuốt chửng — hắn chưa từng là kẻ săn, chỉ là con dao được mài sắc rồi vứt bỏ.',guard:'Ma khí oán niệm đặc quánh, gặm mòn đạo tâm kẻ bước vào.'},
+ {id:'f_kiemtien',w:3,n:'Kiếm Tiên Thái Hư',tt:'Một kiếm khai thiên',boon:'law',fall:'Một kiếm tiên chém rách tầng trời để tìm lối thoát khỏi thế giới, thấy được "bầu trời giả" bên kia — rồi bị lực phản phệ của cái lồng chém ngược, thân kiếm hợp nhất tan thành ánh sáng. Câu cuối hắn để lại: "Trên trời... còn một tầng trời nữa."',guard:'Vô số kiếm quang tự hành phong tỏa mộ thất, phi kiếm trảm kẻ bất kính.'},
+ {id:'f_phattu',w:3,n:'Cổ Phật Nhập Diệt',tt:'Kẻ buông bỏ đắc đạo',boon:'treasure',fall:'Một tu sĩ Phật đạo ngồi thiền vạn năm, buông bỏ mọi chấp niệm, tưởng đã siêu thoát vòng luân hồi. Khoảnh khắc "viên tịch", ngài mới thấy rõ cỗ máy nghiền hồn phía sau cái gọi là luân hồi — và nụ cười trên mặt xá lợi ngài đông cứng thành kinh hãi.',guard:'Phật quang xá lợi thử tâm kẻ tham; tâm bất tịnh thì hồn phi phách tán.'},
+ {id:'f_yeude',w:4,n:'Thượng Cổ Yêu Đế',tt:'Bá chủ một thời hồng hoang',boon:'natal',fall:'Một Yêu Đế thống trị vạn tộc, bị chính đồng loại phản bội và liên quân tu sĩ vây diệt. Trước khi chết ngài rống lên một sự thật bị chôn vùi: kẻ phản bội ngài đã bán cả yêu tộc cho "thứ trên trời" để đổi lấy trường sinh — và cũng bị nuốt sạch không lâu sau.',guard:'Yêu đế uy áp tàn dư đè bẹp kẻ ý chí không đủ cứng; huyết mạch thấp bị khuất phục.'},
+ {id:'f_thanban',w:4,n:'Bán Thánh Vô Danh',tt:'Kẻ suýt chạm tới Thánh vị',boon:'law',fall:'Một cường giả tiến tới nửa bước Thánh nhân, gần chân tướng tới mức nguy hiểm. Ngay trước ngưỡng đột phá, "thiên kiếp" giáng xuống — nhưng không phải để thử thách, mà để xóa sổ. Kẻ biết quá nhiều không được phép bước tiếp. Tên hắn bị đục khỏi mọi bia.',guard:'Tàn dư thiên kiếp còn nổ lách tách trong di tích, giáng lôi lên kẻ đột nhập.'},
+ {id:'f_dequan',w:5,n:'Cổ Đế Vô Tự',tt:'Một trong Thập Đế Tranh Phong',boon:'law',fall:'Một trong mười Cổ Đế cùng thời, tử chiến chống "kẻ trên bầu trời". Ngài không thua vì yếu — ngài thua vì nhận ra dù thắng cũng chỉ đổi được một người nông dân khác. Ngài tự phong ấn di thể cùng chân tướng, chờ một hậu bối đủ điên để đọc.',guard:'Đế uy tàn tồn khiến Hóa Thần quỳ sụp; di thể Cổ Đế vẫn rỉ ra pháp tắc diệt thế.'},
+ {id:'f_thoisa',w:5,n:'Thời Gian Chi Chủ',tt:'Kẻ đùa với dòng thời gian',boon:'treasure',fall:'Một cường giả tham ngộ pháp tắc thời gian, cố quay ngược thời gian để "trước khi cái lồng được dựng". Ông trôi ngược tới tận khởi nguyên — và bị nghiền nát khi chạm phải khoảnh khắc kẻ dựng lồng ra tay. Di thể ông tồn tại ở mọi thời điểm cùng lúc.',guard:'Dòng thời gian loạn trong mộ khiến kẻ vào già đi hoặc trẻ lại thành hư vô.'},
+ {id:'f_honghoang',w:6,n:'Hồng Hoang Cự Thần',tt:'Sinh vật trước cả thượng cổ',boon:'natal',fall:'Một trong những sinh vật nguyên thủy tồn tại trước khi cái lồng được dựng, chống lại việc thế giới bị nhốt. Bị diệt và phân thây, xương làm nền cho thế giới mới. Nhưng một tia chân linh còn sót, chờ đủ vạn kiếp để có kẻ đánh thức di sản trước-cái-lồng.',guard:'Cự thần di cốt lớn bằng núi tỏa uy áp nguyên thủy, đè kẻ tới quỳ mọp.'},
+ {id:'f_hondon',w:7,n:'Hỗn Độn Đạo Nhân',tt:'Kẻ tu từ trước khai thiên',boon:'law',fall:'Một đạo nhân tu luyện từ thuở hỗn độn chưa phân, chứng kiến cái lồng được đúc ra. Ông cố ngăn, thất bại, rồi ẩn mình trong Hỗn Độn Hải chờ thời. Cuối cùng thọ nguyên vô lượng của ông cũng cạn — ngay cả kẻ cổ xưa nhất cũng không thoát khỏi "sinh mệnh cấm khu".',guard:'Hỗn độn khí trong động phủ tan rã mọi pháp tắc, kẻ đạo tâm yếu lập tức đạo tiêu.'},
+ {id:'f_hongmong',w:8,n:'Hồng Mông Cổ Tổ',tt:'Kẻ từng cầm búa khai thiên',boon:'treasure',fall:'Một tồn tại từng tham gia đúc ra tam thiên thế giới, rồi phản bội lại công việc của mình khi hiểu đó là một cái ngục. Ông bị "đồng nghiệp" phong ấn ngay trong Hồng Mông Tổ Lô. Di sản ông để lại có thể là thứ duy nhất đủ sức uy hiếp kẻ dựng lồng.',guard:'Hồng Mông tổ khí trong di tích nặng tới mức mỗi hơi thở là một lần độ kiếp.'},
+ {id:'f_ngoaikhach',w:9,n:'Kẻ Đã Thoát Ra Ngoài',tt:'Người duy nhất rời khỏi cái lồng',boon:'law',fall:'Không ai biết tên hắn. Hắn là kẻ duy nhất từng cạy thủng vỏ lồng và bước ra ngoài — rồi quay lại, một lần, để lại một di tích bên rìa Vô Hạn Ngoại Vực. Hắn không chết. Di tích này là "thư" hắn để lại cho kẻ tiếp theo dám đi con đường ấy.',guard:'Không có lính gác. Chỉ có một câu hỏi khắc trên cửa mà trả lời sai thì thần hồn tan biến.'},
+];
+function realmLooted(id){return (S.realmsLooted||[]).indexOf(id)>=0;}
+function availRealms(){return FALLEN_ONES.filter(f=>f.w<=(S.world.tier||1)&&!realmLooted(f.id));}
+function grantLegacyBoon(boon,g){g=clamp(g,1,12);
+  if(boon==='tech'){const t=genTech(g);S.techs.push(t);return 'công pháp truyền thừa 「'+t.name+'」 ('+PHAM[g-1].n+')';}
+  if(boon==='treasure'){const t=genTreasure(g);S.treasures.push(t);return 'pháp bảo 「'+t.name+'」 ('+t.gradeName+')';}
+  if(boon==='formation'){const f=genFormation(g);(S.arrays=S.arrays||[]).push(f);return 'trận đồ 「'+f.name+'」 ('+PHAM[g-1].n+')';}
+  if(boon==='beast'){const b=genBeast(g);(S.beasts=S.beasts||[]).push(b);return 'linh thú truyền thừa 「'+b.name+'」 ('+PHAM[g-1].n+')';}
+  if(boon==='natal'){const t=genTreasure(clamp(g+1,1,12));if(!S.natal){S.natal=t;S.natal.bond=20;return 'bản mệnh pháp bảo 「'+t.name+'」 ('+t.gradeName+') — đã tế luyện sẵn khế hợp';}S.treasures.push(t);return 'chí bảo 「'+t.name+'」 ('+t.gradeName+')';}
+  // law
+  const lw=RNG.pick(LAWS);if((S.laws||[]).indexOf(lw)<0)(S.laws=S.laws||[]).push(lw);return 'pháp tắc đại đạo 「'+lw+'」';}
+function evFallenRealm(){const pool=availRealms();if(!pool.length)return evSecretRealm?evSecretRealm():evFortune();const f=RNG.pick(pool);
+  if((S.realmsFound||[]).indexOf(f.id)<0)(S.realmsFound=S.realmsFound||[]).push(f.id);
+  const tier=S.world.tier||1;const coreG=clamp(maxGrade(tier)+1+RNG.int(0,1),1,12);const edgeG=clamp(maxGrade(tier)-1+RNG.int(0,1),1,12);
+  return{title:'BÍ CẢNH · Di Tích '+f.n,narr:`Ngươi lần theo dị tượng tới một bí cảnh cổ — di tích của 【${f.n}】, ${f.tt}.\n\n${f.fall}\n\n${f.guard}\n\nCửa động phủ hé mở, truyền thừa vô thượng và cái chết cùng chờ bên trong.`,choices:[
+    {l:'Xông vào lõi, đoạt truyền thừa cốt lõi.',cls:'primary',hint:'Phần thưởng cực lớn — nhưng lính gác có thể lấy mạng ngươi.',act:()=>{
+      const def=S.soul*0.45+(S.dao-50)*0.02+profBonus('tran')*2+((S.laws||[]).length*0.4)+(S.natal?1.5:0)+(luckOf().surv-1)*2;
+      const danger=clamp(0.5+(f.w-tier)*0.12-def*0.02,0.12,0.9);
+      if(RNG.chance(danger)){ // trấn áp thất bại
+        if(RNG.chance(0.4)){S.alive=false;S.cause='Lính gác di tích 「'+f.n+'」 nghiền ngươi thành tro — tham truyền thừa vượt cấp, ngươi trả bằng mạng.';setResult(S.cause);return;}
+        const y=10+RNG.int(0,20);deductLife(y,'trọng thương trong di tích đại năng');S.taint+=6;if(!S.alive){setResult(S.cause);return;}
+        setResult('Cấm chế của 「'+f.n+'」 bạo phát! Ngươi liều mạng thoát ra, trọng thương hộc máu (−'+y+' năm thọ), tay trắng. Truyền thừa đại năng, không phải ai cũng gánh nổi.');return;}
+      // thành công
+      (S.realmsLooted=S.realmsLooted||[]).push(f.id);
+      const boonDesc=grantLegacyBoon(f.boon,coreG);
+      grantWithPrice('truyền thừa của '+f.n,Math.max(2,Math.floor(coreG/2)));
+      // đại năng đã ngã đều để lại một mảnh chân tướng về cái lồng / trường sinh là dối trá
+      let clueMsg='';if(RNG.chance(0.75)){const wm=RNG.pick(availMysteries().filter(m=>!m.identity));if(wm){S.clues=S.clues||{};S.clues[wm.id]=Math.min(wm.clues.length,(S.clues[wm.id]||0)+1);clueMsg='\n\nDi niệm cuối của '+f.n+' rót vào tâm trí ngươi một mảnh chân tướng (+1 manh mối: '+wm.t+').';}}
+      S.fame=clamp(S.fame+15,-100,1000);
+      setResult('Ngươi vượt qua lính gác, đứng trước di sản của một đại năng đã ngã!\n\nĐoạt được: '+boonDesc+'.'+clueMsg+'\n\n(Di tích đã ghi vào "Di Tích Đại Năng Đã Ngã" — tab Nhân Vật.)');}},
+    {l:'Cẩn thận nhặt di vật vòng ngoài.',hint:'An toàn hơn, thu hoạch nhỏ hơn.',act:()=>{(S.realmsLooted=S.realmsLooted||[]).push(f.id);
+      if(RNG.chance(0.25)){const y=4+RNG.int(0,8);deductLife(y,'sẩy chân nơi vòng ngoài di tích');if(!S.alive){setResult(S.cause);return;}setResult('Ngươi chỉ dám men theo vòng ngoài, nhưng vẫn dính một cấm chế nhẹ (−'+y+' năm thọ). Nhặt vội vài món rồi rút — an toàn là trên hết.');return;}
+      const boonDesc=grantLegacyBoon(f.boon,edgeG);S.linhThach+=Math.round(Math.pow(10,1+tier*0.35));
+      setResult('Ngươi khôn ngoan chỉ vơ vét vòng ngoài di tích 「'+f.n+'」 rồi rút trước khi lòng tham nuốt chửng mình.\n\nThu được: '+boonDesc+' cùng một ít linh thạch.');}},
+    {l:'Bái tế đại năng, ghi nhớ rồi rời đi.',hint:'Không đoạt gì — giữ đạo tâm, có thể quay lại sau.',act:()=>{S.dao=Math.min(100,S.dao+4);addKarma(1,'kính trọng tiền nhân đã ngã');setResult('Ngươi cúi mình bái tế trước di tích 「'+f.n+'」, không động tới di sản. "Tiền bối đã đi con đường này trước. Vãn bối xin khắc cốt bài học của người." Đạo tâm ngươi vững thêm một phần.');}}]};}
+
 /* ---- Scene builders ---- */
 function sceneOrigin(o){return{narr:o.open,choices:[{l:'Mở mắt ra, đối diện với thế giới tàn khốc trước mặt.',act:()=>{S.rootShown=false;S.tcShown=false;setScene(sceneReveal());}}]};}
 function sceneReveal(){
@@ -1320,6 +1423,8 @@ function rollEvent(){worldPulse();
   if(RNG.chance(0.055))return evClue();
   // ĐỊA BÍ · bí ẩn theo từng nơi lớn / từng thế giới
   if(RNG.chance(0.06))return evPlaceMystery();
+  // BÍ CẢNH ĐẠI NĂNG ĐÃ NGÃ — di tích cường giả tử vong (truyền thừa & sát cơ)
+  if(S.ri>=2&&availRealms().length&&RNG.chance(0.05))return evFallenRealm();
   // (C) TRƯỜNG SINH LỘ · càng cao/càng sâu, thiên đạo càng muốn diệt kẻ cầu trường sinh
   const peril=clamp((S.ri-6)*0.014+(S.world.tier-1)*0.02,0,0.32);
   if(peril>0&&RNG.chance(peril))return RNG.chance(0.5)?evHeavenSuppress():evForbiddenTruth();
@@ -1458,14 +1563,15 @@ function afterAct(){checkAchievements();if(S&&!S.alive){render();save();return;}
    ========================================================================= */
 function pham(g){const p=PHAM[g-1];return `<span class="pill" style="background:${p.c}">P${p.id} ${p.n}</span>`;}
 function renderStatus(){const el=$('#status');if(!S){el.style.display='none';return;}el.style.display='block';const l=luckOf();const prog=Math.round(S.progress*100);
-  el.innerHTML=`<div class="st-head"><span class="st-name">${esc(S.name)}</span><span class="st-realm">${esc(realmName(S.ri,S.si))}</span></div>
-  <div class="bar"><i style="width:${prog}%"></i><span>Tu vi ${prog}%</span></div>
+  const hpP=Math.max(0,Math.min(100,Math.round(S.hp/Math.max(1,S.hpMax)*100)));const lifeP=Math.max(0,Math.min(100,Math.round(S.life/Math.max(1,S.lifeMax)*100)));
+  el.innerHTML=`<div class="st-head"><span class="st-name">☯ ${esc(S.name)}</span><span class="st-realm">${esc(realmName(S.ri,S.si))}</span></div>
+  <div class="bar cult"><i style="width:${prog}%"></i><span>⟳ Tu vi ${prog}%</span></div>
+  <div class="bar hp"><i style="width:${hpP}%"></i><span>❤ Khí huyết ${Math.round(S.hp)}/${Math.round(S.hpMax)}</span></div>
+  <div class="bar life"><i style="width:${lifeP}%"></i><span>⏳ Thọ nguyên ${Math.max(0,Math.floor(S.life))}/${Math.floor(S.lifeMax)} năm</span></div>
   <div class="st-grid">
-   <div><b>Thọ nguyên</b>${Math.max(0,Math.floor(S.life))}/${Math.floor(S.lifeMax)} năm</div>
    <div><b>Tuổi</b>${Math.floor(S.age)}</div>
-   <div><b>Linh thạch</b>${fmtExp(Math.log10(Math.max(1,S.linhThach)))}</div>
    <div><b>Nguyên thần</b>${Math.floor(S.soul)}</div>
-   <div><b>HP</b>${Math.round(S.hp)}/${Math.round(S.hpMax)}</div>
+   <div><b>Linh thạch</b>${fmtExp(Math.log10(Math.max(1,S.linhThach)))}</div>
    <div><b>Đạo tâm</b>${Math.round(S.dao)}</div>
    <div class="${S.taint>30?'bad':S.taint>15?'warn':''}"><b>Chướng tính</b>${Math.round(S.taint)}</div>
    <div><b>Khí vận</b>${S.luckShown?esc(l.n):'?'}</div>
@@ -1537,6 +1643,8 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <div style="font-size:.76rem;line-height:1.5">${mysHtml}</div>
    ${(()=>{const found=(S.placesFound||[]).length;const total=PLACE_MYSTERIES.length;const avail=availPlaces();const rows=avail.map(p=>{const c=placeCount(p.id);const done=c>=p.clues.length;return `<div style="margin:3px 0"><span style="${done?'color:var(--gold)':''}">${done?'✦':'○'} ${esc(p.t)}</span> <span class="muted">(giới ${p.w}) ${c}/${p.clues.length}</span>${done?'<div class="muted" style="font-size:.72rem;font-style:italic;margin:2px 0 4px;border-left:2px solid var(--gold);padding-left:6px">'+esc(p.reveal)+'</div>':''}</div>`;}).join('');const locked=PLACE_MYSTERIES.filter(p=>p.w>(S.world.tier||1)).length;return `<div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">🗺️ Địa Phương Bí Sử — bí ẩn từng nơi &amp; từng thế giới (${found}/${total} chân tướng)</div>
    <div style="font-size:.76rem;line-height:1.5">${rows||'<span class="muted">Chưa lần ra dấu tích nơi nào — hãy phiêu bạt &amp; khám phá.</span>'}${locked>0?'<div class="muted" style="font-size:.72rem;margin-top:3px">…còn '+locked+' nơi chốn ở các thế giới cao hơn, chờ ngươi vượt giới để chạm tới.</div>':''}</div>`;})()}
+   ${(()=>{const found=(S.realmsFound||[]);const looted=(S.realmsLooted||[]);const total=FALLEN_ONES.length;if(!found.length)return '';const rows=FALLEN_ONES.filter(f=>found.indexOf(f.id)>=0).map(f=>{const lt=looted.indexOf(f.id)>=0;return `<div style="margin:3px 0"><span style="color:${lt?'var(--gold)':'var(--muted)'}">${lt?'⚔':'○'} ${esc(f.n)}</span> <span class="muted">— ${esc(f.tt)} (giới ${f.w})${lt?' · <span class="good">đã đoạt truyền thừa</span>':' · chưa khai mở'}</span><div class="muted" style="font-size:.72rem;font-style:italic;margin:2px 0 4px;border-left:2px solid ${lt?'var(--gold)':'var(--line)'};padding-left:6px">${esc(f.fall)}</div></div>`;}).join('');return `<div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">⚔ Di Tích Đại Năng Đã Ngã (${looted.length} đoạt truyền thừa / ${found.length} tìm thấy / ${total} tồn tại)</div>
+   <div style="font-size:.76rem;line-height:1.5">${rows}</div>`;})()}
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">📜 Sử · Kỷ Nguyên (từ khai thiên đến hiện tại)</div>
    <div style="font-size:.74rem;line-height:1.5">${ERAS.map(e=>`<div style="margin:2px 0"><b>${esc(e[0])}</b> — <span class="muted">${esc(e[1])}</span></div>`).join('')}</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">🌀 <b>Tầng thực tại hiện tại</b> (giới cấp ${S.world.tier}/${WORLDS.length}): ${esc(layer)}<br><i>Mỗi giới cao hơn là một lớp thực tại sâu hơn — và một tầng nguy hiểm hơn. Càng gần trường sinh, cả thế giới càng muốn nghiền ngươi.</i></div>
@@ -1622,7 +1730,8 @@ function death(){
    <div class="muted" style="font-size:.82rem;border-top:1px solid var(--line);padding-top:10px;margin-top:12px">Ngã xuống ở <b>${esc(realmName(S.ri,S.si))}</b>, hưởng "thọ" ${Math.floor(S.age)} tuổi.<br>Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray} · Nhân quả ${S.karma}.</div>
    ${R.ok?`<p class="good" style="font-weight:600;margin:14px 0 4px">☯ TRÙNG SINH! Một tia hồn phách ngươi thoát khỏi luân hồi, mang theo ${esc(R.legacy.desc)} sang kiếp sau.</p>`:'<p class="muted" style="font-size:.82rem;margin-top:12px;font-style:italic">Hồn phách tan vào luân hồi, ký ức kiếp này xóa sạch...</p>'}
    <button class="btn primary" data-m="new" style="margin-top:12px">${R.ok?'☯ Chuyển thế (mang theo di sản kiếp trước)':'Chuyển thế — bắt đầu lại từ hư vô'}</button></div>`;}
-function render(){renderStatus();renderTabs();renderView();}
+function render(){renderStatus();renderTabs();renderView();try{const v=$('#view');v.classList.remove('view-anim');void v.offsetWidth;v.classList.add('view-anim');}catch(e){}}
+function spawnMotes(){try{const box=document.getElementById('motes');if(!box||box.childElementCount)return;let h='';for(let i=0;i<18;i++){const x=Math.random()*100,d=9+Math.random()*12,dl=Math.random()*12,s=2+Math.random()*2.5;h+=`<b style="left:${x}%;bottom:-6px;width:${s}px;height:${s}px;animation-duration:${d}s;animation-delay:-${dl}s"></b>`;}box.innerHTML=h;}catch(e){}}
 
 /* =========================================================================
    EVENTS (DOM)
@@ -1645,7 +1754,7 @@ document.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&e.target&&e.target
 
 /* khởi động — chờ DOM sẵn sàng (đề phòng script chạy trước khi #view tồn tại trong iframe Artifact) */
 window.addEventListener('error',function(ev){try{const v=document.getElementById('view');if(v&&!v.innerHTML.trim())v.innerHTML='<div class="menu-wrap"><h1>Lỗi tải</h1><p class="muted">Có lỗi khi khởi động. Thử tải lại trang. Nếu vẫn lỗi, báo lại giúp: '+(ev.message||'')+'</p><button class="btn" data-m="new">✦ Bắt đầu</button></div>';}catch(_){}});
-function __boot(){try{render();}catch(e){try{document.getElementById('view').innerHTML='<div class="menu-wrap"><h1>TU TIÊN</h1><p class="muted">Không khởi động được ('+(e&&e.message||e)+'). Bấm để bắt đầu.</p><button class="btn primary" data-m="new">✦ Bắt đầu</button></div>';}catch(_){}}}
+function __boot(){try{spawnMotes();}catch(e){}try{render();}catch(e){try{document.getElementById('view').innerHTML='<div class="menu-wrap"><h1>TU TIÊN</h1><p class="muted">Không khởi động được ('+(e&&e.message||e)+'). Bấm để bắt đầu.</p><button class="btn primary" data-m="new">✦ Bắt đầu</button></div>';}catch(_){}}}
 if(document.getElementById('view')){__boot();}
 else if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',__boot);}
 else{__boot();}
