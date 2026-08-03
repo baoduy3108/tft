@@ -1426,47 +1426,42 @@ function sceneNhapDao(step){const deed=S.flags.firstDeed,temper=S.flags.temper,n
       const farewell=nd==='doat'?'\n\nNgươi quay lại — lão ăn mày đã biến mất tự bao giờ, chỉ để lại một tiếng thở dài vọng trong gió: "Tâm thuật bất chính... đường tu của ngươi, e là lắm chông gai."':nd==='bai'?'\n\nLão nhân mỉm cười, thân ảnh dần mờ đi: "Duyên thầy trò tới đây là hết. Đường còn lại, tự ngươi bước. Nhớ lấy — đừng để con đường này nuốt mất bản tâm."':'\n\nNgươi ngoảnh lại, lão ăn mày đã đi xa, bóng lưng hòa vào màn đêm, không một lời từ biệt.';
       setResult(`Tia linh khí đầu tiên chảy qua kinh mạch, buốt giá rồi ấm nóng. Đan điền ngươi khẽ rung lên — một hạt mầm của đại đạo vừa nảy.${farewell}\n\nTừ hôm nay, ngươi không còn là kẻ phàm phu chờ chết. Con đường tu tiên vô tận — và tàn khốc — đã mở ra dưới chân. Sinh tử, cơ duyên, ân oán... tất cả bắt đầu từ đây.`);
     }}]};}
-// Hub / free-roam scene (khi không có scene cố định)
-function sceneHub(){
-  const tg=nextTarget();const ready=S.progress>=1;
-  const c=[
-    {l:'⚔ Phiêu bạt giang hồ — dấn thân vào một biến cố',hint:'Chủ động lao vào câu chuyện: cơ duyên, hiểm họa, ân oán... đều có thể ập tới.',cls:'primary',act:()=>{setScene(rollEvent());}},
-    {l:'🧘 Bế quan tu luyện (Tĩnh tu, ~1 năm)',hint:'Thời gian trôi — đôi khi một biến cố tự tìm tới ngươi.',act:()=>{passTime(1,false);}},
-    {l:'🔥 Khổ tu (nhanh gấp bội, hao thọ + chướng tính)',act:()=>{passTime(1,true);}},
-    {l:'⏩ Tu tới khi đủ đột phá',act:()=>{let g=0;while(S.alive&&S.progress<1&&g<4000){cultivate(1,false);g++;}if(S.alive&&RNG.chance(0.4)){setScene(rollEvent());}else afterAct();}},
-  ];
-  if(ready&&tg)c.push({l:`⚡ Đột phá → ${tg.name} (${Math.round(breakChance()*100)}%)`,cls:'primary',act:()=>{attemptBreak();afterAct();}});
-  c.push({l:'🧠 Luyện nguyên thần (~2 năm)',act:()=>{advance(2);S.soul+=0.4+(S.tc.buff.soul||1)*0.1;log('Nguyên thần ngưng luyện, cường độ đạt '+Math.floor(S.soul)+'.','good');afterAct();}});
-  if((S.inv.thanh_linh||0)>0)c.push({l:'💧 Dùng Thanh Linh Đan tẩy chướng tính',act:()=>{usePill('thanh_linh');afterAct();}});
-  if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập BÍ CẢNH đang mở (cơ duyên lớn · sát cơ lớn · phẩm cao)',cls:'primary',act:()=>{setScene(evSecretRealm());}});
+// ===== SỰ VỤ TU HÀNH — gom mọi thao tác quản lý ra khỏi mạch truyện chính =====
+function sceneAffairs(){const c=[];const bk=()=>afterAct();
+  c.push({l:'🧠 Luyện nguyên thần (~2 năm)',act:()=>{advance(2);S.soul+=0.4+(S.tc.buff.soul||1)*0.1;log('Nguyên thần ngưng luyện, cường độ đạt '+Math.floor(S.soul)+'.','good');bk();}});
+  if((S.inv.thanh_linh||0)>0)c.push({l:'💧 Dùng Thanh Linh Đan tẩy chướng tính',act:()=>{usePill('thanh_linh');bk();}});
   if(!S.sect&&S.ri>=1)c.push({l:'🏯 Tìm tông môn để bái nhập',act:()=>{setScene(sceneJoinSect());}});
   if(S.sect){c.push({l:`🏯 Vào Công Đức Đường ${S.sect.name} (cống hiến: ${S.sect.contrib})`,act:()=>{setScene(sceneSectHall());}});
     c.push({l:'📋 Nhận nhiệm vụ tông môn',act:()=>{setScene(sceneSectTask());}});
-    const rq=sectPromoteReq();if(rq)c.push({l:`⬆ Thăng chức (cần ${rq.contrib} cống hiến · ${rq.ri>0?REALMS[rq.ri-1].name:'—'})`,act:()=>{sectPromote();afterAct();}});
-    c.push({l:'🚪 Rời tông môn (thành tán tu)',act:()=>{const nm=S.sect.name;S.sect=null;log('Ngươi rời khỏi '+nm+', trở lại kiếp tán tu.','warn');afterAct();}});}
-  // Chức nghiệp / nghề phụ
+    const rq=sectPromoteReq();if(rq)c.push({l:`⬆ Thăng chức (cần ${rq.contrib} cống hiến · ${rq.ri>0?REALMS[rq.ri-1].name:'—'})`,act:()=>{sectPromote();bk();}});
+    c.push({l:'🚪 Rời tông môn (thành tán tu)',act:()=>{const nm=S.sect.name;S.sect=null;log('Ngươi rời khỏi '+nm+', trở lại kiếp tán tu.','warn');bk();}});}
   if(!S.prof)c.push({l:'🛠️ Bái sư học một nghề phụ (chức nghiệp)',act:()=>{setScene(sceneChooseProf());}});
-  else c.push({l:`🛠️ Hành nghề ${S.prof.n} (${PROF_RANK[S.prof.rankId]})`,act:()=>{practiceProf();afterAct();}});
-  // Song tu với đạo lữ
-  if(S.daolu)c.push({l:`❤ Song tu cùng đạo lữ ${S.daolu.name}`,act:()=>{cultivate(1,false);S.progress=Math.min(1,S.progress+0.03);S.daolu.love=Math.min(100,(S.daolu.love||60)+2);log('Song tu cùng '+S.daolu.name+', tiến độ tăng thêm.','good');afterAct();}});
-  // Bản mệnh pháp bảo
+  else c.push({l:`🛠️ Hành nghề ${S.prof.n} (${PROF_RANK[S.prof.rankId]})`,act:()=>{practiceProf();bk();}});
+  if(S.daolu)c.push({l:`❤ Song tu cùng đạo lữ ${S.daolu.name}`,act:()=>{cultivate(1,false);S.progress=Math.min(1,S.progress+0.03);S.daolu.love=Math.min(100,(S.daolu.love||60)+2);log('Song tu cùng '+S.daolu.name+', tiến độ tăng thêm.','good');bk();}});
   if(S.ri>=3&&!S.natal&&S.treasures.length)c.push({l:'⚜ Tế luyện bản mệnh pháp bảo',act:()=>{setScene(sceneNatal());}});
-  // Phường thị
   c.push({l:'🏪 Tới phường thị (mua/bán)',act:()=>{setScene(sceneMarket());}});
-  // Tiến hóa pháp bảo
   if(S.natal||S.treasures.some(t=>t.grade<12))c.push({l:'🔧 Tiến hóa pháp bảo (nâng phẩm)',act:()=>{setScene(sceneEvolve());}});
-  // Động phủ + linh điền
   c.push({l:S.cave?`🏔️ Vào động phủ (cấp ${S.cave.level})`:'🏔️ Tậu động phủ + linh điền',act:()=>{setScene(sceneCave());}});
-  // Thông Thiên Tháp
   if(S.ri>=1)c.push({l:`🗼 Thí luyện Thông Thiên Tháp (kỷ lục: tầng ${(S.tower&&S.tower.best)||0})`,act:()=>{S._towerFloor=0;setScene(sceneTower());}});
-  // Kiến lập thế lực (Kim Đan trở lên)
   if(S.ri>=3)c.push({l:S.ownForce?`👑 Thế lực ${S.ownForce.name} (${S.ownForce.members} bộ hạ)`:'👑 Kiến lập thế lực riêng',act:()=>{setScene(sceneForce());}});
-  // Sư đồ (Nguyên Anh trở lên)
   if(S.ri>=4)c.push({l:S.disciple?`🧑‍🎓 Đồ đệ ${S.disciple.name} (${realmName(S.disciple.ri,0)})`:'🧑‍🎓 Thu đồ đệ',act:()=>{setScene(sceneDisciple());}});
-  // Phi thăng vượt giới
-  if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n} (mở khóa phẩm cao)`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
-  if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Bế quan tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
-  if(S.ri>=100)c.unshift({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
+  c.push({l:'← Trở về cốt truyện',act:()=>{setScene(null);}});
+  return{title:'Sự Vụ Tu Hành',narr:'Gác lại chuyện giang hồ trong chốc lát, ngươi lo liệu những việc bên lề con đường tu hành.',choices:c,affairs:true};
+}
+// Hub — TRANG CỐT TRUYỆN chính: dẫn chuyện, không phải menu động từ
+function sceneHub(){
+  const tg=nextTarget();const ready=S.progress>=1;
+  const c=[];
+  if(S.ri>=100)c.push({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
+  c.push({l:'⚔ Dấn thân — xem chuyện gì đang chờ ngươi',hint:'Bước vào một tình huống mới: cơ duyên, hiểm họa, ân oán, bí ẩn...',cls:'primary',act:()=>{setScene(rollEvent());}});
+  if(ready&&tg)c.push({l:`⚡ Xuất quan đột phá → ${tg.name} (${Math.round(breakChance()*100)}%)`,cls:'primary',act:()=>{attemptBreak();afterAct();}});
+  if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập bí cảnh đang mở (cơ duyên & sát cơ)',cls:'primary',act:()=>{setScene(evSecretRealm());}});
+  if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n}`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
+  c.push({l:'🧘 Lui về tĩnh tu một thời gian',hint:'Thời gian trôi — có khi một biến cố tự tìm tới ngươi.',act:()=>{passTime(1,false);}});
+  c.push({l:'🔥 Bế quan khổ tu (nhanh nhưng hao thọ)',act:()=>{passTime(1,true);}});
+  if(!ready)c.push({l:'⏩ Chuyên tâm tu tới khi đủ đột phá',act:()=>{let g=0;while(S.alive&&S.progress<1&&g<4000){cultivate(1,false);g++;}if(S.alive&&RNG.chance(0.5)){setScene(rollEvent());}else afterAct();}});
+  if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
+  c.push({l:'⚙ Lo liệu sự vụ tu hành',hint:'Phường thị · tông môn · động phủ · nghề phụ · luyện bảo · thu đồ · lập thế lực...',act:()=>{setScene(sceneAffairs());}});
   const overdue=S.ledger.filter(x=>x.n<0).length;
   // ---- Narrative động: đổi theo mùa / mục tiêu đạo / mối đe dọa / manh mối đang đeo đuổi ----
   const season=['đầu xuân, vạn vật hồi sinh','giữa hạ, linh khí hừng hực','cuối thu, lá vàng rơi rụng','giữa đông, tuyết phủ trắng trời'][Math.floor(((S.time.m||1)-1)/3)%4];
@@ -1690,6 +1685,7 @@ function renderView(){const v=$('#view');
   let sc=S.scene;
   if(sc&&sc.result){v.innerHTML=`<div class="narr">${nl2(sc.result)}</div><div class="choices"><button class="btn primary" data-i="cont">Tiếp tục</button></div>`;return;}
   if(!sc||sc.hub){sc=sceneHub();S.scene=null;}
+  else if(sc.affairs){sc=sceneAffairs();}
   const choices=(sc.choices||[]).filter(c=>!c.show||c.show());
   v.innerHTML=`${sc.title?`<div style="font-size:.72rem;color:var(--gold);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${esc(sc.title)}</div>`:''}
    <div class="narr">${nl2(sc.narr)}</div>
