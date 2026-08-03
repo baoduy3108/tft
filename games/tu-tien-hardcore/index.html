@@ -896,7 +896,9 @@ function cultivate(years,hard){const gain=cultRate()*years*(hard?2.6:1);S.progre
   return gain;}
 // Thời gian trôi có thể tự dẫn tới một biến cố — cốt truyện tự rẽ nhánh, không đứng yên
 function passTime(years,hard){cultivate(years,hard);if(!S.alive){afterAct();return;}
-  const p=clamp(0.32+(hard?0.06:0)+(S.att>10?0.06:0)+(luckOf().id<=0?0.05:0),0.1,0.55);
+  // Đầu game (cảnh giới thấp) cốt truyện dày đặc như tiểu thuyết; về sau thưa dần cho nhịp tu luyện
+  const base=S.ri<3?0.6:S.ri<8?0.48:0.34;
+  const p=clamp(base+(hard?0.05:0)+(S.att>10?0.06:0)+(luckOf().id<=0?0.05:0),0.15,0.75);
   if(RNG.chance(p)){setScene(rollEvent());}else afterAct();}
 function nextTarget(){if(S.ri<=0)return{ri:1,si:0,major:true,name:'Luyện Khí Nhất tầng'};const r=REALMS[S.ri-1];if(S.si<r.subs.length-1)return{ri:S.ri,si:S.si+1,major:false,name:r.name+' '+r.subs[S.si+1]};if(S.ri>=100)return null;const nr=REALMS[S.ri];return{ri:S.ri+1,si:0,major:true,name:nr.name+' '+nr.subs[0]};}
 function breakChance(){const tg=nextTarget();if(!tg)return 0;const tr=REALMS[tg.ri-1];let p=tr.breakBase;if(!tg.major)p=Math.min(0.95,p+0.25);
@@ -1377,10 +1379,10 @@ function sceneBeggar(){return{title:'Lão Ăn Mày',narr:`Đêm đó, một lão
   {l:'Ngươi cũng đang đói lả — lắc đầu, lặng lẽ khép cửa.',hint:'Lãnh — giữ mình; lão vẫn xem giúp nhưng lạnh nhạt.',act:()=>revealCore('lanh')},
   {l:'Liếc chiếc túi vải của lão — biết đâu trong đó có thứ ăn được... hoặc bán được.',hint:'Tham — khởi dã tâm, gánh chút nghiệp.',act:()=>revealCore('tham')},
 ]};}
-function revealCore(deed){S.rootShown=true;S.tcShown=true;S.luckShown=true;if(S.hidden)S.hidden.shown=true;S.flags.firstDeed=deed;S.flags.canPlay=true;S.tech=genStarterTech();
-  if(deed==='thien'){addKarma(2,'chia miếng ăn cho kẻ khốn cùng');S.inv.tu_khi=(S.inv.tu_khi||0)+5;grantWithPrice('chỉ dẫn nhập đạo tận tình của lão nhân',1);log('Nhận công pháp Thanh Khí Quyết + 5 Tụ Khí Đan.','good');}
-  else if(deed==='lanh'){S.inv.tu_khi=(S.inv.tu_khi||0)+2;log('Lão tự xem giúp rồi để lại Thanh Khí Quyết + 2 Tụ Khí Đan.','good');}
-  else {addKarma(-2,'khởi tà niệm với ân nhân');S.att+=1;S.inv.tu_khi=(S.inv.tu_khi||0)+3;log('Lão "tặng" ngươi Thanh Khí Quyết + 3 Tụ Khí Đan — trước khi ngươi kịp ra tay.','good');}
+function revealCore(deed){S.rootShown=true;S.tcShown=true;S.luckShown=true;if(S.hidden)S.hidden.shown=true;S.flags.firstDeed=deed;
+  // Phàm nhân vẫn là phàm nhân — CHƯA có công pháp, CHƯA tu được. Chỉ mới lộ căn cốt.
+  if(deed==='thien')addKarma(2,'chia miếng ăn cho kẻ khốn cùng');
+  else if(deed==='tham'){addKarma(-2,'khởi tà niệm với ân nhân');S.att+=1;}
   setScene(sceneRevealResult());}
 function genStarterTech(){return{uid:++ITEM_SEQ,type:'tech',name:'Thanh Khí Quyết',grade:1,gradeName:'Phàm',giai:0,giaiName:'hạ giai',color:'#9e9e9e',tech:'Luyện Khí công pháp',mult:0.85,danger:0,desc:'Luyện Khí công pháp · phẩm 1 hạ giai — công pháp nhập môn, chậm nhưng vững.'};}
 function sceneRevealResult(){const l=luckOf();const deed=S.flags.firstDeed;
@@ -1400,7 +1402,30 @@ ${l.id===0?'\nLão bỗng trầm giọng: "Thứ khiến lão phu lo nhất là 
       {l:'Vì TỰ DO — tiêu dao thiên địa, không ai trói buộc được ta.',hint:'Đạo tâm khoáng đạt; ít vướng nhân quả.',act:()=>startPlay('tudo')},
       {l:'Vì MỐI THÙ khắc trong xương tủy — ta phải đòi lại tất cả.',hint:'Hận là động lực, cũng là xiềng xích.',show:()=>!!(S.flags.vengeful||S.flags.lone_survivor||S.flags.demon_heir||S.flags.heaven_forsaken||deed==='tham'),act:()=>startPlay('baothu')},
     ]};}
-function startPlay(m){S.flags.motive=m;const mt={truongsinh:'Ngươi khát trường sinh — dù phải nghịch cả thiên đạo.',sucmanh:'Ngươi khát sức mạnh — kẻ mạnh mới có quyền định đoạt.',tudo:'Ngươi khát tự do — một đời tiêu dao, không ai trói buộc.',baothu:'Ngươi ôm một mối thù — nó sẽ dẫn đường, hoặc thiêu rụi ngươi.'};log('【Đạo tâm】 '+(mt[m]||''),'lore');log('— Con đường tu tiên bắt đầu tại '+S.world.name+' —','lore');setScene(null);TAB='story';}
+function startPlay(m){S.flags.motive=m;const mt={truongsinh:'Ngươi khát trường sinh — dù phải nghịch cả thiên đạo.',sucmanh:'Ngươi khát sức mạnh — kẻ mạnh mới có quyền định đoạt.',tudo:'Ngươi khát tự do — một đời tiêu dao, không ai trói buộc.',baothu:'Ngươi ôm một mối thù — nó sẽ dẫn đường, hoặc thiêu rụi ngươi.'};log('【Đạo tâm】 '+(mt[m]||''),'lore');setScene(sceneNhapDao(0));}
+// ===== ARC NHẬP ĐẠO — phàm nhân bước chân vào tu tiên qua CỐT TRUYỆN (chưa có hub, chưa có công pháp) =====
+function sceneNhapDao(step){const deed=S.flags.firstDeed,temper=S.flags.temper,nd=S.flags.nhapdao;
+  if(step===0){return{title:'Nhập Đạo · Cơ Duyên',narr:`Lão ăn mày phủi bụi, chậm rãi rút từ trong bọc vải rách ra một quyển sách mỏng đã ố vàng vì năm tháng — bìa khắc ba chữ triện cổ: 「Thanh Khí Quyết」.\n\n"Căn cốt ngươi thế nào, ngươi đã rõ. Nhưng phàm nhân không tự dưng thành tiên — cần một môn công pháp dẫn khí nhập thể, và một người chỉ đường. Quyển này, lão có thể trao ngươi."\n\nLão ngẩng lên, ánh mắt vực thẳm nhìn thẳng vào ngươi: "Nhưng nhập đạo là nghịch thiên cải mệnh — một khi bước lên, không có đường lui. Ngươi thật sự muốn không?"`,choices:[
+    {l:'Quỳ xuống, khấu đầu ba cái, bái lão làm khai mông ân sư.',hint:'Kính lễ — lão sẽ tận tâm dẫn dắt.',cls:'primary',act:()=>{S.flags.nhapdao='bai';addKarma(1,'chấp lễ tôn sư');setScene(sceneNhapDao(1));}},
+    {l:'Cung kính nhận sách, khắc cốt ghi ơn — nhưng ngươi không quỳ lạy ai.',hint:'Cương — giữ cốt khí, tự đi đường mình.',act:()=>{S.flags.nhapdao='tudo';setScene(sceneNhapDao(1));}},
+    {l:'Chộp lấy quyển sách — có sức mạnh trong tay đã, ơn nghĩa tính sau!',hint:'Đoạt — nhanh nhưng bạc tình.',show:()=>deed==='tham'||temper==='cuong',act:()=>{S.flags.nhapdao='doat';addKarma(-1,'vô lễ đoạt sách của ân nhân');setScene(sceneNhapDao(1));}},
+  ]};}
+  if(step===1){const threat=RNG.pick([['một toán cường đạo tràn vào thôn cướp bóc, chém giết không tha một ai','Bọn cướp'],['một con dã lang khổng lồ đói mồi lẻn vào thôn trong đêm','Con ác thú'],['bọn nha dịch tới thu "thuế máu", trói người trẻ đem đi biệt tích','Bọn nha dịch']]);
+    return{title:'Nhập Đạo · Đêm Định Mệnh',narr:`Chưa kịp mừng, tai họa đã ập tới. Ngay đêm đó, ${threat[0]}. Tiếng la hét, mùi máu, ánh lửa. Ngươi — vẫn chỉ là một phàm nhân tay không tấc sắt — bị dồn vào chân tường.\n\n${threat[1]} đang tiến về phía ngươi. Sinh tử trong gang tấc.`,choices:[
+    {l:'Liều mạng chống trả bằng bản năng sinh tồn.',hint:'Khí phách — nhưng phàm thân mong manh.',act:()=>{if(RNG.chance(0.5)){const y=RNG.int(2,6);deductLife(y,'trọng thương khi liều mạng');S.flags.introHurt=true;setScene(sceneNhapDao(2));}else{addKarma(1,'liều mình che chở dân thôn');setScene(sceneNhapDao(2));}}},
+    {l:'Lạnh lùng nép vào bóng tối, nín thở chờ tai họa qua đi.',hint:'Toàn mạng — nhưng lương tâm cắn rứt.',act:()=>{if(deed==='thien')S.dao=Math.max(0,S.dao-3);setScene(sceneNhapDao(2));}},
+    {l:'Núp sau lưng lão ăn mày — ngươi tin lão không tầm thường.',hint:'Chỉ khi đã bái sư / tin lão.',show:()=>nd==='bai',act:()=>{log('Lão nhân khẽ phất tay áo, cả toán hung đồ bị một lực vô hình hất văng ra xa. Ngươi kinh hãi nhận ra: ân sư của mình là một tu tiên ẩn thế!','lore');S.flags.masterStrong=true;setScene(sceneNhapDao(2));}},
+  ]};}
+  // step 2: dẫn khí nhập thể — khoảnh khắc phàm nhân hóa tu sĩ
+  return{title:'Nhập Đạo · Dẫn Khí Nhập Thể',narr:`${S.flags.masterStrong?'Sau khi dẹp yên hung đồ, lão nhân đặt tay lên lưng ngươi, dẫn ngươi ngồi xuống.':'Khi tất cả đã qua, trong đêm tàn khói lửa, ngươi mở quyển Thanh Khí Quyết dưới ánh trăng.'} Theo từng câu khẩu quyết cổ xưa, ngươi nhắm mắt, điều tức, lần đầu tiên trong đời cố cảm nhận cái gọi là "linh khí thiên địa".\n\nMơ hồ... rồi rõ ràng — một luồng khí mát lạnh, sống động, đang lượn lờ quanh ngươi, chờ được dẫn vào thân.\n\nĐây là ranh giới. Bước qua, ngươi không còn là phàm nhân.`,choices:[
+    {l:'Vận công — dẫn tia linh khí đầu tiên nhập thể.',cls:'primary',act:()=>{
+      S.tech=genStarterTech();const bonus=nd==='bai'?5:nd==='doat'?2:3;S.inv.tu_khi=(S.inv.tu_khi||0)+bonus;
+      if(nd==='bai')grantWithPrice('chân truyền nhập đạo của ân sư',1);
+      S.flags.canPlay=true;log('Lĩnh hội công pháp 「Thanh Khí Quyết」 + '+bonus+' Tụ Khí Đan. Ngươi chính thức bước vào tu tiên!','good');
+      cultivate(0.5,false);
+      const farewell=nd==='doat'?'\n\nNgươi quay lại — lão ăn mày đã biến mất tự bao giờ, chỉ để lại một tiếng thở dài vọng trong gió: "Tâm thuật bất chính... đường tu của ngươi, e là lắm chông gai."':nd==='bai'?'\n\nLão nhân mỉm cười, thân ảnh dần mờ đi: "Duyên thầy trò tới đây là hết. Đường còn lại, tự ngươi bước. Nhớ lấy — đừng để con đường này nuốt mất bản tâm."':'\n\nNgươi ngoảnh lại, lão ăn mày đã đi xa, bóng lưng hòa vào màn đêm, không một lời từ biệt.';
+      setResult(`Tia linh khí đầu tiên chảy qua kinh mạch, buốt giá rồi ấm nóng. Đan điền ngươi khẽ rung lên — một hạt mầm của đại đạo vừa nảy.${farewell}\n\nTừ hôm nay, ngươi không còn là kẻ phàm phu chờ chết. Con đường tu tiên vô tận — và tàn khốc — đã mở ra dưới chân. Sinh tử, cơ duyên, ân oán... tất cả bắt đầu từ đây.`);
+    }}]};}
 // Hub / free-roam scene (khi không có scene cố định)
 function sceneHub(){
   const tg=nextTarget();const ready=S.progress>=1;
