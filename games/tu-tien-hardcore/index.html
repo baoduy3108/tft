@@ -832,7 +832,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -905,7 +905,20 @@ function nextTarget(){if(S.ri<=0)return{ri:1,si:0,major:true,name:'Luyện Khí 
 function breakChance(){const tg=nextTarget();if(!tg)return 0;const tr=REALMS[tg.ri-1];let p=tr.breakBase;if(!tg.major)p=Math.min(0.95,p+0.25);
   p+=Math.min(0.2,S.soul*0.01);p+=(S.flags.phaCanh||0)+(S.flags.ngoDao||0);p+=(luckOf().fort-1)*0.03;p+=(S.cmp-1)*0.1;
   p-=Math.min(0.4,S.taint*0.01);if(S.karma<0)p-=Math.min(0.15,-S.karma*0.003);if(S.dao<30)p-=0.1;
+  p+=Math.min(0.25,(S.foundation||0)*0.05); // căn cơ / bình cảnh vững -> dễ đột phá
   return clamp(p,0.01,0.98);}
+function ngoTinh(){return Math.round(clamp(S.cmp,0.1,25)*40);} // Ngộ tính dạng số (base 40)
+function deathRiskBreak(){const tg=nextTarget();if(!tg)return 0;const major=tg.major;let r=(major?0.14:0.03)+(S.dao<30?0.06:0)+S.taint*0.002-(S.foundation||0)*0.03-Math.min(0.06,S.soul*0.004);return clamp(r,major?0.02:0.005,0.6);}
+// QUY TRÌNH ĐỘT PHÁ HARDCORE — nhập định → dẫn linh khí → luyện hóa → ổn cố bình cảnh → xung kích → thành/bại (phản phệ)
+function sceneBreakthrough(){const tg=nextTarget();
+  if(!tg)return{title:'Đại Đạo Tận Cùng',narr:'Ngươi đã đứng ở tận cùng đại đạo — phàm trần này không còn cảnh giới nào cao hơn.',choices:[{l:'Trở về.',act:()=>setScene(null)}]};
+  if(S.progress<1)return{title:'Chưa Đủ Tu Vi',narr:'Tu vi trong đan điền chưa viên mãn. Cưỡng ép đột phá lúc này chỉ chuốc lấy tẩu hỏa nhập ma.',choices:[{l:'Lui về tích lũy thêm.',act:()=>setScene(null)}]};
+  const p=breakChance(),major=tg.major,found=S.foundation||0,risk=deathRiskBreak();
+  return{title:'ĐỘT PHÁ · '+tg.name,narr:`Tu vi đã viên mãn. Cảnh giới quan sừng sững trước mắt — ranh giới sinh tử của kẻ tu hành.\n\n① Ngồi nhập định, ngưng thần tĩnh khí.\n② Dẫn linh khí thiên địa cuồn cuộn nhập thể.\n③ Luyện hóa, dồn toàn lực xung kích cảnh giới quan.\n\n〔 Căn cơ: ${found} tầng · Bình cảnh: ${found>=3?'vững chãi':found>=1?'tạm ổn':'CHƯA ỔN ĐỊNH'} 〕\n〔 Tỉ lệ thành công: ${Math.round(p*100)}% 〕${major?'\n〔 ⚠ ĐẠI CẢNH — sau đột phá phải độ THIÊN KIẾP, sinh tử nhất tuyến 〕':''}\n〔 Rủi ro tử vong khi thất bại: ~${Math.round(risk*100)}% 〕\n\nCăn cơ càng dày thì thành công càng cao, phản phệ càng nhẹ. Nóng vội cầu thành — đại kỵ của tu tiên.`,choices:[
+    {l:'🧘 Ổn cố cảnh giới, bồi đắp căn cơ (~2 năm)',hint:'+1 tầng căn cơ (tăng tỉ lệ, giảm rủi ro). Nhưng hao thọ & thời gian.',act:()=>{advance(2);S.foundation=(S.foundation||0)+1;S.taint=Math.max(0,S.taint-1);log('Bế quan ổn cố cảnh giới — căn cơ vững thêm một tầng ('+S.foundation+').','good');if(!S.alive){afterAct();return;}setScene(sceneBreakthrough());}},
+    {l:'⚡ Toàn lực xung kích cảnh giới quan!',cls:'primary',hint:major?'Thành: cảnh giới tăng + độ thiên kiếp. Bại: phản phệ nặng, có thể rớt cảnh hoặc chết.':'Thành: cảnh giới tăng. Bại: hộc máu, tổn đạo cơ, hao thọ, có thể chết.',act:()=>{attemptBreak();afterAct();}},
+    {l:'Lui lại — chưa đủ tự tin, chờ thời cơ chín muồi.',act:()=>setScene(null)},
+  ]};}
 // THIÊN KIẾP + TÂM MA — độ kiếp khi đại đột phá cảnh cao (Kim Đan trở lên)
 function heavenTribulation(ri){
   const bolts=Math.min(9,2+Math.floor(ri/6));
@@ -923,16 +936,24 @@ function heavenTribulation(ri){
 }
 function attemptBreak(){const tg=nextTarget();if(!tg){log('Ngươi đã ở tận cùng Đại Đạo.','lore');return;}
   if(S.progress<1){log('Tu vi chưa đủ, đột phá lúc này chỉ chuốc tẩu hỏa.','warn');return;}
-  const p=breakChance();log(`Bắt đầu đột phá ${tg.name}... (tỉ lệ ${Math.round(p*100)}%)`,'');
+  const p=breakChance(),major=tg.major;log(`Toàn lực xung kích ${tg.name}... (tỉ lệ ${Math.round(p*100)}%, căn cơ ${S.foundation||0} tầng)`,'');
   delete S.flags.phaCanh;delete S.flags.ngoDao;
-  if(RNG.chance(p)){S.ri=tg.ri;S.si=tg.si;S.progress=0;S.stats.break++;if(S.natal)S.natal.bond=Math.min(100,(S.natal.bond||0)+3);log(`✦ Đột phá thành công! ${tg.name}.`,'good');
+  if(RNG.chance(p)){S.ri=tg.ri;S.si=tg.si;S.progress=0;S.foundation=0;S.stats.break++;if(S.natal)S.natal.bond=Math.min(100,(S.natal.bond||0)+3);log(`✦ Đột phá thành công! ${tg.name}.`,'good');
     if(tg.major){const nr=REALMS[tg.ri-1];const gain=Math.max(nr.life-S.lifeMax,nr.life*0.1);S.life+=gain;S.lifeMax=Math.max(S.lifeMax,nr.life);log(`Thọ nguyên tăng ${Math.round(gain)} năm.`,'good');log('【'+nr.name+'】'+realmPower(tg.ri),'lore');
       if(tg.ri>=3){if(!heavenTribulation(tg.ri))return;} // Kim Đan trở lên phải độ thiên kiếp
       rollMutation();}
     else if(RNG.chance(0.25))rollMutation();
-  }else{S.progress=Math.max(0,S.progress-0.3);S.taint+=3;const major=tg.major;const deathRisk=(major?0.12:0.03)+(S.dao<30?0.06:0)+S.taint*0.002;
-    if(RNG.chance(deathRisk)){S.alive=false;S.cause=`Tẩu hỏa nhập ma khi đột phá ${tg.name}. Kinh mạch nổ tung, nguyên thần tan biến.`;log('☠ TẨU HỎA NHẬP MA!','death');}
-    else{deductLife((major?20:5)+RNG.int(0,15),'phản phệ đột phá');log('Đột phá thất bại! Ngươi hộc máu, đạo cơ tổn thương.','bad');}}
+  }else{
+    // THẤT BẠI → PHẢN PHỆ PHÂN CẤP theo căn cơ (căn cơ mỏng = hậu quả thảm khốc)
+    const risk=deathRiskBreak();S.foundation=Math.max(0,(S.foundation||0)-2);S.taint+=major?6:3;
+    if(RNG.chance(risk)){S.alive=false;S.cause=`Tẩu hỏa nhập ma khi đột phá ${tg.name} — căn cơ không đủ chống đỡ phản phệ, kinh mạch nổ tung, nguyên thần tan biến.`;log('☠ TẨU HỎA NHẬP MA!','death');return;}
+    const sev=RNG.next();S.progress=Math.max(0,S.progress-(major?0.5:0.3));
+    if(sev<0.55){S.hp=Math.max(1,Math.round(S.hp*0.5));deductLife((major?12:4)+RNG.int(0,8),'phản phệ đột phá');log('Đột phá thất bại! Ngươi hộc máu, đạo cơ chấn động — thương tổn & hao thọ.','bad');}
+    else if(sev<0.86){S.hp=Math.max(1,Math.round(S.hp*0.3));deductLife((major?25:8)+RNG.int(0,12),'phản phệ nặng');log('Phản phệ dữ dội! Kinh mạch trọng thương, thọ nguyên hao mòn nghiêm trọng.','bad');}
+    else{ // phản phệ hủy diệt — rớt tiểu cảnh
+      if(S.si>0){S.si--;log('Phản phệ kinh khủng — đạo cơ sụp đổ, ngươi RỚT một tiểu cảnh!','death');}
+      S.hp=Math.max(1,Math.round(S.hp*0.2));S.progress=0;deductLife((major?40:15)+RNG.int(0,20),'phản phệ hủy diệt đạo cơ');log('Đạo cơ đại tổn! Thoát chết trong gang tấc nhưng nguyên khí đại thương.','death');}
+  }
 }
 const MUT=[['Đồng tử co như rắn',false,'Ánh mắt khiến người thường khiếp sợ.'],['Da mọc vảy mỏng',false,'Phòng ngự tăng, ngày càng ít giống người.'],['Thần thức nhạy bén dị thường',true,'Nguyên thần +1.'],['Huyết mạch cổ thức tỉnh một phần',true,'Khí huyết mạnh lên.'],['Tâm ma nhen nhóm',false,'Đạo tâm bất ổn, dễ tẩu hỏa.'],['Một phần linh hồn hóa dị vật',false,'Mạnh hơn nhưng nhân tính hao mòn.'],['Mọc một chiếc sừng nhỏ trên trán',false,'Yêu tộc huyết mạch trỗi dậy, người thường xa lánh.'],['Lưng nhú đôi cánh xương mỏng',true,'Thân pháp nhẹ nhàng hơn, nhưng khó giấu thân phận.'],['Máu chuyển sắc vàng kim',true,'Khí huyết cường hãn, vết thương mau lành.'],['Nghe được tiếng lòng vạn vật',true,'Ngộ tính bén hơn, nhưng tạp âm thiên địa quấy nhiễu đạo tâm.'],['Bóng của ngươi bắt đầu tự cử động',false,'Một thứ gì đó đang thành hình trong hồn ngươi.'],['Xương cốt trong suốt như lưu ly',true,'Thân thể thuần khiết hơn, ít nhiễm chướng tính.'],['Không còn cảm thấy đói khát hay mỏi mệt',false,'Càng gần tiên, càng xa người.'],['Tóc bạc trắng dù còn trẻ',false,'Dấu vết của việc nghịch thiên cải mệnh.']];
 function rollMutation(){const m=RNG.pick(MUT);S.mutations.push(m[0]);if(m[0].includes('Thần thức'))S.soul+=1;if(m[0].includes('Tâm ma'))S.dao=Math.max(0,S.dao-10);if(m[0].includes('Huyết mạch'))S.hpMax=Math.round(S.hpMax*1.05);log(`⚝ Dị biến khi đột phá: ${m[0]}. ${m[2]}`,m[1]?'good':'warn');}
@@ -1513,7 +1534,7 @@ function sceneHub(){
   const c=[];
   if(S.ri>=100)c.push({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
   c.push({l:'⚔ Dấn thân — xem chuyện gì đang chờ ngươi',hint:'Bước vào một tình huống mới: cơ duyên, hiểm họa, ân oán, bí ẩn...',cls:'primary',act:()=>{setScene(rollEvent());}});
-  if(ready&&tg)c.push({l:`⚡ Xuất quan đột phá → ${tg.name} (${Math.round(breakChance()*100)}%)`,cls:'primary',act:()=>{attemptBreak();afterAct();}});
+  if(ready&&tg)c.push({l:`⚡ Đột phá cảnh giới → ${tg.name} (quy trình)`,cls:'primary',act:()=>{setScene(sceneBreakthrough());}});
   if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập bí cảnh đang mở (cơ duyên & sát cơ)',cls:'primary',act:()=>{setScene(evSecretRealm());}});
   if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n}`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
   c.push({l:'🧘 Lui về tĩnh tu một thời gian',hint:'Thời gian trôi — có khi một biến cố tự tìm tới ngươi.',act:()=>{passTime(1,false);}});
@@ -1687,9 +1708,272 @@ function coDuyenScene(cd){if(!cd)return evFortune();const rr=DUYEN_RAR[cd.rar]||
     {l:'Bỏ qua — có những cơ duyên chỉ là bẫy trá hình.',act:()=>{S.duyenDone=S.duyenDone||{};S.duyenDone[cd.id]='skip';setResult(cd.skip||'Ngươi ngần ngừ, rồi quyết định bỏ qua. Trên đời có những cơ duyên là phúc, cũng có những cơ duyên là họa đội lốt — được mất, ai biết trước.');}}]};}
 function evCoDuyen(){const avail=(S.fated||[]).map(id=>CO_DUYEN.find(c=>c.id===id)).filter(cd=>cd&&!(S.duyenDone&&S.duyenDone[cd.id])&&S.ri>=(cd.min||0)&&(!cd.gate||cd.gate()));
   if(!avail.length)return evFortune();return coDuyenScene(RNG.pick(avail));}
+/* ============ DỊ VĂN LỤC — hàng trăm mảnh vụn chân tướng thế gian, mở dần khi phiêu bạt ============ */
+const BIVAN=[
+ // — Khai thiên & thượng cổ —
+ 'Trước khi có trời đất, chỉ có một quả trứng hỗn độn. Kẻ đập vỡ nó không phải để khai thiên, mà để thoát ra.',
+ 'Hồng Mông Đạo Tổ chia hỗn độn thành tam thiên thế giới — nhưng số ba nghìn ấy là giới hạn của một cái lồng, không phải của vũ trụ.',
+ 'Có một dòng khắc trên vách đá khai thiên: "Ta hối hận đã mở mắt cho chúng sinh."',
+ 'Thuở sơ khai, thời gian chảy hai chiều. Ai đó đã bẻ nó thành một chiều — để không ai quay về sửa sai.',
+ 'Ngôn ngữ đầu tiên của thế gian không dùng để nói, mà để ra lệnh cho vật chất. Nó đã bị cấm.',
+ 'Chín Đại Nguyên Tố khai thiên vốn là mười. Nguyên tố thứ mười — "Tự Do" — bị xóa khỏi vạn vật.',
+ 'Ba vầng nhật nguyệt trên trời từng là chín. Sáu vầng còn lại đã bị "thu hoạch".',
+ 'Bản đồ sao cổ nhất vẽ các chòm sao thành hình một chiếc lồng. Không ai để ý điều đó suốt vạn năm.',
+ 'Đại địa không tròn cũng không phẳng — nó là mặt trong của một quả cầu, và ta đang sống bên trong.',
+ 'Tiếng "sấm" đầu mùa thực ra là tiếng vỏ thế giới rạn nứt rồi tự vá lại.',
+ // — Chư thần & thần chiến —
+ 'Chư thần thượng cổ không tạo ra loài người. Họ nuôi loài người, như nông phu nuôi lúa.',
+ 'Cuộc "Thần Ma đại chiến" là dối trá. Thần và Ma đã liên thủ chống một kẻ thứ ba — và cùng thua.',
+ 'Vị thần đầu tiên phản bội đồng loại để đổi lấy trường sinh, cuối cùng bị nuốt đầu tiên.',
+ 'Phong Thần Bảng không phong thần — nó đánh dấu những kẻ sắp bị "gặt".',
+ 'Một vị chiến thần cổ tự chặt đầu mình để linh hồn không bị bắt lên trời. Xác ngài vẫn đứng gác một cấm khu.',
+ 'Các vị thần chết không tan biến — họ bị "cất kho" ở một nơi ngoài chín tầng trời.',
+ 'Đền thờ càng linh, thần trong đó càng không còn là thần — chỉ là một cái bẫy nguyện lực.',
+ 'Tế phẩm dâng lên thần linh không tới tay thần — chúng bị hút thẳng lên tầng ngoài cùng.',
+ 'Có một vị thần vô danh chuyên xóa tên các vị thần khác khỏi ký ức chúng sinh. Không ai nhớ nổi mặt ngài.',
+ 'Thần vị cao nhất không phải Thiên Đế, mà là "Kẻ Coi Ruộng" — chức danh không ai dám nhắc.',
+ // — Cổ Đế & Thập Đế —
+ 'Thập Đế Tranh Phong: mười Cổ Đế không đánh nhau vì ngôi vị. Họ tranh nhau quyền được chết trước khi bị gặt.',
+ 'Vị Cổ Đế "chiến thắng" bước lên rồi biến mất — ngài không phi thăng, ngài bị thu hoạch ngay trên đỉnh vinh quang.',
+ 'Mỗi Cổ Đế đều để lại một câu di ngôn giống nhau, chỉ khác cách nói: "Đừng đi hết con đường này."',
+ 'Có một Cổ Đế thứ mười một bị xóa khỏi lịch sử vì đã KHÔNG chịu mạnh lên — kẻ duy nhất thoát khỏi bàn cân.',
+ 'Đế binh của các Cổ Đế đều tự phản chủ vào phút cuối, như thể chúng biết chủ nhân sắp thành bữa ăn.',
+ 'Mộ Cổ Đế luôn được chôn hướng xuống lòng đất, không phải lên trời — họ chỉ đường thoát cho hậu nhân.',
+ 'Một Cổ Đế từng thử nuôi cả một thế giới yếu ớt để "kẻ trên trời" chê không thèm gặt. Kế hoạch ấy vẫn đang chạy.',
+ 'Cổ Đế mạnh nhất vạn cổ không hề chết — ngài tự phong ấn thành một phàm nhân, sống ẩn giữa chúng ta.',
+ 'Huyết mạch Cổ Đế bị săn lùng không vì sức mạnh, mà vì nó là "chìa khóa" mở một cánh cửa nào đó.',
+ 'Ngai vàng của Cổ Đế thực ra là một cái ghế hiến tế trá hình.',
+ // — Cấm khu & mộ địa —
+ 'Trong mọi cấm khu, thời gian chảy chậm lại — không phải phép màu, mà là để "hàng" chín từ từ.',
+ 'Hoang Cổ Cấm Khu chất đầy xác cường giả không phải vì họ chết ở đó, mà vì họ bị "vứt" về đó.',
+ 'Có một cấm khu mà bản đồ không thể vẽ — mỗi kẻ vào thấy một địa hình khác nhau, vì nó không có thật.',
+ 'Sinh Mệnh Cấm Khu không cấm sự sống — nó cấm cái chết. Kẻ vào đó không thể chết, cũng không thể ra.',
+ 'Dưới đáy mọi cấm khu đều có một cánh cửa giống hệt nhau, khóa từ phía bên kia.',
+ 'Cấm khu nguy hiểm nhất lại là nơi bình yên nhất — vì kẻ tạo ra nó không muốn ai bén mảng gần sự thật bên trong.',
+ 'Một số "kỳ trân" trong cấm khu là mồi nhử, được đặt để dụ kẻ đủ mạnh bước sâu hơn vào bẫy.',
+ 'Xác trong mộ cổ đôi khi cử động — không phải cương thi, mà là chủ nhân chưa thật sự "được phép" chết.',
+ 'Bia mộ trong Hoang Cổ toàn khắc một chữ duy nhất, bằng vô số thứ tiếng: "CHẠY".',
+ 'Cấm địa Hoàng Tuyền không dẫn xuống địa ngục — nó dẫn ra rìa cái lồng.',
+ // — Cái lồng / bầu trời giả / kẻ trên trời —
+ 'Bầu trời có thể "rung" nếu ngươi nhìn đủ lâu vào một điểm cố định lúc nửa đêm.',
+ 'Sao trên trời không di chuyển theo mùa — chúng được "vẽ lại" mỗi vạn năm bởi một bàn tay vô hình.',
+ 'Linh khí thiên địa đang cạn dần không phải tự nhiên — nó đang bị rút lên trên, đều đặn như vắt sữa.',
+ 'Chín tầng trời không phải chín cảnh giới cao dần — chúng là chín lớp song của một nhà tù.',
+ 'Phi thăng chưa bao giờ là "lên tiên" — nó chỉ là chuyển kẻ chín tới lò mổ tầng trên.',
+ 'Có một con mắt khổng lồ ở tầng ngoài cùng. Nó không chớp. Nó đã nhìn ngươi từ lúc ngươi chào đời.',
+ 'Kẻ trên bầu trời không ác cũng không thiện — với hắn, chúng sinh chỉ là mùa màng.',
+ 'Mỗi lần một thế giới "mạt pháp", đó là dấu hiệu nó vừa bị gặt xong, chờ gieo lại.',
+ 'Lời cầu nguyện, nguyện lực, hương khói — tất cả là "phân bón" nuôi cho vụ thu hoạch mập hơn.',
+ 'Có kẻ tính ra: cứ mỗi 129.600 năm, cả một tầng thế giới bị xóa sạch và làm lại.',
+ 'Cái lồng có một khe hở duy nhất. Nó đã gần liền lại. Chỉ một kẻ từng chui qua.',
+ 'Thứ giữ cho bầu trời không sập là Chín Cột Thần — và một cột đã gãy.',
+ 'Nếu cả một thế giới cùng ngừng tu luyện, "kẻ trên trời" sẽ bỏ đói — nhưng chưa thế giới nào làm được.',
+ 'Định mệnh, khí vận, thiên mệnh — chỉ là những cái tên mỹ miều cho "quyền chọn giống" của người nông dân.',
+ 'Có một tần số âm thanh khiến "bầu trời giả" hiện rõ đường viền. Kẻ nghe được nó đều phát điên hoặc biến mất.',
+ // — Trường sinh & sinh mệnh —
+ 'Trường sinh bất tử là căn bệnh nan y: thân bất hoại nhưng hồn mục ruỗng thành cái xác biết thở.',
+ 'Càng gần trường sinh, thiên đạo càng ghét ngươi — vì hàng chín quá thì khó gặt.',
+ 'Thọ nguyên không phải giới hạn tự nhiên — nó là "hạn dùng" được cài sẵn để không ai sống đủ lâu mà hiểu ra.',
+ 'Đại Đế cũng chết. Đó là bí mật lớn nhất mà mọi điển tịch đều bôi xóa.',
+ 'Mỗi viên trường sinh đan đều lấy thọ nguyên của kẻ khác — trường sinh là trò chơi tổng bằng không.',
+ 'Có một cách trường sinh thật sự: ngừng mạnh lên, ẩn mình, để bị lãng quên. Nhưng không tu sĩ nào cam lòng.',
+ 'Kẻ bất tử lâu nhất trong lịch sử đã dành ngàn năm cuối chỉ để cầu được chết mà không được.',
+ 'Luân hồi không phải vòng tuần hoàn tự nhiên — nó là cỗ máy nghiền hồn thành năng lượng.',
+ 'Mỗi lần "trùng sinh", ngươi để lại một mảnh hồn kẹt bên bờ Vong Xuyên. Chuyển thế nhiều, ngươi càng khuyết.',
+ 'Bỉ ngạn hoa nở đỏ nơi ranh giới luân hồi vì nó uống máu của những linh hồn bị nghiền.',
+ // — Yêu / Ma / Long / Vu / Quỷ bí sử —
+ 'Yêu tộc không bị nhân tộc đánh bại — họ bị một Yêu Đế bán đứng để đổi lấy trường sinh.',
+ 'Long tộc không tuyệt diệt — họ tự phong ấn cả chủng tộc để giấu một quả trứng khỏi "kẻ trên trời".',
+ 'Vu tộc bị tận diệt vì lý do đơn giản: họ không có nguyên thần, nên thiên đạo không khống chế được.',
+ 'Ma tộc là "huyết duệ" được Ma Tổ gieo rắc làm chìa khóa sống, chờ ngày mở phong ấn cho hắn.',
+ 'U Quỷ tộc nhìn thấu cỗ máy luân hồi — nên bị cả chính đạo lẫn thiên đạo cùng truy diệt.',
+ 'Ma Tổ bị phong ấn dưới Hoàng Tuyền không phải kẻ ác — hắn là kẻ đầu tiên định phá cái lồng, nên bị nhốt.',
+ 'Yêu đan quý không vì bổ — vì trong đó ngưng tụ "bản năng phản kháng" mà con người đã mất.',
+ 'Có một chủng tộc thứ sáu bị xóa hoàn toàn khỏi lịch sử: tộc đã suýt phá được vỏ thế giới.',
+ 'Chân long thượng cổ ngủ dưới đáy mọi đại dương, chờ tiếng gọi của quả trứng cuối cùng.',
+ 'Ma khí và Phật quang cùng một nguồn — chỉ khác cách kẻ trên trời dán nhãn.',
+ // — Dị vật & pháp bảo huyền thoại —
+ 'Cửu Đỉnh trấn khí vận thiên hạ thất lạc từ thượng cổ — kẻ gom đủ chín đỉnh nắm vận mệnh cả một giới.',
+ 'Có một chiếc gương cổ soi ra "ngươi ở thế giới chưa bị nhốt". Nhìn vào nó là muốn đập vỡ mọi thứ.',
+ 'Một cây bút cổ có thể viết lại quy luật — nhưng mỗi nét viết rút một năm dương thọ của cả một thế giới.',
+ 'Hồng Mông Tổ Lô là cái lò đã đúc ra mọi thế giới. Nó nguội rồi, nhưng ai thắp lại được sẽ đúc thế giới mới.',
+ 'Có một chiếc chuông cổ, gõ lên thì mọi kẻ đang bị thiên đạo theo dõi đều tạm "tàng hình".',
+ 'Pháp bảo mạnh nhất không phải để giết — mà là một chiếc chìa khóa hình kiếm, đúc dở, để mở vỏ lồng.',
+ 'Một số "sinh mệnh pháp bảo" thực ra là linh hồn cường giả bị nhốt vào vật, không siêu thoát được.',
+ 'Trữ vật giới chỉ cổ nhất chứa không phải bảo vật — mà là một cường giả đang tự thu nhỏ để trốn con mắt trời.',
+ 'Có một tấm bản đồ vẽ đường ra khỏi tam thiên thế giới. Ai cầm nó quá bảy ngày đều bị "tai nạn".',
+ 'Vẫn thạch thiên ngoại rơi xuống không phải ngẫu nhiên — chúng là mảnh vỡ của một thế giới đã bị gặt sạch.',
+ // — Tông môn & thế lực bí sử —
+ 'Mọi tông môn cổ đều có một Cấm Tầng — giấu chung một bí mật: đường thoát khỏi lồng.',
+ 'Những đời tổ sư bị đục khỏi bia là các vị đã giác ngộ chân tướng và bị thanh trừng.',
+ 'Đại tông môn không tồn tại để nâng đỡ đệ tử — chúng là "trại chăn" gom thiên tài cho dễ thu hoạch.',
+ 'Có một tông môn từng phản Thiên Đạo, bị xóa sổ trong một đêm, tên cũng bị cấm nhắc.',
+ 'Bảng xếp hạng thiên tài các đời thực chất là danh sách "hàng chín sớm".',
+ 'Thánh địa nào cũng dựng trên một long mạch — và long mạch nào cũng là một ống dẫn hút linh khí lên trên.',
+ 'Một thương hội bí ẩn buôn bán thứ không nên tồn tại: ký ức, tên thật, và cả "một ngày không bị theo dõi".',
+ 'Có một tổ chức vô danh chuyên ám sát bất kỳ ai sắp chạm tới chân tướng thế giới.',
+ 'Lệnh bài trấn phái của các tông môn cổ ghép lại thành một tấm phù mở một cánh cửa duy nhất.',
+ 'Kẻ lập ra hầu hết các đại tông đều là cùng một người, dưới vô số danh tính khác nhau.',
+ // — Thiên cơ vụn & lời sấm —
+ 'Một lời sấm cổ: "Khi cột thần thứ nhất gãy, kẻ được chọn sẽ sinh ra nơi tăm tối nhất."',
+ 'Tướng sư giỏi nhất thiên hạ bấm quẻ về tương lai rồi tự chọc mù mắt — "có những thứ không nên thấy".',
+ 'Có một con số bị nguyền: kẻ nào tu tới đúng cảnh giới ấy đều đột tử. Nó nằm ngay dưới ngưỡng trường sinh.',
+ 'Giấc mơ lặp lại về một ngai vàng giữa mây là dấu hiệu ngươi mang ký ức của một kẻ đã bị gặt.',
+ 'Kẻ nào đếm được số sao thật trên trời sẽ phát hiện chúng ít hơn nhiều so với truyền thuyết.',
+ 'Một câu hỏi cổ khắc trên mọi cánh cửa cấm: "Ngươi muốn mạnh, hay muốn tự do? Chỉ được chọn một."',
+ 'Trẻ sinh vào ngày nhật thực toàn phần đôi khi mang "lỗi hệ thống" — thứ mà thiên đạo khó kiểm soát.',
+ 'Có những khoảnh khắc déjà-vu không phải trùng hợp — đó là lúc thế giới vừa được "tua lại" một đoạn.',
+ 'Lời cuối của mọi bậc đại triệt đại ngộ đều na ná nhau: một tiếng cười, rồi im lặng vĩnh viễn.',
+ 'Kẻ hiểu ra tất cả thường không nói gì nữa — vì nói ra là chết, mà im lặng là một loại điên.',
+ // — Thế giới tầng sâu & thực tại —
+ 'Mỗi giới cao hơn không phải "trên" giới thấp — nó là một lớp thực tại "thật hơn", và tù ngục "chặt hơn".',
+ 'Ở tầng thực tại đủ sâu, pháp tắc lộ diện thành chữ viết lơ lửng — ngôn ngữ của kẻ đã lập trình thế giới.',
+ 'Quy Khư là "thùng rác" của cái lồng — nơi các thế giới, linh hồn và quy luật lỗi thời bị vứt bỏ.',
+ 'Thứ gì rơi vào Quy Khư mà không tan sẽ "tồn tại ngoài tầm kiểm soát" — tự do tuyệt đối, hoặc hư vô tuyệt đối.',
+ 'Có một "sa bàn" điều khiển tam thiên thế giới; tắt một hạt sáng là xóa một thế giới thật.',
+ 'Không gian liệt phùng để lộ các "ngươi" ở dòng thực tại khác — cùng một quân cờ, ván cờ song song.',
+ 'Càng lên cao, ngươi càng thấy thế giới "giả" đi — không phải ảo giác, mà là ngươi đang tiến gần lớp vỏ.',
+ 'Tầng thực tại ngoài cùng không có bầu trời — chỉ có một sự "rộng lớn" khiến thần hồn muốn vỡ.',
+ 'Có kẻ nói: chết thật sự không phải hết — chết là bị "gỡ" khỏi ván cờ này để dùng cho ván khác.',
+ 'Chân thực tại nằm ngoài cả Vô Hạn Ngoại Vực — và chưa ai sống sót trở về để kể nó là gì.',
+ // — Nhân sinh & đạo tâm (chất chiêm nghiệm) —
+ 'Kẻ mạnh nhất chưa chắc đi xa nhất — kẻ đi xa nhất là kẻ dám dừng lại đúng lúc.',
+ 'Đạo tâm vô tình giúp ngươi bất bại, nhưng một kẻ không còn gì để mất thì thắng cả thiên hạ cũng bằng thua.',
+ 'Cô độc là cái giá mặc định của con đường này — càng cao càng ít người còn có thể đứng cạnh ngươi.',
+ 'Mỗi cơ duyên đều có giá. Thứ tới quá dễ dàng, cái giá thường được giấu ở phần sau.',
+ 'Nhân quả không mất đi — nó chỉ chờ ngươi đủ cao để cú trả giá đủ đau.',
+ 'Kẻ tu tiên sợ nhất không phải cái chết, mà là sống đủ lâu để thấy mọi thứ mình yêu tan thành cát bụi.',
+ 'Có kẻ thành tiên mà lòng đã chết từ lâu; có kẻ chết phàm mà đạo tâm sáng hơn cả nhật nguyệt.',
+ 'Một niệm thành ma, một niệm thành phật — và phần lớn thời gian, ngươi ở lưng chừng giữa hai bờ.',
+ 'Kẻ khắc tên mình lên bia đá mong bất hủ; kẻ thật sự bất hủ chẳng cần ai nhớ tên.',
+ 'Con đường không có người thắng. Chỉ có kẻ chết sớm và kẻ chết muộn. Vấn đề là ngươi sống thế nào ở khoảng giữa.',
+ // — Thế lực & tông môn bí sử (đợt 2) —
+ 'Thanh Vân Tông nổi danh chính đạo, nhưng tầng hầm sâu nhất của họ nuôi một thứ ăn linh hồn đệ tử phản đồ.',
+ 'Huyết Ma Giáo không thờ Ma Tổ — họ thờ chính "cơn đói" trong huyết mạch mình.',
+ 'Vạn Bảo Lâu buôn mọi thứ, kể cả bí mật của khách hàng — món hàng đắt nhất là sự lãng quên.',
+ 'Đan Vương Các mỗi trăm năm "mất tích" một đại sư — họ không chết, họ bị chính đan của mình luyện thành nguyên liệu.',
+ 'Có một tông môn ẩn thế chỉ nhận đệ tử là kẻ đã từng chết một lần.',
+ 'Thiên Cơ Các bán lời tiên tri, nhưng mỗi lời đúng lại rút một phần thọ nguyên của chính người bói.',
+ 'Kiếm Trủng chôn vạn thanh kiếm của vạn kiếm tu đã chết — đêm trăng, chúng tự rung lên tìm chủ mới.',
+ 'Một môn phái từng hưng thịnh nhờ một cổ tỉnh linh khí — tới khi phát hiện đáy tỉnh là một con mắt.',
+ 'Các đại tông môn ngầm chia nhau "mùa thu hoạch" thiên tài, như chia ruộng.',
+ 'Có một Thánh Địa mà mọi đệ tử đều mỉm cười — vì kẻ nào cau mày đều biến mất trong đêm.',
+ 'Lệnh bài tối cao của mọi tông môn khắc cùng một ký hiệu cổ, không ai còn biết nghĩa của nó.',
+ 'Tàng Kinh Các tầng chín không khóa bằng cấm chế — nó khóa bằng một lời thề mà kẻ vào phải quên tên mình.',
+ 'Có một tông chủ đã chết ba trăm năm nhưng vẫn "ra lệnh" — không ai dám nói ngài không còn sống.',
+ 'Một đạo thống cổ dạy đệ tử: "Đừng bao giờ tu tới cảnh giới cao nhất — đó là vạch đích của lò mổ."',
+ 'Mọi bảng phong thần của các tông môn, ghép lại, vẽ nên bản đồ tới cùng một nơi.',
+ // — Dị thú & yêu thú bí sử —
+ 'Chân long không phải rồng — rồng chỉ là hậu duệ pha loãng. Chân long lớn bằng một dãy núi và đang ngủ.',
+ 'Kỳ lân xuất thế báo điềm lành, nhưng lần cuối nó xuất hiện là ngay trước khi một thế giới bị xóa.',
+ 'Có một loài chim chỉ hót một lần trong đời — vào đúng khoảnh khắc chủ nhân nó sắp chết.',
+ 'Cửu Vĩ Hồ tu ngàn năm không phải để thành người — mà để hiểu vì sao người lại muốn thành tiên.',
+ 'Thao Thiết nuốt vạn vật không biết no, vì bụng nó thông thẳng tới Quy Khư.',
+ 'Huyền quy cõng núi thọ vô lượng — nhưng nó cầu chết từng ngày, chỉ là không ai giết nổi.',
+ 'Yêu thú sợ nhất không phải tu sĩ, mà là những đêm "bầu trời rung" — khi đó cả rừng nín thở.',
+ 'Có một con thú vô hình chuyên ăn ký ức — nơi nó đi qua, cả một tộc quên mất mình từng tồn tại.',
+ 'Cương thi cổ không phải xác chết biết đi — chúng là kẻ bị tước quyền được chết.',
+ 'Bằng Điểu bay một cái vượt chín vạn dặm, nhưng chưa từng bay tới rìa trời — vì ở đó có một tấm lưới.',
+ 'Linh thú càng thông minh càng buồn, vì chúng hiểu ra sự thật sớm hơn con người.',
+ 'Có một giống nhện cổ dệt tơ bằng thời gian — kẻ vướng vào già đi trong chớp mắt.',
+ 'Chuột địa cổ đào hang xuyên các tầng thế giới — theo chúng, có thể tới nơi không nên tới.',
+ 'Yêu đan của lão yêu vạn năm đôi khi chứa cả ký ức của nó — nuốt vào, ngươi mơ giấc mơ của một con thú.',
+ 'Thần thú tứ phương trấn bốn hướng thế giới thực ra là bốn cái chốt khóa cửa, không phải thần hộ vệ.',
+ // — Pháp khí, đan dược & dị vật huyền thoại —
+ 'Có một cây bút lông chép sử — thứ nó viết ra sẽ thành sự thật, nên nó bị khóa trong bảy tầng cấm.',
+ 'Cửu Chuyển Kim Đan có thật, nhưng viên cuối cùng đã được dùng để cải tử hoàn sinh một kẻ đáng lẽ nên chết.',
+ 'Một chiếc la bàn cổ không chỉ hướng Bắc — nó chỉ về phía khe hở của cái lồng.',
+ 'Có một tấm gương chỉ soi ra "con người thật" của kẻ đứng trước nó. Đa số đập vỡ nó ngay lập tức.',
+ 'Đế binh không do người rèn — chúng tự sinh ra khi một Cổ Đế chết, kết tinh từ bất cam của ngài.',
+ 'Nghịch Mệnh Chung gõ một tiếng đảo ngược một cái chết — nhưng luật trời sẽ đòi lại gấp mười.',
+ 'Có một hạt giống chỉ nảy mầm trên máu của mười vạn người — cây mọc lên nở ra một quả trường sinh.',
+ 'Vạn Độc Đỉnh luyện được độc giết thần — nhưng ai luyện thành đều tự uống nó, vì không chịu nổi thứ mình tạo ra.',
+ 'Một cây đàn cổ đánh lên khiến thiên địa ngừng lại ba nhịp thở — đủ để giết, hoặc để trốn.',
+ 'Có một viên đan "quên" — nuốt vào ngươi quên hết đau khổ, cùng với tất cả những gì làm ngươi là ngươi.',
+ 'Trấn thế chi bảo của các thế giới đều là mảnh vỡ của cùng một pháp bảo đã tan trong buổi khai thiên.',
+ 'Sinh Tử Bút viết tên ai lên trang trắng, kẻ đó sống; lên trang đen, kẻ đó chết — nhưng bút không có nắp đậy.',
+ // — Thiên văn & dị tượng —
+ 'Sao chổi không báo điềm — nó là "kẻ thu hoạch" đi tuần, đếm xem mùa màng đã chín chưa.',
+ 'Nhật thực toàn phần là khoảnh khắc "con mắt trên trời" chớp — sinh linh ra đời lúc đó nằm ngoài sổ sách.',
+ 'Mỗi ngàn năm có một đêm không sao — đó là đêm bầu trời giả được "vá lại".',
+ 'Cực quang nơi Bắc Hoang là ánh sáng rò rỉ từ bên ngoài cái lồng.',
+ 'Có những ngôi sao đã tắt từ lâu nhưng ánh sáng vẫn tới — cũng như những thế giới đã bị xóa mà chúng sinh chưa hay.',
+ 'Trăng máu không phải điềm gở tự nhiên — đó là lịch báo mùa "gặt" của một vùng.',
+ 'Mưa sao băng là một thế giới khác đang vỡ vụn, mảnh của nó rơi lạc sang đây.',
+ 'Có một chòm sao hình chiếc chìa khóa, chỉ hiện đúng một đêm mỗi vạn năm, chỉ đường tới lối thoát.',
+ 'Sương mù dày bất thường đôi khi là "màn che" để thứ gì đó di chuyển giữa các tầng thực tại.',
+ 'Khi linh khí một vùng đột nhiên đặc lại, đó không phải phúc — đó là "vỗ béo" trước khi thu.',
+ 'Bóng tối giữa các vì sao không rỗng — có thứ sống trong đó, và nó không thích bị nhìn.',
+ 'Ngày dài hơn đêm hay ngược lại không do mùa — do "kẻ trên trời" điều chỉnh nhịp nuôi.',
+ // — Cấm thuật & lời nguyền —
+ 'Đoạt xá không phải chiếm thân xác — nó là xé linh hồn chủ cũ ra làm phân bón cho linh hồn mới.',
+ 'Có một cấm thuật hồi sinh người chết — nhưng thứ trở về không bao giờ là người đã mất.',
+ 'Nguyền chú mạnh nhất không giết ngươi — nó khiến mọi kẻ ngươi yêu chết thay ngươi.',
+ 'Cấm thuật "trường sinh giả" giữ ngươi trẻ mãi bằng cách đóng băng ngươi trong một khoảnh khắc lặp vô tận.',
+ 'Có kẻ khắc tên kẻ thù lên xương mình để mối hận không bao giờ nguôi — đến khi quên mất mình là ai.',
+ 'Huyết tế đổi sức mạnh có thật — nhưng máu ngươi dâng lên không tới thần, nó tới "kẻ trên trời".',
+ 'Một cấm thuật cho phép nhìn thấy tương lai — cái giá là không bao giờ được sống trong hiện tại nữa.',
+ 'Thuật nhiếp hồn khống chế được vạn người, trừ vu tộc và kẻ điên — hai loại "ngoài sổ".',
+ 'Có một lời nguyền cổ: "Kẻ nào nói ra chân tướng sẽ bị lãng quên bởi tất cả những ai từng biết hắn."',
+ 'Cấm thuật đổi mệnh chuyển tai họa sang người khác — nhưng nhân quả có trí nhớ rất dai.',
+ 'Thuật phân thân cắt linh hồn thành nhiều mảnh — mỗi mảnh dần quên rằng nó chỉ là một phần.',
+ 'Có một câu thần chú mà đọc ngược lại sẽ mở một cánh cửa — và không ai từng đóng được nó.',
+ // — Nhân vật huyền thoại vô danh —
+ 'Có một kẻ quét rác ở một tiểu thành đã sống bốn trăm năm — không ai để ý, kể cả thiên đạo.',
+ 'Người mạnh nhất thiên hạ không có tên trên bất kỳ bảng nào — vì ai biết tên hắn đều đã chết.',
+ 'Một lão ăn mày lang thang khắp các thế giới, luôn xuất hiện trước khi một thiên tài sắp bị gặt.',
+ 'Có một nữ tử ngồi câu cá bên Vong Xuyên vạn năm — nàng câu không phải cá, mà là những linh hồn đáng cứu.',
+ 'Kẻ đầu tiên hỏi "tại sao phải tu tiên" đã bị xóa khỏi lịch sử — nhưng câu hỏi thì không xóa được.',
+ 'Một thiếu niên vô danh từng đứng trước "con mắt trên trời" và không quỳ — rồi biến mất, để lại một nụ cười.',
+ 'Có một kẻ đi ngược đường tu: từ đại năng tự phế thành phàm nhân, và đó là kẻ hạnh phúc nhất từng có.',
+ 'Người chép sử thật sự của thiên hạ giấu mình làm một tên bán sách rong, chép sự thật vào những trang không ai đọc.',
+ 'Một vị thầy thuốc quê mùa từng chữa cho một Cổ Đế hấp hối — và giữ bí mật ấy tới lúc chết.',
+ 'Có kẻ tu thành tiên rồi tự nguyện quay về làm phàm nhân, vì "trên đó chẳng có gì ngoài cô độc".',
+ 'Một đứa trẻ ở thôn nghèo vẽ đúng bản đồ chín tầng trời mà chưa từng rời làng — rồi quên sạch khi lớn lên.',
+ 'Kẻ giữ khe hở cái lồng không phải anh hùng — chỉ là một người quá mệt để đóng nó, và quá tử tế để bước qua một mình.',
+ // — Địa danh vụn khắp thiên hạ —
+ 'Ở Bắc Hoang có một thành băng nơi thời gian đóng băng — dân trong đó vẫn sống ngày họ chết.',
+ 'Nam Cương có một đầm lầy nuốt cả tông môn — mỗi đêm vọng lên tiếng tụng kinh của kẻ đã chìm.',
+ 'Đông Hải sâu nhất có một cung điện sáng đèn — không ai bơi tới nơi mà còn nhớ đường về.',
+ 'Tây Vực có một sa mạc mà cát là tro của một nền văn minh bị "gặt" sạch.',
+ 'Giữa Trung Vực có một tòa tháp không cửa, cao vô tận — kẻ leo lên không bao giờ tới đỉnh, cũng không rơi xuống.',
+ 'Có một thôn nhỏ mà mọi đứa trẻ sinh ra đều mang cùng một vết bớt hình chiếc chìa khóa.',
+ 'Một hẻm núi vọng lại lời của kẻ đã chết — nếu ngươi gọi đúng tên, đôi khi có tiếng đáp.',
+ 'Nơi tận cùng quan đạo cổ có một quán trọ luôn sáng đèn, chủ quán chờ một người khách đã lỡ hẹn vạn năm.',
+ 'Có một hòn đảo chỉ hiện ra với kẻ sắp chết — trên đó, người ta được chọn lại một lần.',
+ 'Dưới kinh thành cổ nhất có một mê cung xương, mỗi khúc xương khắc tên một kẻ từng tìm đường ra.',
+ 'Một ngọn núi lộn ngược treo trên trời một vùng — không ai biết nó rơi lên từ đâu.',
+ 'Có một giếng cạn ở mọi thôn nghèo trên khắp các thế giới, và tất cả thông xuống cùng một nơi.',
+ 'Vực Tử Vong nơi Hoang Cổ không có đáy — thả một hòn đá xuống, vạn năm sau vẫn chưa nghe tiếng chạm.',
+ 'Có một khu chợ chỉ mở lúc giao thời hai kỷ nguyên, bán những thứ của thế giới đã mất.',
+ 'Nơi ba biên giới giao nhau có một tảng đá khắc: "Đi tiếp là chết, quay lại là hèn, đứng yên là khôn."',
+ // — Thân thể, tu luyện & chiêm nghiệm sâu —
+ 'Đan điền không phải bể chứa linh khí — nó là một cánh cửa nhỏ, và tu luyện là học cách hé mở nó.',
+ 'Nguyên thần rời thể không phải xuất hồn — đó là ngươi thò một ngón tay ra ngoài giấc mơ của thế giới.',
+ 'Kinh mạch tắc không phải bệnh — đôi khi là cơ thể tự bảo vệ ngươi khỏi thứ ngươi chưa nên chạm.',
+ 'Lôi kiếp rèn thân là dối trá — nó rèn ngươi thành thứ dễ "thu hoạch" hơn.',
+ 'Càng luyện thần thức mạnh, ngươi càng "hiện rõ" trên rada của kẻ trên trời.',
+ 'Bế quan trăm năm không phải để mạnh lên — với người khôn, đó là để tàng hình khỏi thời cuộc.',
+ 'Đạo tâm không phải ý chí — nó là câu trả lời cho câu hỏi "ngươi sẵn sàng đánh đổi gì".',
+ 'Tâm ma không phải kẻ thù bên ngoài — nó là phần ngươi biết sự thật nhưng không dám thừa nhận.',
+ 'Ngộ đạo không phải hiểu thêm — thường là buông bớt một điều ngươi tưởng là đúng.',
+ 'Thọ nguyên dài là lời chúc độc địa nhất — sống đủ lâu để mất tất cả, rồi mất cả lý do để sống.',
+ 'Kẻ tu tới đỉnh thường phát hiện đỉnh chỉ là một bậc thang, và cầu thang thì dẫn vào lò.',
+ 'Có một cảnh giới không tên nằm giữa hai cảnh giới — kẻ kẹt ở đó thấy được cả hai bờ, và không thuộc về đâu.',
+ 'Cái chết của một tu sĩ giải phóng linh khí cả đời tích lũy — và thứ gì đó luôn ở đó để hứng lấy.',
+ 'Trường sinh thật sự có lẽ không phải sống mãi — mà là được chọn khi nào dừng lại.',
+ 'Mỗi lần ngươi mạnh lên, thế giới lại bớt "thật" đi một chút trong mắt ngươi — cho tới khi ngươi thấy cả bức màn.',
+];
+function evBiVan(){var locked=[];for(var i=0;i<BIVAN.length;i++)if((S.bivan||[]).indexOf(i)<0)locked.push(i);
+  if(!locked.length)return evFortune();var idx=RNG.pick(locked);(S.bivan=S.bivan||[]).push(idx);
+  if(RNG.chance(0.5))S.dao=Math.min(100,S.dao+1);else S.cmp=Math.round((S.cmp+0.01)*100)/100;
+  return{title:'DỊ VĂN · Một Mảnh Chân Tướng',narr:`Giữa chốn phiêu bạt, ngươi vô tình chạm phải một mảnh bí văn cổ — một sự thật vụn vỡ về thế gian này:\n\n"${BIVAN[idx]}"\n\n(Dị Văn Lục: ${S.bivan.length}/${BIVAN.length} — ghi lại ở tab Nhân Vật)`,choices:[
+    {l:'Ghi khắc vào tâm khảm.',cls:'primary',act:()=>setResult('Ngươi khắc mảnh dị văn này vào ký ức. Từng mảnh nhỏ, một ngày sẽ ghép thành bức tranh lớn về chân tướng của cái thế giới này.')}]};}
 function rollEvent(){worldPulse();
   // CƠ DUYÊN ĐỊNH MỆNH — bộ cơ duyên riêng của nhân vật, mở dần thành truyện
   if((S.fated||[]).length&&RNG.chance(0.08))return evCoDuyen();
+  // DỊ VĂN — mảnh vụn chân tướng thế gian
+  if(RNG.chance(0.08))return evBiVan();
   // nhân quả: nếu có nợ máu, đôi khi bị báo thù
   const debts=S.ledger.filter(x=>x.n<=-2&&(x.tag.includes('giết')||x.tag.includes('cướp')||x.tag.includes('phản')||x.tag.includes('tà')||x.tag.includes('hắc')));
   if(debts.length&&RNG.chance(Math.min(0.5,0.15+debts.length*0.08)))return evRevenge();
@@ -1851,8 +2135,10 @@ function renderStatus(){const el=$('#status');if(!S){el.style.display='none';ret
   <div class="st-grid">
    <div><b>Tuổi</b>${Math.floor(S.age)}</div>
    <div><b>Nguyên thần</b>${Math.floor(S.soul)}</div>
+   <div><b>Ngộ tính</b>${ngoTinh()}</div>
    <div><b>Linh thạch</b>${fmtExp(Math.log10(Math.max(1,S.linhThach)))}</div>
    <div><b>Đạo tâm</b>${Math.round(S.dao)}</div>
+   <div><b>Căn cơ</b>${S.foundation||0} tầng</div>
    <div class="${S.taint>30?'bad':S.taint>15?'warn':''}"><b>Chướng tính</b>${Math.round(S.taint)}</div>
    <div><b>Khí vận</b>${S.luckShown?esc(l.n):'?'}</div>
    <div class="${S.karma<0?'bad':S.karma>0?'good':''}"><b>Nhân quả</b>${S.karma}</div>
@@ -1893,7 +2179,7 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Linh căn:</b> ${S.rootShown?`${esc(S.root.n)} ${S.root.pham?pham(S.root.pham):''} <span class="muted">(tốc tu ×${S.root.spd})</span><br><span class="muted" style="font-size:.8rem">${esc(S.root.d)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Thể chất:</b> ${S.tcShown?`${esc(S.tc.n)} (Phẩm ${S.tc.t}) — ${esc(S.tc.d)}<br><span class="muted" style="font-size:.78rem">Buff: ${esc(buffs)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Khí vận:</b> ${S.luckShown?esc(l.n)+' — '+esc(l.d):'<i>chưa rõ</i>'}</p>
-   <p><b>Ngộ tính:</b> ×${(S.cmp).toFixed(2)} · <b>Đạo tâm:</b> ${Math.round(S.dao)} · <b>Nguyên thần:</b> ${Math.floor(S.soul)}${S.soul<1?' <span class="warn">(chưa luyện — dễ chết vì công kích linh hồn!)</span>':''}</p>
+   <p><b>Ngộ tính:</b> ${ngoTinh()} <span class="muted">(×${(S.cmp).toFixed(2)} tốc ngộ)</span> · <b>Đạo tâm:</b> ${Math.round(S.dao)} · <b>Nguyên thần:</b> ${Math.floor(S.soul)}${S.soul<1?' <span class="warn">(chưa luyện — dễ chết vì công kích linh hồn!)</span>':''} · <b>Căn cơ:</b> ${S.foundation||0} tầng</p>
    <p><b>Công pháp đang tu:</b> ${S.tech?esc(S.tech.name)+' '+pham(S.tech.grade)+(S.tech.giaiName?' <span class="muted">'+esc(S.tech.giaiName)+'</span>':'')+(S.tech.tech?' <span class="muted" style="font-size:.8rem">['+esc(S.tech.tech)+']</span>':''):'<i>không</i>'}</p>
    <p><b>Tông môn:</b> ${S.sect?`${esc(S.sect.name)} <span class="muted">(${esc(S.sect.tier)} ${esc(S.sect.type)})</span> · <b>${esc(S.sect.posName)}</b> · cống hiến ${S.sect.contrib} · tu ×${sectCultBonus().toFixed(2)}${S.sect.also&&S.sect.also.length?'<br><span class="muted" style="font-size:.78rem">Kiêm tu: '+esc(S.sect.also.join(', '))+'</span>':''}<br><span class="muted" style="font-size:.78rem">${esc(S.sect.typeDesc)}</span>`:'<i>tán tu (không tông môn)</i>'}</p>
    <p><b>Chức nghiệp:</b> ${S.prof?`${PROF_RANK[S.prof.rankId]} ${esc(S.prof.n)} <span class="muted">(thuần thục ${S.prof.xp}/${profRankReq(S.prof.rankId)})</span>`:'<i>chưa có nghề phụ</i>'}</p>
@@ -1929,6 +2215,8 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    ${(()=>{const fated=(S.fated||[]);if(!fated.length)return '';const got=fated.filter(id=>S.duyenDone&&S.duyenDone[id]==='got').length;const rows=fated.map(id=>{const cd=CO_DUYEN.find(c=>c.id===id);if(!cd)return '';const st=S.duyenDone&&S.duyenDone[id];const rr=DUYEN_RAR[cd.rar];const mark=st==='got'?'✦':st==='skip'?'✗':(S.ri>=(cd.min||0)?'◌':'·');const col=st==='got'?'color:var(--gold)':st==='skip'?'color:var(--muted);text-decoration:line-through':'';const tag=st==='got'?'':st==='skip'?'':(S.ri<(cd.min||0)?' · chưa tới':' · đang chờ');return `<div style="margin:2px 0;${col}"><span style="color:${rr.c}">●</span> ${mark} ${esc(cd.n)} <span class="muted" style="font-size:.7rem">(${rr.n}${tag})</span>${st==='got'?'<div class="muted" style="font-size:.71rem;font-style:italic;margin-left:14px">'+esc(cd.s)+'</div>':''}</div>`;}).join('');return `<div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">🌠 Cơ Duyên Bạc — số mệnh riêng của ngươi (${got}/${fated.length} đã đắc)</div>
    <div style="font-size:.76rem;line-height:1.5">${rows}</div>
    <div class="muted" style="font-size:.71rem;margin-top:3px">Thiên Đạo "định" cho mỗi nhân vật một bộ cơ duyên khác nhau (rút từ ${CO_DUYEN.length} cơ duyên). Chúng hé lộ dần khi ngươi tu tiến & phiêu bạt — nắm hay bỏ là ở ngươi.</div>`;})()}
+   ${(()=>{const bv=(S.bivan||[]).slice().sort((a,b)=>a-b);const rows=bv.map(i=>BIVAN[i]?'<div style="margin:2px 0">◈ '+esc(BIVAN[i])+'</div>':'').join('');return `<div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">◈ Dị Văn Lục — mảnh vụn chân tướng thế gian (${bv.length}/${BIVAN.length})</div>
+   <div style="font-size:.74rem;line-height:1.5;max-height:260px;overflow:auto;border-left:2px solid var(--line);padding-left:8px">${rows||'<span class="muted">Chưa khám phá dị văn nào — hãy phiêu bạt khắp thiên hạ, sự thật nằm rải rác trong từng ngóc ngách.</span>'}</div>`;})()}
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">📜 Sử · Kỷ Nguyên (từ khai thiên đến hiện tại)</div>
    <div style="font-size:.74rem;line-height:1.5">${ERAS.map(e=>`<div style="margin:2px 0"><b>${esc(e[0])}</b> — <span class="muted">${esc(e[1])}</span></div>`).join('')}</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">🌀 <b>Tầng thực tại hiện tại</b> (giới cấp ${S.world.tier}/${WORLDS.length}): ${esc(layer)}<br><i>Mỗi giới cao hơn là một lớp thực tại sâu hơn — và một tầng nguy hiểm hơn. Càng gần trường sinh, cả thế giới càng muốn nghiền ngươi.</i></div>
