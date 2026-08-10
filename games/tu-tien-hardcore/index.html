@@ -17,23 +17,19 @@
 html,body{background:var(--ink);color:var(--txt)}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;font-size:15px;max-width:780px;margin:0 auto;min-height:100vh;padding:10px 10px 74px;position:relative;z-index:1}
 /* ===== NỀN TRANH THỦY MẶC (SVG + hiệu ứng linh khí) ===== */
-#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
-   radial-gradient(120% 80% at 50% -10%, #16233b 0%, #0d1424 42%, #080a10 100%);}
-#bg .moon{position:absolute;top:7%;left:50%;transform:translateX(-50%);width:150px;height:150px;border-radius:50%;
-   background:radial-gradient(circle at 38% 35%, #fff6e0 0%, #f0d69a 45%, #caa25e 72%, rgba(180,140,80,0) 73%);
-   box-shadow:0 0 80px 30px rgba(233,189,116,.14),0 0 160px 60px rgba(120,150,210,.08);opacity:.85;animation:moonPulse 9s ease-in-out infinite}
-@keyframes moonPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
-#bg .mtn{position:absolute;left:0;right:0;bottom:0;height:62%;background-repeat:no-repeat;background-position:bottom center;background-size:cover;
-   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='620' viewBox='0 0 1200 620' preserveAspectRatio='xMidYMax slice'><defs><linearGradient id='a' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23223burl'/></linearGradient></defs><g fill='%23101a2e' opacity='0.55'><path d='M0 430 L160 300 L300 400 L430 250 L560 380 L700 260 L860 400 L1000 300 L1200 420 L1200 620 L0 620 Z'/></g><g fill='%230c1526' opacity='0.8'><path d='M0 520 L120 430 L260 510 L400 400 L520 500 L680 380 L820 500 L980 420 L1120 510 L1200 470 L1200 620 L0 620 Z'/></g><g fill='%23070c17'><path d='M0 580 L200 520 L360 575 L520 500 L680 570 L840 505 L1020 575 L1200 540 L1200 620 L0 620 Z'/></g></svg>");}
-#bg .mist{position:absolute;left:-20%;right:-20%;bottom:20%;height:34%;
-   background:linear-gradient(0deg,rgba(150,175,215,0) 0%,rgba(150,175,215,.05) 45%,rgba(160,185,220,.09) 60%,rgba(150,175,215,0) 100%);
-   filter:blur(8px);animation:mistDrift 26s ease-in-out infinite alternate}
-@keyframes mistDrift{0%{transform:translateX(-4%)}100%{transform:translateX(4%)}}
+#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:linear-gradient(180deg,#0c1420 0%,#0e1626 34%,#0a0f19 72%,#06090f 100%)}
+#bg .shan{position:absolute;inset:0;width:100%;height:100%}
+#bg .moonpulse{animation:moonPulse 11s ease-in-out infinite}
+@keyframes moonPulse{0%,100%{opacity:.88}50%{opacity:1}}
+#bg .drift1{animation:mistDrift1 34s ease-in-out infinite alternate}
+#bg .drift2{animation:mistDrift2 46s ease-in-out infinite alternate}
+@keyframes mistDrift1{0%{transform:translateX(-3%)}100%{transform:translateX(4%)}}
+@keyframes mistDrift2{0%{transform:translateX(3%)}100%{transform:translateX(-4%)}}
 #bg .motes{position:absolute;inset:0}
 #bg .motes b{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--gold2);opacity:.5;box-shadow:0 0 6px 1px rgba(233,189,116,.5);animation:mote linear infinite}
 @keyframes mote{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.6}90%{opacity:.5}100%{transform:translateY(-96vh) translateX(24px);opacity:0}}
-body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;box-shadow:inset 0 0 220px 40px rgba(0,0,0,.75)}
-@media (prefers-reduced-motion:reduce){#bg .moon,#bg .mist,#bg .motes b,.view-anim{animation:none!important}}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;box-shadow:inset 0 0 240px 50px rgba(0,0,0,.72)}
+@media (prefers-reduced-motion:reduce){#bg .moonpulse,#bg .drift1,#bg .drift2,#bg .motes b,.view-anim{animation:none!important}}
 
 /* ===== STATUS (bảng nhân vật RPG) ===== */
 #status{position:sticky;top:6px;z-index:20;background:linear-gradient(180deg,rgba(22,29,42,.9),rgba(14,19,29,.9));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:11px 13px;box-shadow:0 6px 22px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);margin-bottom:11px;position:sticky}
@@ -114,7 +110,33 @@ h2{font-family:var(--serif);color:var(--gold);font-size:1.24rem;letter-spacing:.
 </style>
 </head>
 <body>
-<div id="bg" aria-hidden="true"><span class="moon"></span><span class="mtn"></span><span class="mist"></span><span class="motes" id="motes"></span></div>
+<div id="bg" aria-hidden="true"><svg class="shan" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="moonG" cx="42%" cy="38%" r="62%"><stop offset="0" stop-color="#fbf4dd"/><stop offset="52%" stop-color="#ecd9a6"/><stop offset="84%" stop-color="#c19a57"/><stop offset="100%" stop-color="#c19a57" stop-opacity="0"/></radialGradient>
+<radialGradient id="haloG" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#d8c894" stop-opacity=".16"/><stop offset="100%" stop-color="#d8c894" stop-opacity="0"/></radialGradient>
+<linearGradient id="mF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33455f"/><stop offset="1" stop-color="#1b2740"/></linearGradient>
+<linearGradient id="mM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e2c46"/><stop offset="1" stop-color="#101c30"/></linearGradient>
+<linearGradient id="mN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#122036"/><stop offset="1" stop-color="#080f1c"/></linearGradient>
+<linearGradient id="mG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#080d17"/><stop offset="1" stop-color="#04070d"/></linearGradient>
+<filter id="soft" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="5"/></filter>
+<filter id="far" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="13"/></filter>
+<filter id="mistB" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="24"/></filter>
+<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.62  0 0 0 0 0.68  0 0 0 0 0.8  0 0 0 0.6 0"/></filter>
+</defs>
+<circle cx="905" cy="168" r="150" fill="url(#haloG)"/>
+<circle class="moonpulse" cx="905" cy="168" r="66" fill="url(#moonG)"/>
+<g stroke="#93a0b6" stroke-width="1.6" fill="none" opacity=".45" stroke-linecap="round"><path d="M735 150 q9 -7 18 0 q9 -7 18 0"/><path d="M690 176 q7 -5 14 0 q7 -5 14 0"/><path d="M780 196 q6 -5 12 0 q6 -5 12 0"/></g>
+<path filter="url(#far)" opacity=".55" fill="url(#mF)" d="M0 432 L110 356 L232 406 L360 300 L472 386 L602 300 L742 396 L882 322 L1030 400 L1162 346 L1200 372 L1200 800 L0 800 Z"/>
+<ellipse class="drift1" cx="600" cy="446" rx="840" ry="40" fill="#c7d6ea" opacity=".07" filter="url(#mistB)"/>
+<path filter="url(#soft)" opacity=".94" fill="url(#mM)" d="M0 542 L152 452 L300 522 L432 386 L560 492 L692 402 L842 502 L980 416 L1122 506 L1200 472 L1200 800 L0 800 Z"/>
+<ellipse class="drift2" cx="600" cy="566" rx="920" ry="48" fill="#b9cbe4" opacity=".08" filter="url(#mistB)"/>
+<path fill="url(#mN)" d="M0 662 L172 576 L332 646 L492 546 L642 632 L802 560 L962 642 L1112 576 L1200 616 L1200 800 L0 800 Z"/>
+<g filter="url(#soft)" opacity=".5" fill="#060b14"><ellipse cx="360" cy="650" rx="120" ry="16"/><ellipse cx="820" cy="648" rx="140" ry="16"/></g>
+<path fill="url(#mG)" d="M0 746 L242 706 L440 740 L640 696 L862 736 L1060 706 L1200 726 L1200 800 L0 800 Z"/>
+<g fill="#05090f"><path d="M150 744 Q146 690 152 654 Q154 636 149 616" stroke="#05090f" stroke-width="4.5" fill="none" stroke-linecap="round"/></g>
+<g filter="url(#soft)" fill="#060b12" opacity=".92"><ellipse cx="150" cy="612" rx="58" ry="9"/><ellipse cx="134" cy="636" rx="48" ry="8"/><ellipse cx="164" cy="660" rx="40" ry="7"/><ellipse cx="146" cy="682" rx="30" ry="6"/></g>
+<rect width="1200" height="800" filter="url(#grain)" opacity=".05"/>
+</svg><span class="motes" id="motes"></span></div>
 <div id="status"></div>
 <div id="view"></div>
 <nav class="tabbar" id="tabbar"></nav>
