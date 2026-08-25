@@ -679,7 +679,7 @@ const TE_GIAI=['hạ giai','trung giai','thượng giai']; // mỗi phẩm chia 
 let ITEM_SEQ=0;
 function genTreasure(g){const gr=PHAM[g-1];let special=null,lifesave=false;if(g>=5&&RNG.chance(0.15))special=RNG.pick(['Sinh Mệnh pháp bảo (có linh hồn)','Nguyền rủa pháp bảo (mạnh nhưng phản chủ)']);if(g>=11)special='Hồng Mông chí bảo (1 món hủy đa vũ trụ)';
   if(g>=4&&RNG.chance(0.06)){special='Luân Hồi Hộ Mệnh — nghịch chuyển sinh tử, GIỮ MẠNG 1 lần khi chết';lifesave=true;}
-  return{uid:++ITEM_SEQ,type:'treasure',name:`${RNG.pick(IT_PRE)} ${RNG.pick(IT_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,power:TREASURE_POWER[g],mult:1+g*0.25,special,lifesave,desc:`Pháp bảo phẩm ${g} - ${gr.n}: ${TREASURE_POWER[g]}.`};}
+  return attachProvenance({uid:++ITEM_SEQ,type:'treasure',name:`${RNG.pick(IT_PRE)} ${RNG.pick(IT_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,power:TREASURE_POWER[g],mult:1+g*0.25,special,lifesave,desc:`Pháp bảo phẩm ${g} - ${gr.n}: ${TREASURE_POWER[g]}.`});}
 function genHerb(worldTier){const g=rollGrade(worldTier);const age=Math.round(Math.pow(10,g)*(1+RNG.range(0,5)));const gr=PHAM[g-1];return{uid:++ITEM_SEQ,type:'herb',name:`${RNG.pick(HB_PRE)} ${RNG.pick(HB_KIND)}`,grade:g,gradeName:gr.n,color:gr.c,age,sentient:g>=5,desc:`Linh dược phẩm ${g}, ~${age.toLocaleString('vi-VN')} năm.`};}
 const TE_HIGH=['Thần thông','Thời gian pháp','Luân hồi pháp','Hỗn Độn pháp','Nhân quả pháp']; // chỉ xuất hiện ở phẩm cao
 const TE_TIER_WORD=['sơ khai','nhập môn','tiểu thành','đại thành','viên mãn','cái thế','nghịch thiên','thông thần','vô thượng','hủy thiên','diệt địa','đạo tổ chi cảnh'];
@@ -877,7 +877,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,moment:'kham',momentLead:'',momentHist:[],momentTag:{},
+    inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,plots:[],moment:'kham',momentLead:'',momentHist:[],momentTag:{},
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},regionsSeen:['r_khothach'],
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -931,6 +931,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
   if(S.world.secretRealm>0){S.world.secretRealm-=years;if(S.world.secretRealm<=0){S.world.secretRealm=0;log('『THẾ GIỚI』 Cửa bí cảnh cổ đã khép lại. Cơ duyên trong đó, từ nay thành truyền thuyết.','lore');}}
   if(S.rival)rivalGrow(years); // đối thủ mệnh định cũng tu luyện, cũng đột phá
   boardGrow(years); // thiên kiêu trên Bảng Phong Vân cũng không ngừng tiến bộ
+  plotTick(years); // âm mưu trong bóng tối cũng chín dần theo năm tháng
   if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên cạn kiệt. Ngươi ngồi kiết già, hóa thành tro tàn theo lẽ trời đất.';log('☠ Thọ nguyên cạn.',' death');}}
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
@@ -2189,7 +2190,7 @@ function rollEvent(){worldPulse();
   add('auction',4,evAuction);
   add('conf',(S.fame>=30)?4:0,evDaoConference);
   add('rival',(S.ri>=1)?7:0,evRival);
-  add('tienkieu',(S.ri>=1)?6:0,evTienKieu);
+  add('tienkieu',(S.ri>=1)?6:0,evTienKieu);add('ammuu',(S.ri>=1)?Math.round(4+plotPressure()*14):0,evAmMuu);
   add('consequence',npcRel?9:0,evConsequence);
   add('innerdemon',Math.round(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)*45),evInnerDemon);
   add('combat',Math.round(clamp(dis*45,3,30)),evCombat);
@@ -2468,6 +2469,125 @@ function mapTab(){const rs=regionsOf(S.world.tier);const cur=curRegion();const s
    <p class="muted" style="font-size:.75rem;margin-bottom:8px">Mỗi vùng có linh khí &amp; hiểm độ riêng. Đi lại tốn thọ nguyên; đường xa hay sinh biến cố. Toàn bản đồ vạn giới: <b>${REGIONS.length}</b> vùng trải ${WORLDS.length} tầng thế giới — phi thăng vượt giới sẽ mở ra bản đồ hoàn toàn mới.</p>
    ${rows}
    <p class="muted" style="font-size:.74rem;margin-top:8px">🌠 Vượt giới (phi thăng) mở bản đồ tầng trên: ${WORLDS.map(w=>w.tier<=S.world.tier?`<b style="color:var(--gold)">${esc(w.n)}</b>`:`<span style="opacity:.45">${esc(w.n)}</span>`).join(' → ')}</p></div>`;}
+/* =========================================================================
+   ÂM MƯU — trong tu tiên giới, kẻ giết ngươi hiếm khi đánh thẳng mặt.
+   Âm mưu tự sinh theo danh tiếng / nhân quả / bảo vật ngươi ôm / kẻ thù.
+   Nó ngấm ngầm chín theo năm tháng, cho ngươi manh mối để điều tra — hoặc
+   nổ ra khi ngươi không kịp trở tay.  (懷璧其罪 — ôm ngọc là mang tội)
+   ========================================================================= */
+const PLOT_KIND=[
+ {k:'doatbao',n:'Đoạt Bảo',d:'Có kẻ thèm muốn bảo vật trong tay ngươi.',hint:'Gần đây ngươi luôn thấy có người dò hỏi về món bảo vật của mình.'},
+ {k:'giaha', n:'Giá Họa',d:'Có kẻ đang dựng chứng cứ đổ tội lên đầu ngươi.',hint:'Vài lời đồn bẩn thỉu về ngươi bắt đầu lan ra, không rõ từ miệng ai.'},
+ {k:'maiphuc',n:'Mai Phục',d:'Một cạm bẫy đang được giăng sẵn trên đường ngươi đi.',hint:'Ngươi để ý mấy gương mặt lạ cứ xuất hiện trên lộ trình của mình.'},
+ {k:'noigian',n:'Nội Gián',d:'Trong số kẻ thân cận có một con mắt của người khác.',hint:'Có chuyện chỉ vài người biết, vậy mà bên ngoài đã đồn ầm.'},
+ {k:'hadoc', n:'Hạ Độc',d:'Một thứ độc chậm đang được đưa vào người ngươi.',hint:'Dạo này đan dược ngươi dùng có dư vị lạ, kinh mạch đôi lúc tê dại.'},
+ {k:'transat',n:'Trận Sát',d:'Kẻ địch đang bố một sát trận, chỉ chờ dụ ngươi bước vào.',hint:'Ngươi bắt gặp vài trận kỳ chôn dưới đất ở nơi mình hay lui tới.'},
+ {k:'phanboi',n:'Phản Bội',d:'Người ngươi tin đã nhận lời của kẻ khác.',hint:'Ánh mắt của một kẻ thân cận thoáng né tránh khi chạm mặt ngươi.'},
+ {k:'luadao',n:'Cục Lừa',d:'Một "cơ duyên" được bày ra làm mồi nhử ngươi.',hint:'Một tin cơ duyên béo bở tự nhiên rơi vào tai ngươi — dễ dàng quá mức.'},
+ {k:'tongmon',n:'Tông Môn Đấu',d:'Trong tông môn có kẻ muốn hạ bệ ngươi.',hint:'Cống hiến của ngươi bị ghi thiếu, nhiệm vụ tốt luôn tới tay người khác.'},
+ {k:'daoban',n:'Đoạt Đạo',d:'Có kẻ nhắm vào công pháp / bản mệnh pháp bảo của ngươi.',hint:'Có người gặng hỏi rất kỹ về công pháp ngươi tu — kỹ tới mức bất thường.'}];
+function plotPressure(){let p=0;
+  p+=Math.max(0,S.fame)*0.004;p+=Math.min(0.35,S.att*0.006);
+  p+=Math.min(0.3,Math.max(0,-S.karma)*0.006);
+  for(const t of(S.treasures||[]))if(t.grade>=Math.max(4,maxGrade(S.world.tier)))p+=0.05;
+  p+=Math.min(0.35,treasureHeat()*0.018);
+  if(S.natal&&S.natal.grade>=5)p+=0.05;
+  if(S.rival&&S.rival.alive)p+=0.06+Math.min(0.2,S.rival.grudge*0.002);
+  if(S.sect)p+=0.05;if(S.ownForce)p+=0.06;
+  if(geniusTitle())p+=0.08;
+  return clamp(p,0,0.9);}
+function spawnPlot(){const kd=RNG.pick(PLOT_KIND);
+  let who=null;const ids=Object.keys(S.npcs||{}).filter(i=>S.npcs[i].alive&&S.npcs[i].relation<20);
+  if(S.rival&&S.rival.alive&&RNG.chance(0.35))who=S.rival.name;
+  else if(ids.length&&RNG.chance(0.5))who=S.npcs[RNG.pick(ids)].name;
+  else who=RNG.pick(SUR)+' '+RNG.pick(GIV);
+  const pl={id:'plot_'+RNG.int(0,1e9),k:kd.k,n:kd.n,who,known:0,stage:0,max:3,
+    clock:Math.max(2,Math.round((6+RNG.int(0,12))/(1+S.ri*0.04))),power:clamp(S.ri+RNG.int(-1,3),1,100)};
+  (S.plots=S.plots||[]).push(pl);return pl;}
+function plotDef(k){return PLOT_KIND.find(x=>x.k===k)||PLOT_KIND[0];}
+function plotTick(years){S.plots=S.plots||[];
+  // âm mưu mới nhen nhóm
+  if(S.ri>=1&&S.plots.length<4&&RNG.chance(clamp(plotPressure()*0.35*years,0,0.5)))spawnPlot();
+  for(let i=S.plots.length-1;i>=0;i--){const p=S.plots[i];p.clock-=years;
+    if(p.clock<=0){firePlot(p);S.plots.splice(i,1);}}}
+function firePlot(p){const d=plotDef(p.k);const soft=p.known>=2?0.45:p.known>=1?0.75:1;// biết trước thì đỡ đòn
+  log(`✖ ÂM MƯU PHÁT TÁC: ${d.n} — kẻ chủ mưu ${p.who}.`,'death');
+  if(p.k==='doatbao'&&(S.treasures||[]).length){const idx=S.treasures.reduce((b,t,j,a)=>t.grade>a[b].grade?j:b,0);const t=S.treasures[idx];
+    if(p.known>=2&&RNG.chance(0.55)){log(`Nhờ đã lần ra âm mưu, ngươi kịp giấu 「${t.name}」 và phản đòn. Kẻ cướp trắng tay.`,'good');addFame(3);return;}
+    S.treasures.splice(idx,1);log(`Ngươi bị cướp mất 「${t.name}」 giữa đường. Máu chảy, bảo vật đổi chủ.`,'bad');S.hp=Math.max(1,Math.round(S.hp*0.6));deductLife(2*soft,'trọng thương khi giữ bảo');return;}
+  if(p.k==='giaha'){const f=Math.round(18*soft);S.fame=clamp(S.fame-f,-100,1000);addKarma(-2,'bị giá họa');S.att+=6;
+    log(`Ngươi bị vu cho một tội tày trời. Danh tiếng rơi ${f} điểm, khắp nơi truy nã.`,'bad');return;}
+  if(p.k==='maiphuc'){const e={name:p.who+' cùng đám mai phục',ri:p.power+1,si:2,boss:true,mightBonus:0.5*soft};
+    log('Ngươi lọt vào ổ mai phục!','bad');const r=fight(e);if(r==='win'){log('Ngươi phá vỡ vòng vây, chém kẻ chủ mưu!','good');addFame(6);}return;}
+  if(p.k==='noigian'){S.att+=10;log('Nội gián bán sạch hành tung của ngươi. Từ nay đi đâu cũng có mắt dõi theo.','bad');
+    const ids=Object.keys(S.npcs||{});if(ids.length){const n=S.npcs[RNG.pick(ids)];remember(n,'phản bội ngươi',-70);log(`Kẻ đó là ${n.name}.`,'bad');}S.stats.betray++;return;}
+  if(p.k==='hadoc'){const y=Math.round((8+RNG.int(0,14))*soft);deductLife(y,'độc chậm phát tác');S.taint+=12*soft;S.hp=Math.max(1,Math.round(S.hp*0.5));
+    log(`Độc chậm phát tác! Kinh mạch tổn thương nặng, hao ${y} năm thọ nguyên.`,'death');return;}
+  if(p.k==='transat'){const e={name:'Sát trận của '+p.who,ri:p.power+2,si:3,boss:true,mightBonus:0.9*soft,canFlee:RNG.chance(0.4)};
+    log('Ngươi bước vào sát trận đã bố sẵn!','death');fight(e);return;}
+  if(p.k==='phanboi'){S.stats.betray++;
+    if(S.daolu&&RNG.chance(0.5)){log(`Đạo lữ ${S.daolu.name} đâm ngươi một nhát sau lưng rồi bỏ đi.`,'death');S.daolu=null;S.hp=Math.max(1,Math.round(S.hp*0.35));S.heart-=3;deductLife(4*soft,'vết thương lòng lẫn thân');}
+    else if(S.disciple){log(`Đồ đệ ${S.disciple.name} cuỗm sạch tài sản của ngươi rồi biến mất.`,'bad');S.disciple=null;S.linhThach=Math.round(S.linhThach*0.4);S.heart-=2;}
+    else{log('Một kẻ thân cận trở mặt, ngươi mất một mảng nhân mạch.','bad');S.fame=clamp(S.fame-8,-100,1000);}return;}
+  if(p.k==='luadao'){const ls=Math.round(S.linhThach*0.45*soft);S.linhThach-=ls;
+    log(`"Cơ duyên" kia là cục lừa. Ngươi mất ${ls.toLocaleString('vi-VN')} linh thạch và một phen bẽ mặt.`,'bad');addFame(-4);return;}
+  if(p.k==='tongmon'&&S.sect){S.sect.contrib=Math.round(S.sect.contrib*0.35);
+    log(`Trong tông môn, ngươi bị hạ bệ — cống hiến bị tước gần hết.`,'bad');if(RNG.chance(0.3*soft)){log('Ngươi bị trục xuất khỏi tông môn!','death');S.sect=null;}return;}
+  if(p.k==='daoban'){if(S.natal&&RNG.chance(0.5*soft)){log(`Bản mệnh pháp bảo 「${S.natal.name}」 bị kẻ địch dùng thủ đoạn cắt đứt liên hệ — ngươi phun máu, mất nó.`,'death');S.natal=null;S.hp=Math.max(1,Math.round(S.hp*0.4));deductLife(6,'bản mệnh bị đoạt');}
+    else if((S.techs||[]).length){const t=S.techs.splice(RNG.int(0,S.techs.length-1),1)[0];log(`Công pháp 「${t.name}」 trong tàng thư của ngươi bị sao chép và bán ra ngoài.`,'bad');S.att+=5;}
+    else{log('Kẻ địch dòm ngó đạo thống của ngươi, tuy chưa đắc thủ nhưng đã lộ hết hư thực.','warn');S.att+=8;}return;}
+  // mặc định
+  S.hp=Math.max(1,Math.round(S.hp*0.6));deductLife(3*soft,'âm mưu phát tác');log('Ngươi hứng trọn một đòn ngầm.','bad');}
+function evAmMuu(){S.plots=S.plots||[];
+  const unknown=S.plots.filter(p=>p.known<2);
+  if(!unknown.length){if(RNG.chance(0.5)&&S.ri>=1){const p=spawnPlot();return plotClueScene(p);}return evFortune();}
+  return plotClueScene(RNG.pick(unknown));}
+function plotClueScene(p){const d=plotDef(p.k);const near=Math.max(0,Math.round(p.clock));
+  const sensed=p.known>=1;
+  return{title:'ÂM MƯU · '+(sensed?d.n:'Điềm Chẳng Lành'),
+    narr:`${d.hint}\n\n${sensed?`Ngươi đã lần ra: đây là một cục 「${d.n}」. ${d.d} Nhưng kẻ đứng sau vẫn giấu mặt.`:'Ngươi chưa rõ chuyện gì đang diễn ra, chỉ biết có thứ gì đó đang siết lại quanh mình.'}\n\n(Ước chừng còn ${near<=2?'rất ít':near<=6?'chưa tới mười':'còn khá nhiều'} năm trước khi nó chín muồi.)`,
+    choices:[
+     {l:'🔍 Bỏ công điều tra tới cùng',hint:'Tốn thời gian & linh thạch, nhưng biết địch mới đỡ được đòn.',cls:'primary',act:()=>{
+       const cost=Math.round(Math.pow(10,1+S.ri*0.35));S.linhThach=Math.max(0,S.linhThach-cost);advance(RNG.range(0.5,2));
+       const ok=RNG.chance(clamp(0.34+S.cmp*0.12+(S.soul*0.03)+((S.prof&&S.prof.id==='trandao')?0.1:0),0.2,0.9));
+       if(ok){p.known=2;setResult(`Ngươi lần theo từng đầu mối, chi ${cost.toLocaleString('vi-VN')} linh thạch mua tin.\n\n✦ Chân tướng lộ: kẻ chủ mưu là 「${esc(p.who)}」, đang bày một cục 「${esc(plotDef(p.k).n)}」 nhắm vào ngươi.\n\nBiết địch, ngươi có thể ra tay trước — hoặc chờ nó tới mà bẻ gãy.`);}
+       else{p.known=Math.max(p.known,1);setResult(`Ngươi dò hỏi khắp nơi, tốn ${cost.toLocaleString('vi-VN')} linh thạch mà chỉ chắp vá được một nửa: đây là cục 「${esc(plotDef(p.k).n)}」.\n\nKẻ đứng sau vẫn ẩn trong bóng tối. Ngươi càng dò, nó càng biết ngươi đã ngờ.`);p.clock=Math.max(1,p.clock-1);}}},
+     {l:'⚔ Ra tay trước — diệt cỏ tận gốc',hint:'Chỉ nên làm khi đã biết mặt kẻ chủ mưu.',show:()=>p.known>=2,act:()=>{
+       const e={name:p.who,ri:p.power,si:2,boss:true,mightBonus:0.2};const r=fight(e);
+       if(r==='win'){S.plots=S.plots.filter(x=>x.id!==p.id);addKarma(-1,'tiên hạ thủ vi cường');addFame(5);
+         setResult(`Ngươi tìm tới tận cửa, chém ${esc(p.who)} trước khi âm mưu kịp chín.\n\nCục 「${esc(plotDef(p.k).n)}」 tan theo cái chết của chủ mưu. Trong tu tiên giới, ra tay trước mới là kẻ sống sót.`);}
+       else if(r==='flee'){p.clock=Math.max(1,Math.round(p.clock*0.5));setResult('Ngươi đánh không lại, phải bỏ chạy. Kẻ địch nay đã biết ngươi ngờ nó — âm mưu được đẩy nhanh.');}
+       else if(S.alive){p.clock=Math.max(1,Math.round(p.clock*0.6));setResult('Ngươi bại trận, thân mang trọng thương lết về. Đòn ngầm kia sẽ tới sớm hơn.');}
+       else afterAct();}},
+     {l:'🛡 Âm thầm phòng bị, chờ nó ra tay',hint:'Không đánh động, chuẩn bị đỡ đòn.',act:()=>{
+       p.known=Math.max(p.known,1);advance(RNG.range(0.3,1));S.flags.phongBi=true;
+       setResult('Ngươi không đánh động, chỉ lặng lẽ bày trận, giấu bảo vật, đổi chỗ ở.\n\nKẻ trong tối, ta trong tối — cứ để xem ai nhẫn hơn ai.');}},
+     {l:'🙈 Mặc kệ — tu vi mới là gốc',hint:'Bỏ qua. Đủ mạnh thì mọi âm mưu đều là trò hề.',act:()=>{
+       advance(RNG.range(0.2,0.6));setResult('Ngươi phủi tay bỏ qua. Đạo của ngươi là lấy sức mạnh áp chế tất cả — nếu đủ mạnh thật.');}}]};}
+/* ---- LAI LỊCH PHÁP BẢO: mỗi bảo vật là một mẩu lịch sử, và một mối họa ---- */
+const TR_ORIGIN=[
+ ['Rèn bởi một luyện khí sư vô danh, chôn theo chủ nhân suốt ngàn năm.',0],
+ ['Từng là bồi táng phẩm trong lăng một vị vương phàm trần.',0],
+ ['Chiến lợi phẩm nhặt trên một chiến trường không ai chép sử.',1],
+ ['Tương truyền là một trong bảy món của Huyền Thiên Lão Tổ — sáu món kia vẫn còn ngoài kia.',3],
+ ['Vốn thuộc về một tông môn đã bị diệt môn; kẻ sống sót vẫn đang tìm nó.',3],
+ ['Được luyện từ xương một cổ yêu; đêm khuya nó còn khe khẽ gầm.',2],
+ ['Trên thân khắc tên một người — và tên đó không phải chủ cũ, mà là kẻ đã giết chủ cũ.',2],
+ ['Đúc trong Lô Hỏa Cốc bằng tinh thiết rơi từ Lưu Tinh Hải.',1],
+ ['Từng khiến ba đại tông môn khai chiến; máu đổ đủ nhuộm đỏ một con sông.',4],
+ ['Một vị đại năng đã ném nó đi — không ai biết vì sao ngài không muốn giữ.',3],
+ ['Nó tự tìm tới ngươi. Đó mới là điều đáng sợ.',4],
+ ['Trong lòng nó phong ấn một tia thần niệm chưa tắt của cố chủ.',3],
+ ['Món này vốn là một nửa của một cặp; nửa kia đang nằm trong tay kẻ khác.',3],
+ ['Thợ rèn ra nó đã tự chặt tay mình để không thể rèn món thứ hai.',2],
+ ['Từng được dâng lên làm lễ vật cầu hòa giữa nhân tộc và yêu tộc — lễ ấy kết thúc bằng một cuộc tàn sát.',4]];
+function attachProvenance(t){if(!t||t.origin)return t;
+  const pool=TR_ORIGIN.filter(o=>o[1]<=Math.max(0,t.grade-2));
+  const pick=(pool.length?RNG.pick(pool):TR_ORIGIN[0]);
+  t.origin=pick[0];t.notoriety=pick[1]+Math.max(0,t.grade-4);
+  if(t.notoriety>=3)t.coveted=true;
+  return t;}
+function treasureHeat(){let h=0;for(const t of(S.treasures||[]))h+=(t.notoriety||0);if(S.natal)h+=(S.natal.notoriety||0);return h;}
 /* ---- ACCORDION: phân hoá tab thành từng nhóm gập/mở, có đếm số ---- */
 let ACC={info:true,chiso:true};
 function acc(id,ic,ti,ct,body){const open=!!ACC[id];
@@ -2503,6 +2623,13 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    ${(()=>{if(!S.tkboard&&S.ri<1)return '';ensureBoard();const pm=powerMight();const rank=playerRank();const live=S.tkboard.filter(m=>m.alive).slice().sort((a,b)=>boardMight(b)-boardMight(a)).slice(0,10);const rows=live.map((m,i)=>{const stronger=boardMight(m)>pm;return `<div style="display:flex;justify-content:space-between;gap:6px;margin:1px 0;${stronger?'':'color:var(--muted)'}"><span>#${i+1} ${esc(m.name)} <span class="muted" style="font-size:.72rem">【${esc(m.title)}】${m.beaten?' · <span class="warn">bại dưới tay ngươi</span>':''}</span></span><span class="muted" style="font-size:.72rem">${esc(realmName(m.ri,m.si))}</span></div>`;}).join('');return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px"><div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">🏆 Bảng Phong Vân — Thiên Kiêu một thời đại</div>
    <div style="font-size:.76rem">${rows}</div>
    <div class="muted" style="font-size:.74rem;margin-top:4px">Thứ hạng của ngươi: <b style="color:${rank&&rank<=3?'var(--gold2)':'var(--txt)'}">${rank?('#'+rank+(rank===1?' — Thiên Hạ Đệ Nhất Kiêu!':'')):'ngoài bảng'}</b> · Đánh bại thiên kiêu để leo hạng, trảm để lưu danh.</div></div>`;})()}`));
+  if((S.plots||[]).length)_P.push(acc('plots','\u{1F5A4}','ÂM MƯU ĐANG GIĂNG',(S.plots||[]).length,`
+   <p class="muted" style="font-size:.76rem;margin:2px 0 6px">Trong tu tiên giới, kẻ giết ngươi hiếm khi đánh thẳng mặt. Điều tra để lộ mặt chủ mưu — biết trước thì đỡ được đòn.</p>
+   ${(S.plots||[]).map(p=>{const d=plotDef(p.k);const st=p.known>=2?'<span class="good">đã lộ chủ mưu</span>':p.known>=1?'<span class="warn">mới đoán được loại</span>':'<span class="bad">chưa rõ gì</span>';
+     return `<div style="margin:5px 0;border-left:2px solid ${p.known>=2?'var(--gold)':'var(--red,#a33)'};padding-left:8px">
+     <b style="color:var(--gold2)">${p.known>=1?esc(d.n):'Một âm mưu chưa rõ'}</b> — ${st}<br>
+     <span class="muted" style="font-size:.76rem">${p.known>=2?'Chủ mưu: <b>'+esc(p.who)+'</b> · ':''}${esc(d.d)}<br>⏳ còn ước ${Math.max(0,Math.round(p.clock))} năm trước khi phát tác</span></div>`;}).join('')}
+   <p class="muted" style="font-size:.74rem;margin-top:5px">Áp lực chiêu họa hiện tại: <b>${Math.round(plotPressure()*100)}%</b> · Độ nổi của bảo vật: <b>${treasureHeat()}</b> — danh tiếng, nhân quả, bảo vật và kẻ thù đều làm ngươi thành mục tiêu.</p>`));
   _P.push(acc('achiev','\u{1F3C5}','TH\u00c0NH T\u1EF0U',(S.achievements||[]).length,`
    <p><b>Thành tựu (${(S.achievements||[]).length}/${ACHIEVEMENTS.length}):</b> ${(S.achievements||[]).length?S.achievements.map(id=>`<span class="chip">🏆 ${esc(achTitle(id))}</span>`).join(''):'<i>chưa mở khóa</i>'}</p>`));
   _P.push(acc('phamluc','\u{1F4D6}','THI\u00caN PH\u1EA8M L\u1EE4C',12,`
@@ -2541,7 +2668,7 @@ function invTab(){const pills=Object.keys(S.inv).filter(k=>PILL_DEF[k]&&S.inv[k]
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🌿 Linh dược</div>
    ${herbs.length?herbs.map(k=>{const h=(S.invMeta||{})[k]||{name:k,grade:1};return `<div class="item"><span>${esc(h.name)} ${pham(h.grade)}</span></div>`;}).join(''):'<p class="muted">Trống.</p>'}
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🗡️ Pháp bảo</div>
-   ${S.treasures.length?S.treasures.map(t=>`<div class="item"><span>${esc(t.name)} ${pham(t.grade)}<br><span class="muted" style="font-size:.76rem">${esc(t.power)}${t.special?' — '+esc(t.special):''}</span></span></div>`).join(''):'<p class="muted">Trống.</p>'}
+   ${S.treasures.length?S.treasures.map(t=>`<div class="item"><span>${esc(t.name)} ${pham(t.grade)}<br><span class="muted" style="font-size:.76rem">${esc(t.power)}${t.special?' — '+esc(t.special):''}</span>${t.origin?`<br><span class="muted" style="font-size:.74rem;font-style:italic;border-left:2px solid var(--line);padding-left:6px;display:inline-block;margin-top:3px">\u{1F4DC} ${esc(t.origin)}</span>`:''}${t.coveted?'<br><span class="bad" style="font-size:.73rem">\u26A0 Bảo vật có tiếng — kẻ khác đang dòm ngó.</span>':''}</span></div>`).join(''):'<p class="muted">Trống.</p>'}
    ${(()=>{const slots=techSlots(),used=(S.subTechs||[]).length;
      const main=S.tech?`<div class="item"><span><b style="color:var(--gold2)">★ CHỦ TU</b> · ${esc(S.tech.name)} ${pham(S.tech.grade)}${S.tech.giaiName?' <span class="muted" style="font-size:.72rem">'+esc(S.tech.giaiName)+'</span>':''}<br><span class="muted" style="font-size:.76rem">${esc(S.tech.tech||'')} · thuần thục ${techProf(S.tech)}% (${techMastery(S.tech)})</span></span></div>`:'<p class="muted">Chưa có chủ tu công pháp.</p>';
      const subs=(S.subTechs||[]).map((t,i)=>`<div class="item"><span><b style="color:var(--cyan)">◇ PHỤ TU</b> · ${esc(t.name)} ${pham(t.grade)}<br><span class="muted" style="font-size:.76rem">${esc(t.tech||'')} · thuần thục ${techProf(t)}% (${techMastery(t)})${t.danger?' · <span class="bad">nguy hiểm</span>':''}</span></span><button class="btn small" data-dropsub="${i}">Ngưng tu</button></div>`).join('');
