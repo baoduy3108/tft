@@ -120,6 +120,16 @@ h2{font-family:var(--serif);color:var(--gold);font-size:1.24rem;letter-spacing:.
 .acc.open .acc-b{display:block;animation:accIn .18s ease}
 @keyframes accIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 .acc-b>p{margin:6px 0}
+.rg{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin:7px 0;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.008));transition:border-color .16s}
+.rg:hover{border-color:rgba(212,175,55,.4)}
+.rg.here{border-color:var(--gold);background:linear-gradient(180deg,rgba(212,175,55,.11),rgba(212,175,55,.03))}
+.rg-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rg-n{font-weight:700;color:var(--gold);font-size:.88rem;font-family:var(--serif,serif)}
+.rg-k{font-size:.71rem;color:var(--muted)}
+.rg-d{font-size:.77rem;color:var(--muted);line-height:1.5;margin:4px 0 6px;font-style:italic}
+.rg-m{display:flex;gap:12px;flex-wrap:wrap;font-size:.73rem;color:var(--muted);margin-bottom:7px}
+.rg-here{font-size:.73rem;color:var(--gold2);font-weight:700;letter-spacing:.4px}
+.rg .btn.small{width:100%}
 </style>
 </head>
 <body>
@@ -869,7 +879,7 @@ function newState(originId){
     fame:0,karma:fx.karma||0,att:fx.att||0,
     inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,moment:'kham',momentLead:'',momentHist:[],momentTag:{},
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
-    world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
+    world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},regionsSeen:['r_khothach'],
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
     time:{y:0,m:1,d:1},stats:{kills:0,break:0,pills:0,ngodao:0,betray:0},
     scene:null,alive:true,cause:null,
@@ -925,7 +935,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
 function cultRate(){const tech=(S.tech?(0.6+S.tech.grade*0.25)*(0.72+(S.tech.prof||0)/360):0.3)+auxCultBonus();const taint=Math.max(0.2,1-S.taint*0.02);const diff=S.ri<=0?0.8:(1+S.ri*0.25)*Math.pow(1.06,S.ri);
-  return 6*(S.root.spd)*(S.cultMul)*(S.tc.buff.cult||1)*machQi()*(S.world.qiMod||1)*sectCultBonus()*(1+profBonus('dan'))*(S.daolu?1.12:1)*tech*taint/diff;}
+  return 6*(S.root.spd)*(S.cultMul)*(S.tc.buff.cult||1)*machQi()*(S.world.qiMod||1)*regionQi()*sectCultBonus()*(1+profBonus('dan'))*(S.daolu?1.12:1)*tech*taint/diff;}
 function cultivate(years,hard){const gain=cultRate()*years*(hard?2.6:1);S.progress=Math.min(1,S.progress+gain);
   growTechProf(years*(hard?1.9:1));
   const taint=(1-[0.5,0.55,0.65,0.72,0.8,0.86,0.9,0.93,0.95,0.97,0.985,1][clamp((S.world.machId||1)-1,0,11)])*0.5*years*(hard?2.5:1);S.taint+=taint;
@@ -936,7 +946,8 @@ function cultivate(years,hard){const gain=cultRate()*years*(hard?2.6:1);S.progre
 function passTime(years,hard){cultivate(years,hard);if(!S.alive){afterAct();return;}
   // Đầu game (cảnh giới thấp) cốt truyện dày đặc như tiểu thuyết; về sau thưa dần cho nhịp tu luyện
   const base=S.ri<3?0.6:S.ri<8?0.48:0.34;
-  const p=clamp(base+(hard?0.05:0)+(S.att>10?0.06:0)+(luckOf().id<=0?0.05:0),0.15,0.75);
+  const rdg=(regionDanger()-3)*0.02;
+  const p=clamp(base+rdg+(hard?0.05:0)+(S.att>10?0.06:0)+(luckOf().id<=0?0.05:0),0.15,0.8);
   if(RNG.chance(p)){setScene(rollEvent());}else afterAct();}
 function nextTarget(){if(S.ri<=0)return{ri:1,si:0,major:true,name:'Luyện Khí Nhất tầng'};const r=REALMS[S.ri-1];if(S.si<r.subs.length-1)return{ri:S.ri,si:S.si+1,major:false,name:r.name+' '+r.subs[S.si+1]};if(S.ri>=100)return null;const nr=REALMS[S.ri];return{ri:S.ri+1,si:0,major:true,name:nr.name+' '+nr.subs[0]};}
 function breakChance(){const tg=nextTarget();if(!tg)return 0;const tr=REALMS[tg.ri-1];let p=tr.breakBase;if(!tg.major)p=Math.min(0.95,p+0.25);
@@ -1686,6 +1697,7 @@ function sceneHub(){
   let narr='';
   if(S.momentLead){narr+=S.momentLead+'\n\n';S.momentLead='';}
   narr+=situationText(m,season);
+  {const rg=curRegion();if(rg){const q=regionQi();narr+=`\n\n『${esc(rg.n)}』 ${q>=1.35?'Linh khí nơi đây nồng đậm khác thường — tu luyện ở đất này nhanh hơn hẳn.':q<=0.75?'Linh khí ở đây loãng tới mức tu luyện như múc nước bằng rổ.':'Linh khí ở mức bình thường.'}${rg.dg>=7?' Nhưng sát khí cũng nặng — đây là đất chết.':rg.dg>=5?' Vùng này không yên ổn.':''}`;}}
   const th=threadFlavor();
   if(th.length&&RNG.chance(0.8))narr+='\n\n'+RNG.pick(th);
   const c=[];
@@ -1739,7 +1751,7 @@ ${RNG.pick(['Một chiếc lá khô xoay tròn rơi xuống. Trong khoảnh kh�
     {l:'Ghi nhớ nhưng không sa đà.',act:()=>{advance(0.5);setResult('Ngươi cất cảm ngộ vào lòng, không sa đà, rồi tiếp tục con đường của mình.');}}]};}
 
 /* ---- EVENTS (5 loại + báo thù/đền đáp từ nhân quả) ---- */
-function disasterChance(){const l=luckOf();let p=0.02;if(S.karma<0)p+=Math.min(0.4,-S.karma*0.01);p+=Math.min(0.4,S.att*0.005);p/=Math.max(0.5,l.surv);p*=l.att;return clamp(p,0.005,0.9);}
+function disasterChance(){const l=luckOf();let p=0.02+Math.max(0,(regionDanger()-3))*0.012;if(S.karma<0)p+=Math.min(0.4,-S.karma*0.01);p+=Math.min(0.4,S.att*0.005);p/=Math.max(0.5,l.surv);p*=l.att;return clamp(p,0.005,0.9);}
 function fortuneChance(){const l=luckOf();let p=0.03*l.fort;if(S.karma>0)p+=Math.min(0.2,S.karma*0.005);return Math.min(0.6,p);}
 /* ===================== 100 CƠ DUYÊN — mỗi nhân vật một bộ định mệnh khác nhau ===================== */
 const DUYEN_RAR={pham:{n:'Phàm Duyên',c:'#9e9e9e',w:100},tieu:{n:'Tiểu Duyên',c:'#4caf50',w:42},ky:{n:'Kỳ Duyên',c:'#03a9f4',w:13},dai:{n:'Đại Duyên',c:'#9c27b0',w:4},nghich:{n:'Nghịch Thiên Duyên',c:'#ff5252',w:0.7}};
@@ -2342,13 +2354,15 @@ function renderTabs(){const el=$('#tabbar');if(!S||!S.flags||!S.flags.canPlay){e
   el.innerHTML=`<button class="tab ${t('story')}" data-tab="story"><span>📖</span>Cốt Truyện</button>
   <button class="tab ${t('char')}" data-tab="char"><span>🧬</span>Nhân Vật</button>
   <button class="tab ${t('inv')}" data-tab="inv"><span>🎒</span>Túi Đồ</button>
-  <button class="tab ${t('npc')}" data-tab="npc"><span>👥</span>Quan Hệ</button>`;}
+  <button class="tab ${t('npc')}" data-tab="npc"><span>👥</span>Quan Hệ</button>
+  <button class="tab ${t('map')}" data-tab="map"><span>🗺️</span>Bản Đồ</button>`;}
 function renderView(){const v=$('#view');
   if(!S){menu();return;}
   if(!S.alive){death();return;}
   if(TAB==='char'){charTab();return;}
   if(TAB==='inv'){invTab();return;}
   if(TAB==='npc'){npcTab();return;}
+  if(TAB==='map'){mapTab();return;}
   // story tab
   let sc=S.scene;
   if(sc&&sc.result){v.innerHTML=`<div class="narr">${nl2(sc.result)}</div><div class="choices"><button class="btn primary" data-i="cont">Tiếp tục</button></div>`;return;}
@@ -2364,6 +2378,96 @@ function renderView(){const v=$('#view');
   v._choices=choices;
 }
 function freeform(){return `<div class="freeform"><div class="ff-l">✍ Hoặc tự quyết định (gõ hành động riêng — kể cả "chọn cả A và B"):</div><div class="ff-row"><input id="freetext" class="ff-in" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off"><button class="btn small primary" data-i="free">Làm</button></div></div>`;}
+/* =========================================================================
+   THIÊN ĐỊA ĐỒ — bản đồ vạn giới. Mỗi giới có nhiều vùng: linh khí, hiểm độ,
+   đặc sản, thế lực trấn giữ khác nhau. Đi lại tốn thời gian & gặp biến cố.
+   ========================================================================= */
+const RK={thon:'🏘️ Thôn ấp',thanh:'🏯 Thành trì',son:'⛰️ Sơn mạch',lam:'🌲 Sâm lâm',mac:'🏜️ Hoang mạc',hai:'🌊 Hải vực',dam:'🪷 Đầm lầy',tuyet:'❄️ Tuyết nguyên',hoa:'🌋 Hỏa diệm',co:'🏛️ Cổ địa',yeu:'🐉 Yêu vực',ma:'💀 Ma vực',tong:'⛩️ Tông môn địa',chien:'⚔️ Chiến địa',bi:'🌌 Bí miền'};
+const R=(w,id,n,k,dg,qi,d)=>({w,id,n,k,dg,qi,d});
+const REGIONS=[
+ // ================= TẦNG 1 · PHÀM GIỚI =================
+ R(1,'r_khothach','Thôn Khô Thạch','thon',1,0.6,'Thôn nhỏ giữa cao nguyên đá, giếng cạn ba đời, linh khí mỏng như sương sớm. Nơi vô số kẻ tu tiên bắt đầu — và kết thúc.'),
+ R(1,'r_thanhly','Thanh Lý Trấn','thon',1,0.8,'Trấn nhỏ ven quan đạo, có một tiệm đan cũ và một lão thợ rèn từng theo tu sĩ. Tin đồn tứ phương tụ ở quán trà đầu trấn.'),
+ R(1,'r_hoaduong','Hoa Dương Thành','thanh',2,1.0,'Thành trì phàm nhân lớn nhất vùng, có phường thị tu tiên nép trong phố Tây. Quan phủ và tu sĩ ngầm chia nhau cai trị.'),
+ R(1,'r_thanhvan','Thanh Vân Sơn','tong',3,1.4,'Sơn môn của Thanh Vân Tông — mây trắng quấn đỉnh, thang đá chín ngàn bậc. Ngoại môn đệ tử đông như kiến, nội môn thì kén như lọc vàng.'),
+ R(1,'r_hacphong','Hắc Phong Lĩnh','son',4,1.1,'Dãy núi đen tuyền quanh năm gió rít. Sơn tặc tu sĩ chặn đường, yêu lang thành bầy. Nhưng khoáng mạch linh thạch cũng nằm dưới đó.'),
+ R(1,'r_thapvan','Thập Vạn Đại Sơn','lam',5,1.3,'Rừng già trải mười vạn dặm, cây cao che kín mặt trời. Linh dược mọc hoang — cùng với những thứ ăn thịt kẻ đi hái.'),
+ R(1,'r_khoxuong','Khô Xương Mạc','mac',5,0.7,'Sa mạc xương trắng, gió cuốn cát như dao. Người ta nói dưới cát là một chiến trường cổ chưa ai đào tới đáy.'),
+ R(1,'r_uminh','U Minh Trạch','dam',6,1.2,'Đầm lầy chướng khí, sương độc quanh năm. Thi thể không thối rữa mà đứng dậy đi lại. Độc sư và ma tu coi đây là thánh địa.'),
+ R(1,'r_bachtuyet','Bạch Tuyết Nguyên','tuyet',5,1.5,'Bình nguyên tuyết phủ vô tận, đêm xuống lạnh tới mức linh lực đóng băng trong kinh mạch. Băng linh thảo chỉ mọc ở đây.'),
+ R(1,'r_lohoa','Lô Hỏa Cốc','hoa',6,1.6,'Hẻm núi lửa, dung nham chảy như sông. Luyện khí sư tranh nhau một chỗ đặt lò. Hỏa độc thiêu cháy kẻ căn cơ mỏng.'),
+ R(1,'r_dongham','Đông Hải Ngư Thôn','hai',3,1.0,'Làng chài ven Đông Hải, ngư dân đánh cá cùng thuồng luồng. Thi thoảng sóng đánh dạt vào bờ những mảnh pháp bảo từ hải vực sâu.'),
+ R(1,'r_cothanh','Cổ Thành Vô Danh','co',7,1.8,'Một tòa thành cổ trồi lên sau trận động đất, không sử sách nào chép tên. Bên trong, đèn đá vẫn cháy sau vạn năm không ai thắp.'),
+ // ================= TẦNG 2 · LINH GIỚI =================
+ R(2,'r_lstuyetlanh','Tuyết Lãnh Tiên Thành','thanh',3,2.2,'Thành trì lơ lửng trên biển mây, cột băng chống trời. Chợ ở đây bán thứ mà Phàm Giới gọi là truyền thuyết.'),
+ R(2,'r_lsvankiem','Vạn Kiếm Chi Nguyên','chien',6,2.6,'Bình nguyên cắm đầy kiếm gãy của vạn năm chiến tranh. Kiếm ý còn sót lại tự chém kẻ đi ngang — nhưng kiếm tu tới đây để ngộ đạo.'),
+ R(2,'r_lsyeuson','Bách Yêu Sơn Mạch','yeu',7,2.4,'Dãy núi do yêu tộc cai trị, nhân tộc bước vào là lương thực. Yêu đan trong đó đủ khiến tu sĩ liều mạng.'),
+ R(2,'r_lsluutinh','Lưu Tinh Hải','hai',6,2.5,'Biển sao rơi — thiên thạch cắm đầy đáy nước, mỗi khối là một mỏ tinh thiết. Hải yêu canh giữ từng khối.'),
+ R(2,'r_lsamha','Âm Hà Cốc','ma',8,2.3,'Dòng sông âm khí chảy ngược, hai bờ là mộ địa vô tận. Ma tu luyện thi ở đây; chính đạo gọi là chốn cấm.'),
+ R(2,'r_lsdanlo','Vạn Đan Địa','tong',4,2.8,'Đất tổ của Vạn Đan Tông, cả một thung lũng là linh điền. Mùi dược hương nồng tới mức người thường ngất đi.'),
+ R(2,'r_lsphutinh','Phù Tinh Quần Đảo','bi',7,2.7,'Chuỗi đảo bay lơ lửng, di chuyển theo tinh tượng. Muốn tới đúng đảo phải tính đúng thiên văn, sai một khắc là rơi vào hư không.'),
+ R(2,'r_lslinhkhu','Cổ Linh Khư','co',8,3.0,'Phế tích của một tiên môn đã diệt vong. Trận pháp hộ sơn vẫn vận hành, giết kẻ lạ theo lệnh của người đã chết từ lâu.'),
+ // ================= TẦNG 3 · TIÊN GIỚI =================
+ R(3,'r_txthienkinh','Thiên Kinh Tiên Đô','thanh',4,4.0,'Kinh đô của Tiên Giới, chín tầng thành trì chồng lên nhau, tầng càng cao người càng mạnh. Phàm phu không được phép ngẩng đầu.'),
+ R(3,'r_txlongmach','Long Mạch Nguyên','son',7,4.5,'Nơi long mạch của cả một giới trồi lên mặt đất. Đứng đó tu luyện một ngày bằng ngoài kia một năm — nếu chịu nổi áp lực.'),
+ R(3,'r_txtruongsinh','Trường Sinh Hải','hai',6,4.2,'Biển không có bờ bên kia. Truyền thuyết nói vượt qua nó là tới nơi không còn cái chết. Chưa ai quay lại kể.'),
+ R(3,'r_txmavuc','Cửu U Ma Vực','ma',9,4.4,'Vực sâu nối thẳng xuống Cửu U. Ma khí đặc như nước, tâm ma của kẻ vào đó tự thành hình và giết chủ nhân.'),
+ R(3,'r_txtientran','Tiên Trận Di Chỉ','co',9,4.8,'Di chỉ của một đại trận từng phong ấn thứ gì đó. Trận đã nứt. Mỗi năm vết nứt rộng thêm một tấc.'),
+ R(3,'r_txdaodao','Đạo Đài Sơn','tong',5,4.6,'Ngọn núi có một đài đá tự nhiên khắc đầy đạo văn. Đại năng ngồi giảng đạo ở đây, nghe được một câu là đại cơ duyên.'),
+ // ================= TẦNG 4 · THÁNH GIỚI =================
+ R(4,'r_thanhvuc','Thánh Vực Trung Tâm','thanh',6,7.0,'Trung tâm Thánh Giới, mỗi viên gạch lát đường là một khối linh ngọc. Người đi lại đều là kẻ Phàm Giới gọi là thần.'),
+ R(4,'r_thanhchien','Thánh Chiến Di Trường','chien',9,7.5,'Chiến trường nơi các thánh nhân từng quyết đấu. Không gian vẫn còn rách, thò tay vào vết rách là mất cả cánh tay.'),
+ R(4,'r_thanhco','Thánh Cốt Bình Nguyên','co',9,7.2,'Bình nguyên nằm trên xương một sinh vật lớn bằng một dãy núi. Xương vẫn tỏa thánh uy sau vô lượng kiếp.'),
+ R(4,'r_thanhtri','Thánh Trì','bi',7,8.0,'Một hồ nước thánh khí, tắm một lần rửa sạch tạp chất trong đạo cơ. Mỗi ngàn năm chỉ mở một lần, và luôn có kẻ chết ở cửa.'),
+ // ================= TẦNG 5 · ĐẾ VỰC =================
+ R(5,'r_dedo','Đế Đô Vô Thượng','thanh',7,12,'Kinh đô của Đế Vực. Cổng thành cao vạn trượng, khắc tên những vị đế đã chứng đạo — và những vị đã ngã.'),
+ R(5,'r_delang','Đế Lăng Cấm Địa','co',10,13,'Lăng mộ của các cổ đế. Bước vào là nghịch thiên; đế uy trong đó đè chết kẻ chưa đủ tư cách ngay tại cửa.'),
+ R(5,'r_devuc','Đế Chiến Hư Không','chien',10,12.5,'Vùng hư không vỡ nát vì một trận đế chiến. Quy tắc thời gian hỗn loạn — một bước có thể là trăm năm.'),
+ R(5,'r_dethai','Thái Sơ Nguyên Địa','bi',9,14,'Nơi được cho là mảnh sót lại của thuở khai thiên. Vật chất ở đây chưa thành hình, còn là hỗn độn thuần túy.'),
+ // ================= TẦNG 6 · HỒNG HOANG =================
+ R(6,'r_hhthaico','Thái Cổ Chiến Trường','chien',10,20,'Chiến trường thời Hồng Hoang, xác thần ma xếp thành núi. Máu chưa khô sau vô lượng năm.'),
+ R(6,'r_hhtoluong','Tổ Long Huyệt','yeu',10,22,'Huyệt địa của Tổ Long. Long uy còn sót khiến mọi loài mang huyết mạch rồng phải quỳ.'),
+ R(6,'r_hhbatco','Bất Tử Sơn','co',10,24,'Ngọn núi mà mọi thứ trên đó không thể chết — kể cả những thứ đáng lẽ phải chết từ lâu.'),
+ // ================= TẦNG 7-9 =================
+ R(7,'r_hdhaidao','Hỗn Độn Hải Nhãn','bi',10,40,'Mắt bão của Hỗn Độn Hải, nơi hỗn độn khí phun trào. Đại đạo ở đây chưa phân, mọi quy tắc đều có thể bẻ.'),
+ R(7,'r_hdtansinh','Tàn Sinh Quần Đảo','hai',10,38,'Đảo trôi trong hỗn độn, mỗi đảo là mảnh vỡ của một thế giới đã chết. Trên đó còn dân sót lại, thờ phụng cái chết của quê hương.'),
+ R(8,'r_hmvuctru','Hồng Mông Tổ Khí Trì','bi',10,70,'Ao tổ khí Hồng Mông. Một hớp đủ tái tạo đạo cơ; một hớp quá tay là tan thành hư vô.'),
+ R(8,'r_hmthienmon','Thiên Môn Cựu Chỉ','co',10,68,'Di chỉ của cánh cổng mà các bậc phi thăng từng bước qua. Cổng đã sập. Không ai biết bên kia còn gì.'),
+ R(9,'r_vhngoaivuc','Vô Hạn Ngoại Vực','bi',10,120,'Bên ngoài mọi thế giới. Không có phương hướng, không có thời gian, không có thiên đạo. Chỉ có ngươi — và những thứ chưa từng có tên.')];
+function regionsOf(t){return REGIONS.filter(r=>r.w===(t||S.world.tier||1));}
+function curRegion(){const rs=regionsOf(S.world.tier);return rs.find(r=>r.n===S.world.region)||rs[0]||REGIONS[0];}
+function regionQi(){const r=curRegion();if(!r)return 1;const rs=regionsOf(r.w);if(!rs.length)return 1;
+  const avg=rs.reduce((s,x)=>s+x.qi,0)/rs.length;return clamp(r.qi/avg,0.4,2.2);}
+function regionDanger(){const r=curRegion();return r?r.dg:1;}
+// địa bí & bí cảnh "thuộc về" vùng nào (ánh xạ ổn định theo id)
+function hashId(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+function placesIn(rid){const rs=regionsOf(S.world.tier);const idx=rs.findIndex(r=>r.id===rid);if(idx<0||!rs.length)return[];
+  return availPlaces().filter(p=>hashId(p.id)%rs.length===idx);}
+function realmsIn(rid){const rs=regionsOf(S.world.tier);const idx=rs.findIndex(r=>r.id===rid);if(idx<0||!rs.length)return[];
+  return FALLEN_ONES.filter(f=>(S.realmsFound||[]).indexOf(f.id)>=0&&hashId(f.id)%rs.length===idx);}
+function travelTo(rid){const rs=regionsOf(S.world.tier);const from=rs.findIndex(r=>r.n===S.world.region);const to=rs.findIndex(r=>r.id===rid);const r=rs[to];if(!r)return;
+  const dist=Math.max(1,Math.abs(to-(from<0?0:from)));const yrs=dist*(0.25+RNG.range(0,0.35))/(1+S.ri*0.05);
+  advance(yrs);S.world.region=r.n;(S.regionsSeen=S.regionsSeen||[]).indexOf(r.id)<0&&S.regionsSeen.push(r.id);
+  log(`Ngươi vượt ${dist} vùng đất, tới 「${r.n}」 (mất ${yrs.toFixed(1)} năm).`,'');
+  if(!S.alive){TAB='story';afterAct();return;}
+  TAB='story';
+  // đường xa sinh biến cố — hiểm địa càng dễ gặp chuyện
+  const p=clamp(0.22+r.dg*0.045,0.15,0.75);
+  if(RNG.chance(p)){setScene(rollEvent());return;}
+  flow('kham',`Sau ${yrs.toFixed(1)} năm đường trường, ngươi đặt chân tới 「${esc(r.n)}」.\n\n${esc(r.d)}`);}
+function mapTab(){const rs=regionsOf(S.world.tier);const cur=curRegion();const seen=S.regionsSeen||[];
+  const rows=rs.map(r=>{const here=r.id===cur.id;const pls=placesIn(r.id);const fnd=pls.filter(p=>placeCount(p.id)>0).length;const brs=realmsIn(r.id);
+    const dgc=r.dg>=9?'var(--red)':r.dg>=6?'var(--gold2)':r.dg>=4?'var(--cyan)':'var(--muted)';
+    return `<div class="rg${here?' here':''}">
+      <div class="rg-t"><span class="rg-n">${here?'📍 ':''}${esc(r.n)}</span><span class="rg-k">${RK[r.k]||''}</span></div>
+      <div class="rg-d">${esc(r.d)}</div>
+      <div class="rg-m"><span>Hiểm độ <b style="color:${dgc}">${r.dg}/10</b></span><span>Linh khí <b style="color:var(--cyan)">×${r.qi}</b></span>${pls.length?`<span>Địa bí <b>${fnd}/${pls.length}</b></span>`:''}${brs.length?`<span>Bí cảnh <b style="color:var(--gold2)">${brs.length}</b></span>`:''}</div>
+      ${here?'<div class="rg-here">Ngươi đang ở đây</div>':`<button class="btn small" data-go="${r.id}">Khởi hành → ${esc(r.n)}</button>`}</div>`;}).join('');
+  $('#view').innerHTML=`<div class="sheet"><h2>Thiên Địa Đồ</h2>
+   <p class="muted" style="font-size:.82rem;margin-bottom:2px"><b style="color:var(--gold)">${esc(S.world.name)}</b> — giới cấp ${S.world.tier}/${WORLDS.length} (${esc(WORLDS[S.world.tier-1].n)}) · đã đặt chân ${seen.length}/${rs.length} vùng</p>
+   <p class="muted" style="font-size:.75rem;margin-bottom:8px">Mỗi vùng có linh khí &amp; hiểm độ riêng. Đi lại tốn thọ nguyên; đường xa hay sinh biến cố. Toàn bản đồ vạn giới: <b>${REGIONS.length}</b> vùng trải ${WORLDS.length} tầng thế giới — phi thăng vượt giới sẽ mở ra bản đồ hoàn toàn mới.</p>
+   ${rows}
+   <p class="muted" style="font-size:.74rem;margin-top:8px">🌠 Vượt giới (phi thăng) mở bản đồ tầng trên: ${WORLDS.map(w=>w.tier<=S.world.tier?`<b style="color:var(--gold)">${esc(w.n)}</b>`:`<span style="opacity:.45">${esc(w.n)}</span>`).join(' → ')}</p></div>`;}
 /* ---- ACCORDION: phân hoá tab thành từng nhóm gập/mở, có đếm số ---- */
 let ACC={info:true,chiso:true};
 function acc(id,ic,ti,ct,body){const open=!!ACC[id];
@@ -2529,6 +2633,7 @@ document.addEventListener('click',(e)=>{
     else if(a==='new')chooseOrigin();
     return;}
   const ac=e.target.closest('[data-acc]');if(ac){const k=ac.getAttribute('data-acc');ACC[k]=!ACC[k];render();return;}
+  const go=e.target.closest('[data-go]');if(go){travelTo(go.getAttribute('data-go'));return;}
   const tab=e.target.closest('[data-tab]');if(tab){TAB=tab.getAttribute('data-tab');render();return;}
   const use=e.target.closest('[data-use]');if(use){usePill(use.getAttribute('data-use'));render();save();return;}
   const sub=e.target.closest('[data-subtech]');if(sub){const i=+sub.getAttribute('data-subtech');const t=S.techs[i];if(t){if(!canLearnMore()){alert('Kh\u00f4ng \u0111\u1EE7 slot ph\u1EE5 tu ('+(S.subTechs||[]).length+'/'+techSlots()+'). C\u1EA3nh gi\u1EDBi/ng\u1ED9 t\u00ednh cao h\u01A1n m\u1EDBi \u00f4m th\u00eam \u0111\u01B0\u1EE3c.');}else{S.techs.splice(i,1);learnSub(t);log('Kh\u1EDFi t\u1EA1o ph\u1EE5 tu: '+t.name+'.','good');}}render();save();return;}
