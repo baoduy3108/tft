@@ -1458,6 +1458,13 @@ function originArchetype(){const f=S.flags||{};
   if(S.race&&S.race!=='nhan')return'race';
   if(f.rich_heir||f.noble_manner||f.hidden_lineage||f.merchant)return'noble';
   if(f.martial_base)return'martial';
+  return commonSub();}
+// Xuất thân THƯỜNG chia 4 nhóm chủ đề -> mỗi nhóm một mở đầu khác nhau (thay vì ai cũng gặp lão ăn mày)
+function commonSub(){const n=(S.originName||'')+' '+(S.origin||'');
+  if(/ăn mày|cô nhi|bỏ rơi|gánh nước|bán than|khiêng kiệu|hầu trà|hầu|nô |tôi tớ|xin|mồ côi|kiệu|than|nước thuê/i.test(n))return'khonho';
+  if(/săn|chài|ngư|rắn|chăn|mỏ|tiều|lưới|dê|trâu|đào mỏ|đào huyệt|phu đào/i.test(n))return'sonlam';
+  if(/thợ|rèn|gốm|mộc|may|giấy|đá|đồ tể|tằm|diêm|thú y|làm giấy|nuôi tằm/i.test(n))return'tholuyen';
+  if(/học|đồ|tửu|hát|xiếc|đò|bát âm|buôn|đạo chích|trộm|lính|nhị|thầy|ganh xiếc|thư sinh/i.test(n))return'thithanh';
   return'common';}
 // Kết thúc arc nhập đạo — trao công pháp + đan, mở hub, kèm dư âm cơ duyên ẩn của riêng xuất thân
 function nhapDaoDone(text,opt){opt=opt||{};S.tech=genStarterTech();const pills=opt.pills!=null?opt.pills:3;S.inv.tu_khi=(S.inv.tu_khi||0)+pills;S.flags.canPlay=true;
@@ -1502,7 +1509,23 @@ function sceneArc(a){const f=S.flags,o=S.originName||'';
     {l:'Cường hành đập vỡ cảnh giới võ đạo, lấy võ ý làm đạo cơ!',hint:'Nền tảng nhục thân cực mạnh — con đường cương mãnh.',cls:'primary',act:()=>{S.hpMul=Math.round(S.hpMul*1.05*1000)/1000;S.hpMax=Math.round(100*S.hpMul);S.hp=S.hpMax;nhapDaoDone('Ngươi vận toàn bộ võ ý tích lũy nửa đời, cường hành dẫn linh khí xé qua kinh mạch đã được tôi luyện bởi võ đạo. Đau đớn tột cùng — rồi thông suốt. Nhục thân ngươi vốn đã hơn người, nay thêm linh khí, như hổ mọc cánh.',{pills:3,method:'võ ý nhập đạo',att:1});}},
     {l:'Nén kiêu ngạo, đi tầm sư học đạo bài bản từ đầu.',hint:'Chậm mà chắc — nền móng vững.',act:()=>nhapDaoDone('Ngươi buông bỏ ngạo khí của một Võ Tôn, khiêm tốn tầm một tán tu chỉ điểm, học dẫn khí nhập thể đúng cách. Nền võ đạo giúp ngươi tiếp thu nhanh khác thường. Vững vàng từng bước một.',{pills:4})},
   ]};}
-  // fallback
+  if(a==='khonho'){return{title:'Nhập Đạo · Dưới Đáy Bùn Đen',narr:`Cả đời ngươi sống dưới đáy xã hội — đói, rét, đòn roi, khinh miệt. Đêm nay, giữa cơn cùng quẫn, ngươi trốn vào một nơi hoang phế và tình cờ chạm phải di vật của một tán tu chết cóng: một quyển 「Thanh Khí Quyết」 ố vàng nắm chặt trong tay xác.\n\nKhông có sư phụ, không có ai chỉ đường. Chỉ có ngươi, cái đói, và một tia cơ hội đổi đời.`,choices:[
+    {l:'Giật lấy quyển sách, tự mình mò mẫm nhập đạo.',hint:'Kẻ dưới đáy chỉ có thể tự cứu mình.',cls:'primary',act:()=>nhapDaoDone('Ngươi ôm quyển công pháp như ôm cả sinh mệnh, lần mò từng câu khẩu quyết dưới ánh trăng, tự dẫn tia linh khí đầu tiên nhập thể. Không ai dạy, không ai giúp — con đường này ngươi tự mở bằng chính đôi tay chai sạn.',{pills:3,karma:1})},
+    {l:'Lục kỹ tử thi xem còn gì đáng giá nữa không.',hint:'Sống dưới đáy dạy ngươi không bỏ sót thứ gì.',act:()=>{S.linhThach+=50;nhapDaoDone('Ngươi lục soát kỹ càng — ngoài công pháp còn vài viên linh thạch vụn và một túi đan. Bản năng sinh tồn của kẻ khốn cùng giúp ngươi khởi đầu khá hơn tưởng tượng.',{pills:4});}},
+  ]};}
+  if(a==='tholuyen'){return{title:'Nhập Đạo · Nghề Trong Tay',narr:`Đôi tay ngươi đã chai sạn vì nghề từ thuở bé — ngươi hiểu vật liệu, hiểu lửa, hiểu sự tỉ mỉ. Một ngày, khi đang làm nghề, ngươi vô tình tạo ra một thứ giữ được linh khí không tan; hoặc một tu sĩ ngang qua sững người trước tay nghề của ngươi, để lại một quyển công pháp nhập môn.\n\n"Đôi tay này, dùng để làm khí cụ phàm tục thì phí quá."`,choices:[
+    {l:'Vừa hành nghề vừa lĩnh hội — lấy nghề nuôi đạo.',hint:'Nền tảng nghề giúp ngươi tiến chắc.',cls:'primary',act:()=>nhapDaoDone('Ngươi dẫn khí nhập thể theo cách của một người thợ — kiên nhẫn, tỉ mỉ, chắc từng bước. Cái nghề nuôi thân năm xưa nay thành nền móng cho con đường tu tiên, và một nghề phụ sáng giá đang chờ.',{pills:3,method:'công pháp + nền nghề'})},
+    {l:'Dốc hết tâm sức nghiên cứu, cải tiến công pháp theo cách của mình.',hint:'Ngộ tính của người thợ lành nghề.',act:()=>{S.cmp=Math.round((S.cmp+0.05)*100)/100;nhapDaoDone('Ngươi mày mò cải biến khẩu quyết cho hợp với thể chất mình — chậm hơn nhưng vững hơn. Đầu óc của một người thợ giỏi giúp ngươi ngộ ra vài điều người khác bỏ qua.',{pills:3});}},
+  ]};}
+  if(a==='sonlam'){return{title:'Nhập Đạo · Rừng Sâu Sông Cả',narr:`Ngươi lớn lên giữa núi rừng sông nước, quen với hiểm nguy và cái chết rình rập. Một lần vào sâu nơi người thường không dám tới, ngươi phát hiện một hang động ẩn linh khí, hoặc một con linh thú hấp hối, hoặc một cây linh dược phát sáng — và bên cạnh là dấu tích một tu sĩ đã ngã.\n\nBản năng sinh tồn mách bảo: đây là cơ hội, cũng là hiểm họa.`,choices:[
+    {l:'Mạo hiểm tiến sâu, đoạt lấy cơ duyên nơi hoang dã.',hint:'Kẻ quen hiểm địa mới dám vào.',cls:'primary',act:()=>{if(RNG.chance(0.3)){deductLife(3,'trúng hiểm nơi rừng sâu');}nhapDaoDone('Ngươi men theo hiểm địa với bản lĩnh của kẻ sinh ra từ núi rừng, đoạt được quyển công pháp cùng chút cơ duyên. Thiên nhiên khắc nghiệt đã dạy ngươi cách sống sót — và cách nắm lấy cơ hội.',{pills:3,method:'công pháp hoang dã'});}},
+    {l:'Thu phục con linh thú bị thương làm bạn đồng hành.',hint:'Ngươi hiểu loài vật hơn hiểu người.',act:()=>{nhapDaoDone('Ngươi cứu chữa con linh thú; nó nguyện đi theo ngươi. Cùng nó, ngươi dẫn khí nhập thể giữa núi rừng — khởi đầu con đường của một kẻ vừa tu vừa ngự thú.',{pills:3});(function(){try{var b=genBeast(2);(S.beasts=S.beasts||[]).push(b);log('Thu phục linh thú: '+b.name+'.','good');}catch(e){}})();}},
+  ]};}
+  if(a==='thithanh'){return{title:'Nhập Đạo · Phố Thị Phồn Hoa',narr:`Ngươi lớn lên nơi phố chợ đông đúc, tai nghe mắt thấy đủ hạng người — hiệp khách, gian thương, tu sĩ giả dạng. Sự tinh ranh đường phố giúp ngươi đánh hơi được một cơ hội: một quyển công pháp bị rao bán rẻ mạt, hoặc lén nghe được bí mật nhập đạo, hoặc một vị khách lạ để lộ thân phận tu tiên.\n\nỞ chốn này, kẻ nhanh mắt nhanh tai mới vớ được cơ duyên.`,choices:[
+    {l:'Dùng hết mưu mẹo đường phố để đoạt lấy công pháp.',hint:'Khôn khéo hơn người là vốn liếng của ngươi.',cls:'primary',act:()=>nhapDaoDone('Bằng sự lanh lợi tích cóp cả tuổi thơ nơi phố thị, ngươi xoay xở có được quyển công pháp và tự dẫn khí nhập thể. Chốn phồn hoa dạy ngươi: cơ duyên không tự tới, phải giành lấy bằng cái đầu.',{pills:3,method:'công pháp + đầu óc phố thị'})},
+    {l:'Kết giao với vị khách lạ, mong được chỉ điểm.',hint:'Quan hệ đôi khi quý hơn bảo vật.',act:()=>{S.fame=clamp(S.fame+3,-100,1000);nhapDaoDone('Ngươi khéo léo làm thân với vị tu sĩ ẩn danh; ông ta hứng thú chỉ cho ngươi cách nhập đạo. Ở đời, biết đối nhân xử thế cũng là một loại thiên phú.',{pills:4});}},
+  ]};}
+  // fallback (phàm nhân không rõ nhóm) -> arc lão ăn mày
   return sceneNhapDao(0);
 }
 // ===== ARC NHẬP ĐẠO — phàm nhân bước chân vào tu tiên qua CỐT TRUYỆN (chưa có hub, chưa có công pháp) =====
@@ -1594,9 +1617,9 @@ function sceneNgoDao(){S.stats.ngodao++;const gain=0.1+RNG.range(0,0.2)*(S.cmp);
   return{title:'Ngộ Đạo',narr:`Ngươi ngồi kiết già, gạt bỏ vạn niệm. Hơi thở chậm lại, chậm lại... cho tới khi ngươi không còn nghe thấy nó nữa.
 
 ${RNG.pick(['Một chiếc lá khô xoay tròn rơi xuống. Trong khoảnh khắc, ngươi như chạm được một tia đạo vận.','Ngươi thấy mình đứng giữa một bàn cờ trải khắp thiên địa, còn mình chỉ là một quân tốt nhỏ bé.','Dòng thời gian như ngưng đọng. Ngươi thấy sinh, thấy tử, thấy vạn vật tuần hoàn.','Ngươi thấy một hạt giống nứt vỏ, một vì sao tắt lịm, cả hai đều là một quy luật.','Trong hư vô, ngươi nghe thấy tiếng vọng của chính mình từ vô lượng kiếp trước.','Ngươi thấy mưa rơi ngược lên trời, và hiểu ra: cái gọi là quy luật cũng có thể bị bẻ cong.','Một giọt nước hòa vào biển lớn — ngươi ngộ ra thế nào là hữu ngã, thế nào là vô ngã.','Ngươi đối diện một tấm gương vô tận, trong đó có vô số cái tôi đang tu luyện, đang chết, đang tái sinh.'])}`,
-    choices:[{l:'Đắm mình vào cảm ngộ.',act:()=>{S.progress=Math.min(1,S.progress+gain);S.dao=Math.min(100,S.dao+5);advance(RNG.int(1,5));if(insight){S.flags.ngoDao=0.12;log(`Tâm cảnh thăng hoa! Tiến độ +${Math.round(gain*100)}%, giữ được linh cảm cho đột phá tới.`,'good');}else log(`Ngươi lĩnh hội được đôi phần, tiến độ +${Math.round(gain*100)}%.`,'good');if(RNG.chance(0.15)&&insight){const t=genTech(clamp(3,1,maxGrade(S.world.tier)));S.techs.push(t);log('Trong cảm ngộ, ngươi lĩnh hội một môn công pháp: '+t.name+'!','good');}
-      if(S.ri>=5&&insight&&RNG.chance(0.12+S.cmp*0.03)){const law=RNG.pick(LAWS);if(!(S.laws||[]).includes(law)){(S.laws=S.laws||[]).push(law);log('⚛ Ngươi lĩnh ngộ một tia ĐẠI ĐẠO PHÁP TẮC: «'+law+'»! Đây là nền tảng của cường giả cảnh cao.','good');}}afterAct();}},
-    {l:'Ghi nhớ nhưng không sa đà.',act:()=>{advance(0.5);log('Ngươi cất cảm ngộ vào lòng rồi tiếp tục.','');afterAct();}}]};}
+    choices:[{l:'Đắm mình vào cảm ngộ.',cls:'primary',act:()=>{S.progress=Math.min(1,S.progress+gain);S.dao=Math.min(100,S.dao+5);advance(RNG.int(1,5));let extra='';if(insight){S.flags.ngoDao=0.12;extra='Tâm cảnh thăng hoa — giữ được linh cảm cho lần đột phá tới.';}if(RNG.chance(0.15)&&insight){const t=genTech(clamp(3,1,maxGrade(S.world.tier)));S.techs.push(t);extra+=(extra?' ':'')+'Trong cảm ngộ, ngươi lĩnh hội một môn công pháp: '+t.name+'!';}
+      if(S.ri>=5&&insight&&RNG.chance(0.12+S.cmp*0.03)){const law=RNG.pick(LAWS);if(!(S.laws||[]).includes(law)){(S.laws=S.laws||[]).push(law);extra+=(extra?' ':'')+'⚛ Ngươi lĩnh ngộ một tia ĐẠI ĐẠO PHÁP TẮC: «'+law+'»!';}}setResult('Ngươi đắm mình vào cảm ngộ, tiến độ tu vi +'+Math.round(gain*100)+'%.'+(extra?'\n\n'+extra:''));}},
+    {l:'Ghi nhớ nhưng không sa đà.',act:()=>{advance(0.5);setResult('Ngươi cất cảm ngộ vào lòng, không sa đà, rồi tiếp tục con đường của mình.');}}]};}
 
 /* ---- EVENTS (5 loại + báo thù/đền đáp từ nhân quả) ---- */
 function disasterChance(){const l=luckOf();let p=0.02;if(S.karma<0)p+=Math.min(0.4,-S.karma*0.01);p+=Math.min(0.4,S.att*0.005);p/=Math.max(0.5,l.surv);p*=l.att;return clamp(p,0.005,0.9);}
@@ -1992,40 +2015,51 @@ function evBiVan(){var locked=[];for(var i=0;i<BIVAN.length;i++)if((S.bivan||[])
   return{title:'DỊ VĂN · Một Mảnh Chân Tướng',narr:`Giữa chốn phiêu bạt, ngươi vô tình chạm phải một mảnh bí văn cổ — một sự thật vụn vỡ về thế gian này:\n\n"${BIVAN[idx]}"\n\n(Dị Văn Lục: ${S.bivan.length}/${BIVAN.length} — ghi lại ở tab Nhân Vật)`,choices:[
     {l:'Ghi khắc vào tâm khảm.',cls:'primary',act:()=>setResult('Ngươi khắc mảnh dị văn này vào ký ức. Từng mảnh nhỏ, một ngày sẽ ghép thành bức tranh lớn về chân tướng của cái thế giới này.')}]};}
 function rollEvent(){worldPulse();
-  // CƠ DUYÊN ĐỊNH MỆNH — bộ cơ duyên riêng của nhân vật, mở dần thành truyện
-  if((S.fated||[]).length&&RNG.chance(0.08))return evCoDuyen();
-  // DỊ VĂN — mảnh vụn chân tướng thế gian
-  if(RNG.chance(0.08))return evBiVan();
-  // nhân quả: nếu có nợ máu, đôi khi bị báo thù
+  // Nhân quả CƯỠNG CHẾ (ưu tiên cao, hiếm): nợ máu bị báo thù / thiện được báo đáp
   const debts=S.ledger.filter(x=>x.n<=-2&&(x.tag.includes('giết')||x.tag.includes('cướp')||x.tag.includes('phản')||x.tag.includes('tà')||x.tag.includes('hắc')));
-  if(debts.length&&RNG.chance(Math.min(0.5,0.15+debts.length*0.08)))return evRevenge();
+  if(debts.length&&RNG.chance(Math.min(0.45,0.14+debts.length*0.07))){S._lastEv='revenge';return evRevenge();}
   const goods=S.ledger.filter(x=>x.n>=2);
-  if(goods.length&&RNG.chance(0.12))return evReward();
-  // (D) CỐT TRUYỆN THEO XUẤT THÂN — các arc riêng kích hoạt dần khi tu luyện
-  if(S.ri>=2&&RNG.chance(0.07)){const arc=evOriginArc();if(arc)return arc;}
-  // (B) ĐẠO TÂM · tình kiếp — một niệm
-  if(S.ri>=2&&RNG.chance(0.05))return evHeartTrial();
-  // (A) THIÊN CƠ · manh mối bí ẩn ngàn năm
-  if(RNG.chance(0.055))return evClue();
-  // ĐỊA BÍ · bí ẩn theo từng nơi lớn / từng thế giới
-  if(RNG.chance(0.06))return evPlaceMystery();
-  // BÍ CẢNH ĐẠI NĂNG ĐÃ NGÃ — di tích cường giả tử vong (truyền thừa & sát cơ)
-  if(S.ri>=2&&availRealms().length&&RNG.chance(0.05))return evFallenRealm();
-  // (C) TRƯỜNG SINH LỘ · càng cao/càng sâu, thiên đạo càng muốn diệt kẻ cầu trường sinh
+  if(goods.length&&RNG.chance(0.1)){S._lastEv='reward';return evReward();}
+  // POOL SỰ KIỆN có trọng số + điều kiện — chọn 1, dựng 1 lần, CHỐNG LẶP liên tiếp
+  const npcRel=Object.keys(S.npcs).some(i=>S.npcs[i].alive&&Math.abs(S.npcs[i].relation)>=40);
   const peril=clamp((S.ri-6)*0.014+(S.world.tier-1)*0.02,0,0.32);
-  if(peril>0&&RNG.chance(peril))return RNG.chance(0.5)?evHeavenSuppress():evForbiddenTruth();
-  if(S.sect&&RNG.chance(0.24))return evSect();
-  if(S.daolu&&RNG.chance(0.1))return evDaoluPeril();
-  if(!S.daolu&&S.ri>=1&&S.dao>=45&&RNG.chance(0.06))return evDaolu();
-  if(RNG.chance(0.05))return evWorldBoss();
-  if(RNG.chance(0.05))return evForbiddenZone();
-  if(RNG.chance(0.05))return evAuction();
-  if(S.fame>=30&&RNG.chance(0.05))return evDaoConference();
-  if(S.ri>=1&&RNG.chance(0.07))return evRival();
-  if(Object.keys(S.npcs).some(i=>S.npcs[i].alive&&Math.abs(S.npcs[i].relation)>=40)&&RNG.chance(0.12))return evConsequence();
-  if(RNG.chance(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)))return evInnerDemon();
-  const dis=disasterChance(),fort=fortuneChance();const r=RNG.next();
-  if(r<dis*0.6)return evCombat();if(r<dis)return evApoc();if(r<dis+fort)return evFortune();if(r<dis+fort+0.13)return sceneNgoDao();if(r<dis+fort+0.19&&Object.keys(S.npcs).length)return evBetray();if(r<dis+fort+0.24&&RNG.chance(0.5))return evBloodline();return RNG.pick([evFortune,evCombat])();}
+  const dis=disasterChance(),fort=fortuneChance();
+  const duyenAvail=(S.fated||[]).some(id=>{const cd=CO_DUYEN.find(c=>c.id===id);return cd&&!(S.duyenDone&&S.duyenDone[cd.id])&&S.ri>=(cd.min||0)&&(!cd.gate||cd.gate());});
+  const cand=[];const add=(k,w,fn)=>{if(w>0)cand.push({k:k,w:w,fn:fn});};
+  add('coduyen',duyenAvail?10:0,evCoDuyen);
+  add('divan',7,evBiVan);
+  add('arc',(S.ri>=2)?7:0,null);
+  add('heart',(S.ri>=2)?5:0,evHeartTrial);
+  add('clue',5,evClue);
+  add('place',6,evPlaceMystery);
+  add('fallen',(S.ri>=2&&availRealms().length)?5:0,evFallenRealm);
+  add('peril',Math.round(peril*45),function(){return RNG.chance(0.5)?evHeavenSuppress():evForbiddenTruth();});
+  add('sect',S.sect?11:0,evSect);
+  add('daoluperil',S.daolu?4:0,evDaoluPeril);
+  add('daolu',(!S.daolu&&S.ri>=1&&S.dao>=45)?4:0,evDaolu);
+  add('worldboss',4,evWorldBoss);
+  add('forbidzone',4,evForbiddenZone);
+  add('auction',4,evAuction);
+  add('conf',(S.fame>=30)?4:0,evDaoConference);
+  add('rival',(S.ri>=1)?7:0,evRival);
+  add('consequence',npcRel?9:0,evConsequence);
+  add('innerdemon',Math.round(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)*45),evInnerDemon);
+  add('combat',Math.round(clamp(dis*45,3,30)),evCombat);
+  add('apoc',Math.round(clamp(dis*12,1,9)),evApoc);
+  add('fortune',Math.round(clamp(fort*45,4,24)),evFortune);
+  add('ngodao',7,sceneNgoDao);
+  add('betray',Object.keys(S.npcs).length?5:0,evBetray);
+  add('bloodline',4,evBloodline);
+  // chống lặp: loại kind vừa xảy ra nếu vẫn còn lựa chọn khác
+  let pool=cand;if(S._lastEv&&cand.length>1){const f=cand.filter(c=>c.k!==S._lastEv);if(f.length)pool=f;}
+  for(let tries=0;tries<5&&pool.length;tries++){
+    const pick=RNG.weight(pool.map(c=>[c.w,c]));
+    let ev;
+    if(pick.k==='arc'){ev=evOriginArc();if(!ev){pool=pool.filter(c=>c.k!=='arc');continue;}}
+    else ev=pick.fn();
+    S._lastEv=pick.k;return ev;
+  }
+  S._lastEv='fortune';return evFortune();}
 const LEGENDS=['Nghe nói Thiên Kiêu của Thanh Vân Tông vừa đột phá Trúc Cơ khi mới mười sáu tuổi.','Đồn rằng một khí vận chi tử vừa bước ra từ bí cảnh, mang theo cả một truyền thừa.','Xa xôi nơi Đế Vực, hai vị Cổ Đế giao thủ, chấn nứt cả một tầng trời.','Một yêu nghiệt vô danh vừa đồ sát cả một tông môn chỉ vì một cây linh dược.','Có tin một bí cảnh vạn năm sắp mở ra ở Hoang Nguyên; vô số tu sĩ đang đổ về đó.','Người ta bảo Đan Vương các vừa ra giá trên trời cho một cây thiên niên linh dược.','Một vị lão tổ bế quan ngàn năm của Huyết Ma giáo vừa có động tĩnh — cả tu tiên giới nín thở.','Nghe đồn có kẻ luyện thành cấm thuật đoạt xá, chuyên chiếm thân xác thiên tài trẻ tuổi.','Một tán tu vô danh bỗng nổi danh sau một đêm vì chém chết một tên đệ tử đại tông môn.','Thương hội Vạn Bảo Lâu vừa treo thưởng truy nã một nữ tu trộm mất bảo vật trấn phái.','Linh mạch một vùng đột nhiên cạn kiệt, cả một tòa thành tu chân trong sớm chiều thành phế tích.','Đồn rằng nơi tận cùng tinh không có một cánh cửa cổ, mở ra là trường sinh, cũng có thể là diệt vong.'];
 // Pháp tắc đại đạo: 55 bản nguyên × 6 tầng lĩnh ngộ = 330 pháp tắc phân biệt
 const LAW_BASE=['Kim','Mộc','Thủy','Hỏa','Thổ','Lôi Đình','Cuồng Phong','Băng Sương','Viêm Diễm','Đại Địa','Quang Minh','Hắc Ám','Kịch Độc','Huyết Sát','Kiếm','Đao','Thương','Không Gian','Thời Gian','Trọng Lực','Sinh Mệnh','Tử Vong','Luân Hồi','Nhân Quả','Nghiệp Lực','Vận Mệnh','Hủy Diệt','Sáng Thế','Hỗn Độn','Âm','Dương','Ngũ Hành','Tinh Thần','Linh Hồn','Mộng Cảnh','Cấm Chế','Thôn Phệ','Bất Diệt','Hư Vô','Thực Tại','Nhật','Nguyệt','Tinh Thần','Sơn Nhạc','Thương Hải','Cương','Nhu','Tốc Độ','Phong Ấn','Ôn Dịch','Cổ Độc','Thần Lôi','Vẫn Tinh','Hồng Hoang','Chân Thực'];
