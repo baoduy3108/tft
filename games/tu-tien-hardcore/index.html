@@ -107,6 +107,19 @@ h2{font-family:var(--serif);color:var(--gold);font-size:1.24rem;letter-spacing:.
 .origin-card .ds{font-size:.8rem;color:var(--muted);margin-top:4px;line-height:1.5}
 .warn-note{color:var(--bad);font-size:.82rem;margin-top:14px;font-style:italic}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+.acc{border:1px solid var(--line);border-radius:11px;margin:8px 0;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012))}
+.acc-h{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;user-select:none;transition:background .16s}
+.acc-h:hover{background:rgba(212,175,55,.08)}
+.acc-h .ic{font-size:.98rem;line-height:1}
+.acc-h .ti{flex:1;font-weight:700;font-size:.79rem;letter-spacing:.6px;color:var(--gold)}
+.acc-h .ct{font-size:.7rem;min-width:22px;height:20px;padding:0 7px;border-radius:10px;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.28);color:var(--gold2);display:flex;align-items:center;justify-content:center;font-weight:700}
+.acc-h .ar{font-size:.62rem;color:var(--muted);transition:transform .18s ease}
+.acc.open .acc-h .ar{transform:rotate(90deg)}
+.acc.open .acc-h{background:rgba(212,175,55,.06);border-bottom:1px solid var(--line)}
+.acc-b{padding:4px 12px 10px;display:none}
+.acc.open .acc-b{display:block;animation:accIn .18s ease}
+@keyframes accIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.acc-b>p{margin:6px 0}
 </style>
 </head>
 <body>
@@ -854,7 +867,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,moment:'kham',momentLead:'',momentHist:[],momentTag:{},
+    inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,moment:'kham',momentLead:'',momentHist:[],momentTag:{},
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -911,9 +924,10 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
   if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên cạn kiệt. Ngươi ngồi kiết già, hóa thành tro tàn theo lẽ trời đất.';log('☠ Thọ nguyên cạn.',' death');}}
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
-function cultRate(){const tech=S.tech?(0.6+S.tech.grade*0.25):0.3;const taint=Math.max(0.2,1-S.taint*0.02);const diff=S.ri<=0?0.8:(1+S.ri*0.25)*Math.pow(1.06,S.ri);
+function cultRate(){const tech=(S.tech?(0.6+S.tech.grade*0.25)*(0.72+(S.tech.prof||0)/360):0.3)+auxCultBonus();const taint=Math.max(0.2,1-S.taint*0.02);const diff=S.ri<=0?0.8:(1+S.ri*0.25)*Math.pow(1.06,S.ri);
   return 6*(S.root.spd)*(S.cultMul)*(S.tc.buff.cult||1)*machQi()*(S.world.qiMod||1)*sectCultBonus()*(1+profBonus('dan'))*(S.daolu?1.12:1)*tech*taint/diff;}
 function cultivate(years,hard){const gain=cultRate()*years*(hard?2.6:1);S.progress=Math.min(1,S.progress+gain);
+  growTechProf(years*(hard?1.9:1));
   const taint=(1-[0.5,0.55,0.65,0.72,0.8,0.86,0.9,0.93,0.95,0.97,0.985,1][clamp((S.world.machId||1)-1,0,11)])*0.5*years*(hard?2.5:1);S.taint+=taint;
   advance(years*(hard?2.6:1));if(hard)deductLife(years*0.6*(1-profBonus('y')),'khổ tu');
   if(S.taint>40){deductLife((S.taint-40)*0.1*years,'chướng tính ăn mòn kinh mạch');}
@@ -995,7 +1009,40 @@ function remember(npc,deed,d){npc.memory.push(deed);npc.relation=clamp(npc.relat
    ========================================================================= */
 let TAB='story';
 let freeRes=null;
-function powerMight(){let m=S.ri<=0?0:powerExp(S.ri,S.si);m+=Math.log10(S.atkMul*(S.tc.buff.atk||1));if(S.tech)m+=S.tech.grade*0.15;for(const t of S.treasures)m+=Math.log10(t.mult||1);for(const a of(S.arrays||[]))m+=Math.log10(a.mult||1)*0.5;for(const b of(S.beasts||[]))m+=Math.log10(b.mult||1);
+/* =========================================================================
+   ĐA CÔNG PHÁP — chủ tu + phụ tu (như truyện: main tu nhiều môn cùng lúc)
+   Slot mở theo cảnh giới/ngộ tính/nguyên thần. Mỗi môn có THUẦN THỤC riêng.
+   Tham nhiều hơn slot = tạp niệm, chướng khí, nguy cơ tẩu hỏa nhập ma.
+   ========================================================================= */
+function techSlots(){let n=0;const r=S.ri;
+  if(r>=2)n=1;if(r>=3)n=2;if(r>=4)n=3;if(r>=6)n=4;if(r>=10)n=5;if(r>=20)n=6;if(r>=40)n=8;
+  if(S.cmp>=2)n++;if(S.cmp>=4)n++;if(S.soul>=5)n++;if((S.laws||[]).length>=3)n++;
+  return n;}
+function techProf(t){return Math.round(t&&t.prof||0);}
+function techMastery(t){const p=techProf(t);return p>=100?'Đại Thành':p>=75?'Viên Mãn':p>=45?'Tiểu Thành':p>=15?'Nhập Môn':'Sơ Khuy';}
+function auxCultBonus(){let b=0;for(const t of(S.subTechs||[])){const p=(t.prof||0)/100;
+  if(String(t.tech||'').indexOf('Luyện Khí')>=0)b+=t.grade*0.035*p;else b+=t.grade*0.012*p;}return b;}
+function auxMightBonus(){let m=0;for(const t of(S.subTechs||[])){const p=0.35+(t.prof||0)/155;m+=t.grade*0.07*p;}return m;}
+function techOverload(){return Math.max(0,(S.subTechs||[]).length-techSlots());}
+function techDangerSum(){let d=0;for(const t of(S.subTechs||[]))d+=(t.danger||0);if(S.tech)d+=(S.tech.danger||0);return d;}
+function canLearnMore(){return (S.subTechs||[]).length<techSlots();}
+// tu luyện song song: mỗi môn tiến bộ chậm hơn khi ôm quá nhiều
+function growTechProf(years){const n=1+(S.subTechs||[]).length;const split=Math.pow(n,0.62);
+  if(S.tech)S.tech.prof=Math.min(100,(S.tech.prof||0)+years*(2.2+S.cmp*1.8)/split);
+  for(const t of(S.subTechs||[]))t.prof=Math.min(100,(t.prof||0)+years*(1.5+S.cmp*1.2)/split);
+  const ov=techOverload();
+  if(ov>0){S.taint+=ov*0.7*years;
+    if(RNG.chance(Math.min(0.3,ov*0.018*years))){const t=RNG.pick(S.subTechs);
+      log(`Tạp niệm bùng nổ! Ôm ${(S.subTechs||[]).length} môn phụ tu vượt quá ${techSlots()} slot — 「${t?t.name:'công pháp'}」 phản phệ.`,'bad');
+      S.hp=Math.max(1,Math.round(S.hp*0.6));deductLife(1+RNG.int(0,4),'tạp tu phản phệ');
+      if(t&&RNG.chance(0.35)){t.prof=Math.max(0,(t.prof||0)-18);log('Thuần thục '+esc(t.name)+' thụt lùi.','warn');}}}
+  const dg=techDangerSum();
+  if(dg>=14&&RNG.chance(Math.min(0.22,(dg-13)*0.012*years))){S.taint+=dg*0.25;
+    log('Nhiều môn tà công cùng vận chuyển trong người — khí tức xung đột, chướng tính tăng vọt.','bad');}}
+function learnSub(t){if(!t)return false;(S.subTechs=S.subTechs||[]).push(t);t.prof=t.prof||0;return true;}
+function dropSub(i){const t=(S.subTechs||[])[i];if(!t)return;S.subTechs.splice(i,1);S.techs.push(t);log('Ngươi ngưng tu 「'+t.name+'」, cất vào tàng thư.','');}
+function setMainTech(t){const old=S.tech;S.tech=t;t.prof=t.prof||0;if(old)S.techs.push(old);}
+function powerMight(){let m=S.ri<=0?0:powerExp(S.ri,S.si);m+=Math.log10(S.atkMul*(S.tc.buff.atk||1));if(S.tech)m+=S.tech.grade*0.15*(0.6+(S.tech.prof||0)/250);m+=auxMightBonus();for(const t of S.treasures)m+=Math.log10(t.mult||1);for(const a of(S.arrays||[]))m+=Math.log10(a.mult||1)*0.5;for(const b of(S.beasts||[]))m+=Math.log10(b.mult||1);
   m+=profBonus('khi');if(S.natal)m+=Math.log10((S.natal.mult||1))*(1+(S.natal.bond||0)*0.01)+0.3;for(const l of(S.laws||[]))m+=0.25;if(S.flags.huyetBao)m+=Math.log10(3);return m;}
 function fight(enemy){const gap=powerMight()-(powerExp(enemy.ri,enemy.si)+(enemy.boss?0.3:0)+(enemy.mightBonus||0));const l=luckOf();
   if(enemy.soul&&S.soul<enemy.ri*0.4){log(`${enemy.name} tung một đòn thần thức thẳng vào nguyên thần ngươi!`,'bad');if(RNG.chance(Math.max(0.1,0.5-S.soul*0.05))){S.alive=false;S.cause=`Nguyên thần bị ${enemy.name} nghiền nát (chưa luyện nguyên thần).`;return'dead';}deductLife(3,'nguyên thần bị công kích');}
@@ -2317,37 +2364,50 @@ function renderView(){const v=$('#view');
   v._choices=choices;
 }
 function freeform(){return `<div class="freeform"><div class="ff-l">✍ Hoặc tự quyết định (gõ hành động riêng — kể cả "chọn cả A và B"):</div><div class="ff-row"><input id="freetext" class="ff-in" type="text" placeholder="vd: lặng lẽ theo dõi rồi ra tay khi hắn sơ hở..." autocomplete="off"><button class="btn small primary" data-i="free">Làm</button></div></div>`;}
+/* ---- ACCORDION: phân hoá tab thành từng nhóm gập/mở, có đếm số ---- */
+let ACC={info:true,chiso:true};
+function acc(id,ic,ti,ct,body){const open=!!ACC[id];
+  return `<div class="acc${open?' open':''}"><div class="acc-h" data-acc="${id}"><span class="ic">${ic}</span><span class="ti">${esc(ti)}</span><span class="ct">${esc(String(ct))}</span><span class="ar">\u25B6</span></div><div class="acc-b">${body}</div></div>`;}
 function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).map(([k,v])=>`${k}:×${v}`).join(', ')||'không';
-  $('#view').innerHTML=`<div class="sheet"><h2>Nhân Vật & Thiên Phú</h2>
+  const _P=[];
+  _P.push(acc('info','\u{1F9EC}','TH\u00d4NG TIN',7,`
    <p><b>Cảnh giới:</b> ${esc(realmName(S.ri,S.si))} <span class="muted">(${S.ri>0?REALMS[S.ri-1].group:'Phàm'})</span> · Tu vi ${Math.round(S.progress*100)}% · Lực ${fmtExp(powerMight())}</p>
    <p class="muted" style="font-size:.8rem;font-style:italic;margin:-2px 0 6px;border-left:2px solid var(--line);padding-left:8px">${esc(realmPower(S.ri))}</p>
    <p><b>Linh căn:</b> ${S.rootShown?`${esc(S.root.n)} ${S.root.pham?pham(S.root.pham):''} <span class="muted">(tốc tu ×${S.root.spd})</span><br><span class="muted" style="font-size:.8rem">${esc(S.root.d)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Thể chất:</b> ${S.tcShown?`${esc(S.tc.n)} (Phẩm ${S.tc.t}) — ${esc(S.tc.d)}<br><span class="muted" style="font-size:.78rem">Buff: ${esc(buffs)}</span>`:'<i>chưa rõ</i>'}</p>
    <p><b>Khí vận:</b> ${S.luckShown?esc(l.n)+' — '+esc(l.d):'<i>chưa rõ</i>'}</p>
+   <p><b>Chủng tộc:</b> ${esc(S.raceName||'Nhân Tộc')} <span class="muted" style="font-size:.78rem">${esc((RACES.find(r=>r.id===S.race)||RACES[0]).d)}</span></p>
+   <p><b>Thế giới:</b> ${esc(S.world.name)} <span class="muted">(giới cấp ${S.world.tier}/${WORLDS.length}, trần phẩm ${maxGrade(S.world.tier)})</span></p>`));
+  _P.push(acc('chiso','\u{1F4CA}','CH\u1EC8 S\u1ED0',8,`
    <p><b>Ngộ tính:</b> ${ngoTinh()} <span class="muted">(×${(S.cmp).toFixed(2)} tốc ngộ)</span> · <b>Đạo tâm:</b> ${Math.round(S.dao)} · <b>Nguyên thần:</b> ${Math.floor(S.soul)}${S.soul<1?' <span class="warn">(chưa luyện — dễ chết vì công kích linh hồn!)</span>':''} · <b>Căn cơ:</b> ${S.foundation||0} tầng</p>
-   <p><b>Công pháp đang tu:</b> ${S.tech?esc(S.tech.name)+' '+pham(S.tech.grade)+(S.tech.giaiName?' <span class="muted">'+esc(S.tech.giaiName)+'</span>':'')+(S.tech.tech?' <span class="muted" style="font-size:.8rem">['+esc(S.tech.tech)+']</span>':''):'<i>không</i>'}</p>
+   <p><b>Nhân quả:</b> ${S.karma} · <b>Danh tiếng:</b> ${S.fame} · <b>Lộ diện:</b> ${Math.round(S.att)}${geniusTitle()?' · <span class="good">🏅 '+esc(geniusTitle().n)+'</span>':''}</p>
+   <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>`));
+  _P.push(acc('tuluyen','\u{1F4DC}','TU LUY\u1EC6N & TRUY\u1EC0N TH\u1EEAA',(S.tech?1:0)+((S.subTechs||[]).length)+(S.natal?1:0)+((S.laws||[]).length)+((S.mutations||[]).length)+(S.hidden?1:0),`
+   <p><b>Chủ tu:</b> ${S.tech?esc(S.tech.name)+' '+pham(S.tech.grade)+(S.tech.giaiName?' <span class="muted">'+esc(S.tech.giaiName)+'</span>':'')+' <span class="muted" style="font-size:.78rem">· thuần thục '+techProf(S.tech)+'% ('+techMastery(S.tech)+')</span>'+(S.tech.tech?'<br><span class="muted" style="font-size:.78rem">['+esc(S.tech.tech)+']</span>':''):'<i>không</i>'}</p>
+   <p><b>Phụ tu (${(S.subTechs||[]).length}/${techSlots()} slot):</b> ${(S.subTechs||[]).length?'<br>'+S.subTechs.map(t=>`<span class="muted" style="font-size:.8rem">◇ ${esc(t.name)} ${pham(t.grade)} — ${esc(t.tech||'')} · ${techProf(t)}% (${techMastery(t)})</span>`).join('<br>'):'<i>chưa ôm môn nào</i>'}${techOverload()>0?' <span class="bad">— vượt '+techOverload()+' slot, tạp niệm phản phệ!</span>':''}</p>
+   <p><b>Bản mệnh pháp bảo:</b> ${S.natal?`${esc(S.natal.name)} ${pham(S.natal.grade)} <span class="muted">(khế hợp ${S.natal.bond||0})</span>`:'<i>chưa tế luyện</i>'}</p>
+   ${(S.laws&&S.laws.length)?`<p><b>Pháp tắc lĩnh ngộ:</b> ${S.laws.map(l=>`<span class="chip">⚛ ${esc(l)}</span>`).join('')}</p>`:''}
+   <p><b>Cơ duyên ẩn:</b> ${S.hidden?(S.hidden.shown?esc(S.hidden.name)+' — '+esc(S.hidden.desc):'<i>bí ẩn...</i>'):'không'}</p>
+   <p><b>Dị biến:</b> ${S.mutations.length?S.mutations.map(m=>`<span class="chip">${esc(m)}</span>`).join(''):'chưa có'}</p>`));
+  _P.push(acc('theluc','\u{1F3EF}','TH\u1EBE L\u1EF0C & QUAN H\u1EC6',[S.sect,S.prof,S.daolu,S.cave,S.ownForce,S.disciple,S.rival].filter(Boolean).length,`
    <p><b>Tông môn:</b> ${S.sect?`${esc(S.sect.name)} <span class="muted">(${esc(S.sect.tier)} ${esc(S.sect.type)})</span> · <b>${esc(S.sect.posName)}</b> · cống hiến ${S.sect.contrib} · tu ×${sectCultBonus().toFixed(2)}${S.sect.also&&S.sect.also.length?'<br><span class="muted" style="font-size:.78rem">Kiêm tu: '+esc(S.sect.also.join(', '))+'</span>':''}<br><span class="muted" style="font-size:.78rem">${esc(S.sect.typeDesc)}</span>`:'<i>tán tu (không tông môn)</i>'}</p>
    <p><b>Chức nghiệp:</b> ${S.prof?`${PROF_RANK[S.prof.rankId]} ${esc(S.prof.n)} <span class="muted">(thuần thục ${S.prof.xp}/${profRankReq(S.prof.rankId)})</span>`:'<i>chưa có nghề phụ</i>'}</p>
    <p><b>Đạo lữ:</b> ${S.daolu?`${esc(S.daolu.name)} <span class="muted">(tình ${S.daolu.love||60}) — song tu ×1.12</span>`:'<i>độc hành</i>'}</p>
-   <p><b>Bản mệnh pháp bảo:</b> ${S.natal?`${esc(S.natal.name)} ${pham(S.natal.grade)} <span class="muted">(khế hợp ${S.natal.bond||0})</span>`:'<i>chưa tế luyện</i>'}</p>
-   ${(S.laws&&S.laws.length)?`<p><b>Pháp tắc lĩnh ngộ:</b> ${S.laws.map(l=>`<span class="chip">⚛ ${esc(l)}</span>`).join('')}</p>`:''}
-   <p><b>Nhân quả:</b> ${S.karma} · <b>Danh tiếng:</b> ${S.fame} · <b>Lộ diện:</b> ${Math.round(S.att)}${geniusTitle()?' · <span class="good">🏅 '+esc(geniusTitle().n)+'</span>':''}</p>
-   <p><b>Cơ duyên ẩn:</b> ${S.hidden?(S.hidden.shown?esc(S.hidden.name)+' — '+esc(S.hidden.desc):'<i>bí ẩn...</i>'):'không'}</p>
-   <p><b>Dị biến:</b> ${S.mutations.length?S.mutations.map(m=>`<span class="chip">${esc(m)}</span>`).join(''):'chưa có'}</p>
-   <p><b>Thế giới:</b> ${esc(S.world.name)} <span class="muted">(giới cấp ${S.world.tier}/${WORLDS.length}, trần phẩm ${maxGrade(S.world.tier)})</span></p>
-   <p><b>Chủng tộc:</b> ${esc(S.raceName||'Nhân Tộc')} <span class="muted" style="font-size:.78rem">${esc((RACES.find(r=>r.id===S.race)||RACES[0]).d)}</span></p>
    <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Đồ đệ:</b> ${S.disciple?esc(S.disciple.name):'<i>không</i>'} · <b>Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
-   <p><b>Đối thủ mệnh định:</b> ${S.rival?(S.rival.alive?esc(S.rival.name)+' <span class="muted">('+esc(realmName(S.rival.ri,S.rival.si))+', ân oán '+S.rival.grudge+', chạm mặt '+S.rival.encounters+' lần)</span>':'<span class="good">đã bị ngươi trảm sát</span>'):'<i>chưa xuất hiện</i>'}</p>
+   <p><b>Đối thủ mệnh định:</b> ${S.rival?(S.rival.alive?esc(S.rival.name)+' <span class="muted">('+esc(realmName(S.rival.ri,S.rival.si))+', ân oán '+S.rival.grudge+', chạm mặt '+S.rival.encounters+' lần)</span>':'<span class="good">đã bị ngươi trảm sát</span>'):'<i>chưa xuất hiện</i>'}</p>`));
+  if(S.tkboard||S.ri>=1)_P.push(acc('tkboard','\u{1F3C6}','B\u1EA2NG PHONG V\u00c2N',(playerRank()||'—'),`
    ${(()=>{if(!S.tkboard&&S.ri<1)return '';ensureBoard();const pm=powerMight();const rank=playerRank();const live=S.tkboard.filter(m=>m.alive).slice().sort((a,b)=>boardMight(b)-boardMight(a)).slice(0,10);const rows=live.map((m,i)=>{const stronger=boardMight(m)>pm;return `<div style="display:flex;justify-content:space-between;gap:6px;margin:1px 0;${stronger?'':'color:var(--muted)'}"><span>#${i+1} ${esc(m.name)} <span class="muted" style="font-size:.72rem">【${esc(m.title)}】${m.beaten?' · <span class="warn">bại dưới tay ngươi</span>':''}</span></span><span class="muted" style="font-size:.72rem">${esc(realmName(m.ri,m.si))}</span></div>`;}).join('');return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px"><div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">🏆 Bảng Phong Vân — Thiên Kiêu một thời đại</div>
    <div style="font-size:.76rem">${rows}</div>
-   <div class="muted" style="font-size:.74rem;margin-top:4px">Thứ hạng của ngươi: <b style="color:${rank&&rank<=3?'var(--gold2)':'var(--txt)'}">${rank?('#'+rank+(rank===1?' — Thiên Hạ Đệ Nhất Kiêu!':'')):'ngoài bảng'}</b> · Đánh bại thiên kiêu để leo hạng, trảm để lưu danh.</div></div>`;})()}
-   <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>
-   <p><b>Thành tựu (${(S.achievements||[]).length}/${ACHIEVEMENTS.length}):</b> ${(S.achievements||[]).length?S.achievements.map(id=>`<span class="chip">🏆 ${esc(achTitle(id))}</span>`).join(''):'<i>chưa mở khóa</i>'}</p>
+   <div class="muted" style="font-size:.74rem;margin-top:4px">Thứ hạng của ngươi: <b style="color:${rank&&rank<=3?'var(--gold2)':'var(--txt)'}">${rank?('#'+rank+(rank===1?' — Thiên Hạ Đệ Nhất Kiêu!':'')):'ngoài bảng'}</b> · Đánh bại thiên kiêu để leo hạng, trảm để lưu danh.</div></div>`;})()}`));
+  _P.push(acc('achiev','\u{1F3C5}','TH\u00c0NH T\u1EF0U',(S.achievements||[]).length,`
+   <p><b>Thành tựu (${(S.achievements||[]).length}/${ACHIEVEMENTS.length}):</b> ${(S.achievements||[]).length?S.achievements.map(id=>`<span class="chip">🏆 ${esc(achTitle(id))}</span>`).join(''):'<i>chưa mở khóa</i>'}</p>`));
+  _P.push(acc('phamluc','\u{1F4D6}','THI\u00caN PH\u1EA8M L\u1EE4C',12,`
    ${(()=>{const cap=maxGrade(S.world.tier);const hard=Math.min(12,cap+2);return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">📖 Thiên Phẩm Lục — 12 phẩm (pháp bảo · công pháp · thể chất · thiên phú · đan · linh dược · cơ duyên · trận pháp · linh thú)</div>
    <div style="font-size:.74rem;line-height:1.5">${PHAM.map(p=>{const st=p.id>hard?'<span class="bad">không tồn tại</span>':p.id>cap?'<span class="warn">gần như bằng 0</span>':'<span class="good">có thể gặp</span>';return `<div style="display:flex;justify-content:space-between;gap:8px"><span>${pham(p.id)} <span class="muted">tỉ lệ gốc ${p.pct}</span></span>${st}</div>`;}).join('')}</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px">Thế giới hiện tại <b>${esc(S.world.name)}</b> (cấp ${S.world.tier}/${WORLDS.length}): trần phẩm thường ${cap}, tối đa cưỡng cầu ${hard}. Phẩm ≥${cap+1} càng lên càng gần như không tồn tại; phẩm ≥${hard+1} <b>không tồn tại</b> ở tầng vũ trụ này — muốn có phải phi thăng lên thế giới cao hơn.</div>
-   <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">📜 <b>Quy mô sinh thủ tục:</b> ${TE_CATS.length} hệ công pháp × ${TECH_NAME_SHELLS.toLocaleString('vi-VN')} tổ hợp tên × 12 phẩm × 3 giai = <b>${TECH_DISTINCT.toLocaleString('vi-VN')}</b> công pháp phân biệt · ${LAWS.length} pháp tắc đại đạo · ${BS_PRE.length*BS_KIND.length} loài linh thú · ${ORIGINS.length} xuất thân × ${REALMS.length} cảnh × ${WORLDS.length} giới — nhân với cơ duyên/nhân quả/lựa chọn là <b>thực tế vô hạn</b>.</div></div>`;})()}
+   <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">📜 <b>Quy mô sinh thủ tục:</b> ${TE_CATS.length} hệ công pháp × ${TECH_NAME_SHELLS.toLocaleString('vi-VN')} tổ hợp tên × 12 phẩm × 3 giai = <b>${TECH_DISTINCT.toLocaleString('vi-VN')}</b> công pháp phân biệt · ${LAWS.length} pháp tắc đại đạo · ${BS_PRE.length*BS_KIND.length} loài linh thú · ${ORIGINS.length} xuất thân × ${REALMS.length} cảnh × ${WORLDS.length} giới — nhân với cơ duyên/nhân quả/lựa chọn là <b>thực tế vô hạn</b>.</div></div>`;})()}`));
+  _P.push(acc('codex','\u{1F52E}','THI\u00caN C\u01A0 L\u1EE4C & B\u00cd \u1EA8N',MYSTERIES.filter(m=>S.flags&&S.flags['mystery_'+m.id]).length+(S.placesFound||[]).length+(S.realmsFound||[]).length+(S.bivan||[]).length,`
    ${(()=>{const heartTxt=S.heart<=-8?'❄ Vô Tình Đạo (đạo tâm băng lãnh, không còn là người)':S.heart<=-3?'lạnh dần về phía Vô Tình':S.heart>=8?'❤ Chân Tình Đạo (giữ trọn phần người)':S.heart>=3?'ấm dần về phía Hữu Tình':'⚖ Một niệm giữa hai bờ — chưa nghiêng về đâu';
    const layer=REALITY_LAYER[Math.min(REALITY_LAYER.length-1,Math.max(0,S.world.tier-1))];
    const known=MYSTERIES.filter(m=>S.flags&&S.flags['mystery_'+m.id]);
@@ -2368,8 +2428,8 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <div style="color:var(--gold);font-weight:700;font-size:.82rem;margin:8px 0 4px">📜 Sử · Kỷ Nguyên (từ khai thiên đến hiện tại)</div>
    <div style="font-size:.74rem;line-height:1.5">${ERAS.map(e=>`<div style="margin:2px 0"><b>${esc(e[0])}</b> — <span class="muted">${esc(e[1])}</span></div>`).join('')}</div>
    <div class="muted" style="font-size:.72rem;margin-top:5px;border-top:1px dotted var(--line);padding-top:5px">🌀 <b>Tầng thực tại hiện tại</b> (giới cấp ${S.world.tier}/${WORLDS.length}): ${esc(layer)}<br><i>Mỗi giới cao hơn là một lớp thực tại sâu hơn — và một tầng nguy hiểm hơn. Càng gần trường sinh, cả thế giới càng muốn nghiền ngươi.</i></div>
-   </div>`;})()}
-   <p class="muted" style="font-size:.74rem;margin-top:6px">💾 Tự động lưu — không cần bấm lưu.</p></div>`;}
+   </div>`;})()}`));
+  $('#view').innerHTML='<div class="sheet"><h2>Nh\u00e2n V\u1EADt &amp; Thi\u00ean Ph\u00fa</h2>'+_P.join('')+'<p class="muted" style="font-size:.74rem;margin-top:6px">\u{1F4BE} T\u1EF1 \u0111\u1ED9ng l\u01B0u \u2014 kh\u00f4ng c\u1EA7n b\u1EA5m l\u01B0u.</p></div>';}
 function invTab(){const pills=Object.keys(S.inv).filter(k=>PILL_DEF[k]&&S.inv[k]>0);const herbs=Object.keys(S.inv).filter(k=>k.startsWith('herb_')&&S.inv[k]>0);
   $('#view').innerHTML=`<div class="inv"><h2>Túi Đồ</h2>
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:8px 0 4px;border-bottom:1px solid var(--line)">💊 Đan dược</div>
@@ -2378,8 +2438,14 @@ function invTab(){const pills=Object.keys(S.inv).filter(k=>PILL_DEF[k]&&S.inv[k]
    ${herbs.length?herbs.map(k=>{const h=(S.invMeta||{})[k]||{name:k,grade:1};return `<div class="item"><span>${esc(h.name)} ${pham(h.grade)}</span></div>`;}).join(''):'<p class="muted">Trống.</p>'}
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🗡️ Pháp bảo</div>
    ${S.treasures.length?S.treasures.map(t=>`<div class="item"><span>${esc(t.name)} ${pham(t.grade)}<br><span class="muted" style="font-size:.76rem">${esc(t.power)}${t.special?' — '+esc(t.special):''}</span></span></div>`).join(''):'<p class="muted">Trống.</p>'}
-   <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">📜 Công pháp lĩnh hội</div>
-   ${S.techs.length?S.techs.map((t,i)=>`<div class="item"><span>${esc(t.name)} ${pham(t.grade)}${t.giaiName?' <span class="muted" style="font-size:.72rem">'+esc(t.giaiName)+'</span>':''}<br><span class="muted" style="font-size:.76rem">${esc(t.tech)}${t.danger?' · <span class="bad">nguy hiểm</span>':''}</span></span><button class="btn small" data-tech="${i}">Tu luyện</button></div>`).join(''):'<p class="muted">Chưa có.</p>'}
+   ${(()=>{const slots=techSlots(),used=(S.subTechs||[]).length;
+     const main=S.tech?`<div class="item"><span><b style="color:var(--gold2)">★ CHỦ TU</b> · ${esc(S.tech.name)} ${pham(S.tech.grade)}${S.tech.giaiName?' <span class="muted" style="font-size:.72rem">'+esc(S.tech.giaiName)+'</span>':''}<br><span class="muted" style="font-size:.76rem">${esc(S.tech.tech||'')} · thuần thục ${techProf(S.tech)}% (${techMastery(S.tech)})</span></span></div>`:'<p class="muted">Chưa có chủ tu công pháp.</p>';
+     const subs=(S.subTechs||[]).map((t,i)=>`<div class="item"><span><b style="color:var(--cyan)">◇ PHỤ TU</b> · ${esc(t.name)} ${pham(t.grade)}<br><span class="muted" style="font-size:.76rem">${esc(t.tech||'')} · thuần thục ${techProf(t)}% (${techMastery(t)})${t.danger?' · <span class="bad">nguy hiểm</span>':''}</span></span><button class="btn small" data-dropsub="${i}">Ngưng tu</button></div>`).join('');
+     const over=techOverload();
+     return `<div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">\u{1F4DC} Đang tu luyện <span class="muted" style="font-weight:400">(phụ tu ${used}/${slots} slot${over>0?' — <span class="bad">vượt '+over+' slot, tạp niệm phản phệ!</span>':''})</span></div>${main}${subs}
+     <div class="muted" style="font-size:.73rem;margin:3px 0 0">Slot mở theo cảnh giới, ngộ tính, nguyên thần &amp; pháp tắc. Ôm quá nhiều môn = chia sẻ tiến độ, chướng khí dâng, dễ tẩu hỏa.</div>`;})()}
+   <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">\u{1F4DA} Tàng thư (chưa tu)</div>
+   ${S.techs.length?S.techs.map((t,i)=>`<div class="item"><span>${esc(t.name)} ${pham(t.grade)}${t.giaiName?' <span class="muted" style="font-size:.72rem">'+esc(t.giaiName)+'</span>':''}<br><span class="muted" style="font-size:.76rem">${esc(t.tech)}${t.danger?' · <span class="bad">nguy hiểm</span>':''}${t.prof?' · thuần thục '+techProf(t)+'%':''}</span></span><span style="display:flex;gap:4px"><button class="btn small" data-tech="${i}">Chủ tu</button>${canLearnMore()?`<button class="btn small" data-subtech="${i}">Phụ tu</button>`:''}</span></div>`).join(''):'<p class="muted">Chưa có.</p>'}
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🔯 Trận pháp</div>
    ${(S.arrays&&S.arrays.length)?S.arrays.map(a=>`<div class="item"><span>${esc(a.name)} ${pham(a.grade)}<br><span class="muted" style="font-size:.76rem">${esc(a.desc)}</span></span></div>`).join(''):'<p class="muted">Chưa có trận đồ nào.</p>'}
    <div style="color:var(--cyan);font-weight:600;font-size:.85rem;margin:10px 0 4px;border-bottom:1px solid var(--line)">🐉 Linh thú</div>
@@ -2462,9 +2528,12 @@ document.addEventListener('click',(e)=>{
     if(a==='cont'){if(load()){TAB='story';render();}}
     else if(a==='new')chooseOrigin();
     return;}
+  const ac=e.target.closest('[data-acc]');if(ac){const k=ac.getAttribute('data-acc');ACC[k]=!ACC[k];render();return;}
   const tab=e.target.closest('[data-tab]');if(tab){TAB=tab.getAttribute('data-tab');render();return;}
   const use=e.target.closest('[data-use]');if(use){usePill(use.getAttribute('data-use'));render();save();return;}
-  const tech=e.target.closest('[data-tech]');if(tech){const i=+tech.getAttribute('data-tech');const t=S.techs[i];if(t){if(!S.tech||confirm('Chuyển sang tu luyện '+t.name+' (phẩm '+t.grade+')? Công pháp cũ: '+(S.tech?S.tech.name:'không'))){const old=S.tech;S.tech=t;S.techs.splice(i,1);if(old&&old.name!=='Thanh Khí Quyết')S.techs.push(old);log('Chuyển sang tu luyện: '+t.name+'.','good');}}render();save();return;}
+  const sub=e.target.closest('[data-subtech]');if(sub){const i=+sub.getAttribute('data-subtech');const t=S.techs[i];if(t){if(!canLearnMore()){alert('Kh\u00f4ng \u0111\u1EE7 slot ph\u1EE5 tu ('+(S.subTechs||[]).length+'/'+techSlots()+'). C\u1EA3nh gi\u1EDBi/ng\u1ED9 t\u00ednh cao h\u01A1n m\u1EDBi \u00f4m th\u00eam \u0111\u01B0\u1EE3c.');}else{S.techs.splice(i,1);learnSub(t);log('Kh\u1EDFi t\u1EA1o ph\u1EE5 tu: '+t.name+'.','good');}}render();save();return;}
+  const dsub=e.target.closest('[data-dropsub]');if(dsub){dropSub(+dsub.getAttribute('data-dropsub'));render();save();return;}
+  const tech=e.target.closest('[data-tech]');if(tech){const i=+tech.getAttribute('data-tech');const t=S.techs[i];if(t){if(!S.tech||confirm('\u0110\u1ED5i CH\u1EE6 TU sang '+t.name+' (ph\u1EA9m '+t.grade+')? C\u00f4ng ph\u00e1p c\u0169 v\u1EC1 t\u00e0ng th\u01B0: '+(S.tech?S.tech.name:'kh\u00f4ng'))){S.techs.splice(i,1);setMainTech(t);log('Ch\u1EE7 tu: '+t.name+'.','good');}}render();save();return;}
   const bi=e.target.closest('[data-i]');if(bi){const k=bi.getAttribute('data-i');
     if(k==='cont'){S.scene=null;render();save();return;}
     if(k==='free'){doFree();return;}
