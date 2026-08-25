@@ -877,7 +877,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,plots:[],system:null,sim:null,phanthan:null,faith:0,discSchool:null,relic:null,collected:[],moment:'kham',momentLead:'',momentHist:[],momentTag:{},
+    inv:{},treasures:[],techs:[],tech:null,subTechs:[],arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,plots:[],factions:null,ownRegions:[],system:null,sim:null,phanthan:null,faith:0,discSchool:null,relic:null,collected:[],moment:'kham',momentLead:'',momentHist:[],momentTag:{},
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},regionsSeen:['r_khothach'],
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -936,6 +936,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
   if(S.rival)rivalGrow(years); // đối thủ mệnh định cũng tu luyện, cũng đột phá
   boardGrow(years); // thiên kiêu trên Bảng Phong Vân cũng không ngừng tiến bộ
   plotTick(years); // âm mưu trong bóng tối cũng chín dần theo năm tháng
+  factionTick(years); // thiên hạ tự tranh bá dù ngươi đứng ngoài
   sysTick(years);phanThanTick(years);
   if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên cạn kiệt. Ngươi ngồi kiết già, hóa thành tro tàn theo lẽ trời đất.';log('☠ Thọ nguyên cạn.',' death');}}
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
@@ -1639,7 +1640,9 @@ function sceneAffairs(){const c=[];const bk=()=>afterAct();
   if(S.ri>=4)c.push({l:S.disciple?`🧑‍🎓 Đồ đệ ${S.disciple.name} (${realmName(S.disciple.ri,0)})`:'🧑‍🎓 Thu đồ đệ',act:()=>{setScene(sceneDisciple());}});
   if(S.system)c.push({l:'\u{1F4DF} M\u1EDF b\u1EA3ng H\u1EC6 TH\u1ED0NG ('+S.system.pts+' \u0111i\u1EC3m)',cls:'primary',act:()=>{setScene(sceneSystem());}});
   if(pbSystem())c.push({l:'\u{1F30C} M\u1EDF khe n\u1EE9t \u2014 xuy\u00ean PH\u00d3 B\u1EA2N v\u1EA1n gi\u1EDBi',cls:'primary',act:()=>{setScene(evPhoBan());}});
-  if(S.sim)c.push({l:'\u{1F52E} M\u00f4 ph\u1ECFng th\u1EED m\u1ED9t \u0111o\u1EA1n \u0111\u01B0\u1EDDng ph\u00eda tr\u01B0\u1EDBc',cls:'primary',act:()=>{setScene(sceneSimulate());}});
+  if(S.sim||simSystem())c.push({l:'\u{1F52E} M\u00d4 PH\u1ECeNG NH\u00c2N SINH \u2014 t\u01B0\u01A1ng lai c\u1EE7a ch\u00ednh ng\u01B0\u01A1i',cls:'primary',act:()=>{setScene(sceneSimulate());}});
+  if(luanhoiSystem())c.push({l:'\u267E M\u00d4 PH\u1ECeNG LU\u00c2N H\u1ED2I \u2014 s\u1ED1ng m\u1ED9t ki\u1EBFp c\u1EE7a ng\u01B0\u1EDDi kh\u00e1c',cls:'primary',act:()=>{setScene(sceneLuanHoi());}});
+  if(vangioiSystem())c.push({l:'\u{1F310} V\u1EA0N GI\u1EDaI \u2014 xuy\u00ean v\u00e0o \u300CNg\u01B0\u01A1i\u300D \u1EDF v\u1ECB di\u1EC7n kh\u00e1c',cls:'primary',act:()=>{setScene(sceneVanGioi());}});
   if(canPhanThan())c.push({l:'\u{1F465} T\u00e1ch PH\u00c2N TH\u00c2N (nguy\u00ean th\u1EA7n \u0111\u1EE7 m\u1EA1nh)',act:()=>{setScene(scenePhanThan());}});
   c.push({l:'← Trở về cốt truyện',act:()=>{setScene(null);}});
   return{title:'Sự Vụ Tu Hành',narr:'Gác lại chuyện giang hồ trong chốc lát, ngươi lo liệu những việc bên lề con đường tu hành.',choices:c,affairs:true};
@@ -2204,7 +2207,7 @@ function rollEventRaw(){worldPulse();
   add('auction',4,evAuction);
   add('conf',(S.fame>=30)?4:0,evDaoConference);
   add('rival',(S.ri>=1)?7:0,evRival);
-  add('tienkieu',(S.ri>=1)?6:0,evTienKieu);add('ammuu',(S.ri>=1)?Math.round(4+plotPressure()*14):0,evAmMuu);add('relic',relicSystem()?10:0,evRelic);add('phoban',pbSystem()?14:0,evPhoBan);
+  add('tienkieu',(S.ri>=1)?6:0,evTienKieu);add('ammuu',(S.ri>=1)?Math.round(4+plotPressure()*14):0,evAmMuu);add('relic',relicSystem()?10:0,evRelic);add('phoban',pbSystem()?14:0,evPhoBan);add('vuongtrieu',(S.ri>=1)?9:0,evVuongTrieu);add('luanhoi',luanhoiSystem()?10:0,sceneLuanHoi);add('vangioi',vangioiSystem()?10:0,sceneVanGioi);
   add('consequence',npcRel?9:0,evConsequence);
   add('innerdemon',Math.round(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)*45),evInnerDemon);
   add('combat',Math.round(clamp(dis*45,3,30)),evCombat);
@@ -2632,9 +2635,10 @@ const SYSTEMS=[
  Y('tienhoa','Tiến Hóa Hệ Thống','Mỗi lần đột phá, huyết mạch và thân thể ngươi tiến hóa thêm một bậc.','break'),
  Y('danhvong','Danh Vọng Hệ Thống','Thiên hạ càng biết tên ngươi, hệ thống càng rót lực lượng cho ngươi.','fame'),
  Y('trucdien','Thiên Đạo Trực Tiếp Hệ Thống','Mọi hành động của ngươi bị phát cho vạn giới xem.','att'),
- Y('mpnhansinh','Mô Phỏng Nhân Sinh Hệ Thống','Sống thử trọn một kiếp, mang về công pháp, thiên phú, kinh nghiệm.','time',{sim:1}),
+ Y('mpnhansinh','Mô Phỏng Nhân Sinh Hệ Thống','Sống thử tương lai của CHÍNH ngươi — không đổi thân phận, chỉ xem con đường này dẫn tới đâu.','time',{sim:1}),
  Y('mpvohan','Mô Phỏng Vô Hạn Hệ Thống','Mô phỏng không giới hạn số lần, chỉ giới hạn bởi tâm thần ngươi.','time',{sim:1}),
- Y('mpthanphan','Thân Phận Ngẫu Nhiên Hệ Thống','Mỗi lần mô phỏng ngươi thành một chủng tộc, một thân phận khác.','time',{sim:1}),
+ Y('mpluanhoi','Mô Phỏng Luân Hồi Hệ Thống','Đầu thai thành MỘT NGƯỜI HOÀN TOÀN KHÁC — khác tên, khác thế giới, khác thời đại. Quên mình là ai cho tới lúc kiếp đó hết.','time',{luanhoi:1}),
+ Y('mpthanphan','Thân Phận Ngẫu Nhiên Hệ Thống','Mỗi lần luân hồi ngươi thành một chủng tộc, một thân phận khác.','time',{luanhoi:1}),
  Y('mongcanh','Mộng Cảnh Hệ Thống','Tu luyện trong mộng, nhưng thành quả mang thẳng về hiện thực.','dream',{sim:1}),
  Y('tuluyenmong','Tu Luyện Trong Mộng Hệ Thống','Ngủ một đêm bằng người khác bế quan mười năm.','dream'),
  Y('thoidien','Thôi Diễn Hệ Thống','Đưa vào một công pháp tàn khuyết, hệ thống thôi diễn ra bản hoàn chỉnh.','cult',{tech:1}),
@@ -2645,7 +2649,7 @@ const SYSTEMS=[
  Y('giaicau','Giải Cấu Hệ Thống','Phân giải bất cứ vật gì thành nguyên liệu gốc và đạo lý gốc.','loot',{tech:1}),
  Y('hopthanh','Hợp Thành Hệ Thống','Ghép vật phẩm cấp thấp thành vật phẩm cấp cao.','craft',{tech:1}),
  Y('phucnguyen','Phục Nguyên Hệ Thống','Khôi phục thứ đã vỡ nát — pháp bảo, công pháp, thậm chí thân thể.','craft'),
- Y('thuthapvangioi','Thu Thập Chư Thiên Hệ Thống','Vươn tay sang vạn giới, lấy về công pháp mà một phiên bản khác của chính ngươi đã tu thành.','travel',{collect:1}),
+ Y('thuthapvangioi','Vạn Giới Thu Thập Hệ Thống','Xuyên vào CHÍNH NGƯƠI ở vị diện khác — cùng một hồn, khác một lựa chọn. Lấy về thứ bản đó đã tu thành; và chém được cả vị diện chi tử.','travel',{collect:1,vangioi:1}),
  Y('saochepthienphu','Sao Chép Thiên Phú Hệ Thống','Thấy thiên phú của ai, sao ra một bản cho mình.','kill',{tal:1}),
  Y('cuopthienphu','Cướp Đoạt Thiên Phú Hệ Thống','Lấy thiên phú của kẻ khác — và kẻ đó mất nó vĩnh viễn.','kill',{tal:1,evilish:1}),
  Y('khothienphu','Kho Thiên Phú Hệ Thống','Thiên phú thu được ở các đời trước đều còn nguyên trong kho.','break',{tal:1}),
@@ -2831,7 +2835,8 @@ Ngươi hiểu ra: mình có thể **mô phỏng** một đoạn đường phía
      {l:'Không. Ta muốn tự đi đường của mình, không xem trước kết cục.',hidden:true,act:()=>{S.sim=null;S.flags.simRefused=true;S.dao=Math.min(100,S.dao+10);
        setResult('Ngươi từ chối nhìn trước tương lai.\n\n"Biết trước rồi thì còn gì là đạo?" — ngươi tự nhủ, rồi bước tiếp vào màn sương mù mịt.');}}]};}
 // mô phỏng chạy trên BẢN SAO trạng thái — không đụng tới thân thật
-function runSim(years){if(!S.sim)return null;
+function canSim(){return !!(S.sim||simSystem()||luanhoiSystem()||vangioiSystem());}
+function runSim(years){if(!canSim())return null;S.sim=S.sim||{uses:0,insight:0};
   const snap=JSON.stringify(S),logSnap=LOG.length;const ev=[];
   S.flags.__sim=true;
   let died=null;
@@ -2851,10 +2856,6 @@ function runSim(years){if(!S.sim)return null;
   S.sim.uses++;const gainC=0.02+RNG.range(0,0.03);S.cmp=Math.round((S.cmp+gainC)*100)/100;
   S.sim.insight+=1;S.flags.simHint=died?1:0;advance(RNG.range(0.2,0.8));
   return{ev,died,endRealm,endAge,gainC};}
-/* ---- MÔ PHỎNG: THÂN PHẬN SINH THỦ TỤC — tổ hợp gần như vô hạn ----
-   Không phải một danh sách cứng. Mỗi lần mở mô phỏng, thiên đạo bốc ra
-   THẾ GIỚI × CHỦNG LOÀI/NGHỀ × SỐ PHẬN KHỞI ĐIỂM. Loại mặc định vẫn là
-   "Mô Phỏng Nhân Sinh" — sống thử tương lai của chính ngươi.            */
 const SIM_WORLD=[
  {n:'Tu Tiên Giới',d:'linh khí ngập trời, tông môn khắp nơi',t:['tech','exp'],r:1},
  {n:'Ma Pháp Đại Lục',d:'phù thủy, ma trận, tháp pháp sư',t:['spell','info'],r:2},
@@ -2883,7 +2884,8 @@ const SIM_WORLD=[
  {n:'Đấu Khí Đại Lục',d:'không tu linh khí, chỉ luyện đấu khí',t:['exp','tech'],r:2},
  {n:'Quỷ Vực Bách Quỷ',d:'trăm loại quỷ, mỗi loại một luật lệ riêng',t:['soul','risk'],r:5},
  {n:'Thần Bí Duy Tự',d:'tri thức cấm khiến người đọc phát điên',t:['law','info'],r:7},
- {n:'Đảo Quốc Vạn Đảo',d:'mỗi hòn đảo là một tiểu thế giới',t:['info','craft'],r:3}];
+ {n:'Đảo Quốc Vạn Đảo',d:'mỗi hòn đảo là một tiểu thế giới',t:['info','craft'],r:3},
+ {n:'Ma Tình Tông Chi Giới',d:'yêu nữ khắp nơi, nam tu là dược nhân bị thái bổ',t:['risk','soul'],r:4}];
 const SIM_ROLE=[
  {n:'phàm nhân',t:['dao','info'],r:1},{n:'nông phu',t:['dao'],r:1},{n:'thợ rèn',t:['craft'],r:1},
  {n:'lang y',t:['heal','info'],r:2},{n:'thư sinh',t:['info','dao'],r:1},{n:'thương nhân',t:['info'],r:2},
@@ -2907,7 +2909,8 @@ const SIM_ROLE=[
  {n:'kẻ săn quái',t:['exp','risk'],r:3},{n:'người kể chuyện rong',t:['info','dao'],r:1},
  {n:'kẻ ăn mày',t:['dao','info'],r:1},{n:'đồ tể',t:['exp'],r:1},
  {n:'thầy bói',t:['law','info'],r:3},{n:'người canh mộ',t:['soul','info'],r:2},
- {n:'thợ săn linh hồn',t:['soul','exp'],r:5},{n:'kẻ chép sách cấm',t:['law','info'],r:6}];
+ {n:'thợ săn linh hồn',t:['soul','exp'],r:5},{n:'kẻ chép sách cấm',t:['law','info'],r:6},
+ {n:'nam tu bị nuôi làm dược nhân',t:['risk','heal'],r:3},{n:'nãi ma hộ đạo (khiên & trị liệu)',t:['heal','craft'],r:2}];
 const SIM_FATE=[
  {n:'sinh ra đã tàn phế',d:'thân thể khiếm khuyết từ trong bụng mẹ',risk:1.6,rw:1.5},
  {n:'con nhà quyền quý',d:'ngậm thìa vàng, nhưng bốn bề là dao',risk:0.9,rw:1.0},
@@ -2924,55 +2927,135 @@ const SIM_FATE=[
  {n:'kẻ mang thân phận giả',d:'ngươi sống bằng tên của một người đã chết',risk:1.3,rw:1.2},
  {n:'đứa trẻ bị bỏ lại trong chiến trường',d:'lớn lên giữa xác người',risk:1.5,rw:1.3},
  {n:'người bình thường đến mức đáng ngờ',d:'không thiên phú, không cơ duyên, không gì cả',risk:1.0,rw:0.8}];
-const SIM_SHEN=['Thiên Nhãn Thông','Thiên Nhĩ Thông','Tha Tâm Thông','Túc Mệnh Thông','Thần Túc Thông','Lậu Tận Thông','Đại Nhật Chân Hỏa','Hư Không Toái Ảnh','Vạn Kiếm Quy Tông','Bất Diệt Kim Thân','Thôn Thiên Ma Công','Thời Quang Đảo Lưu','U Minh Thôn Phệ','Vô Tướng Biến Hóa','Cửu Chuyển Hoàn Hồn','Nhất Niệm Thành Giới'];
-const SIM_EYE=['Long Đồng — nhìn thấu hư thực, xuyên qua huyễn thuật','Thần Nhãn — thấy được mạch khí của thiên địa','Âm Dương Nhãn — nhìn thấy hồn phách và nhân quả','Phá Vọng Nhãn — mọi ngụy trang đều vô nghĩa','Luân Hồi Nhãn — thấy được tiền kiếp của kẻ đối diện','Tử Vong Chi Đồng — thấy đường chết của vạn vật','Tinh Không Nhãn — thấy được quỹ đạo các vì sao trong một hạt bụi'];
-const SIM_BLOOD=['Chân Long huyết mạch','Thái Cổ Yêu Tổ huyết mạch','Phượng Hoàng Niết Bàn huyết mạch','Huyền Vũ Bất Hoại huyết mạch','Thượng Cổ Thần Ma huyết mạch','Kỳ Lân Thánh Thú huyết mạch','Huyết Tộc Thủy Tổ huyết mạch','Cự Nhân Cổ Thần huyết mạch','U Minh Nhai Long huyết mạch'];
+const SIM_SHEN=['Thiên Nhãn Thông','Thiên Nhĩ Thông','Tha Tâm Thông','Túc Mệnh Thông','Thần Túc Thông','Lậu Tận Thông','Đại Nhật Chân Hỏa','Hư Không Toái Ảnh','Vạn Kiếm Quy Tông','Bất Diệt Kim Thân','Thôn Thiên Ma Công','Thời Quang Đảo Lưu','Kiếm Tẩu Thiên Phong','Nhất Niệm Thành Giới','Cửu Chuyển Hoàn Hồn'];
+const SIM_EYE=['Long Đồng — nhìn thấu hư thực, xuyên qua huyễn thuật','Thần Nhãn — thấy được mạch khí của thiên địa','Âm Dương Nhãn — nhìn thấy hồn phách và nhân quả','Phá Vọng Nhãn — mọi ngụy trang đều vô nghĩa','Luân Hồi Nhãn — thấy được tiền kiếp của kẻ đối diện','Tử Vong Chi Đồng — thấy đường chết của vạn vật','Tinh Không Nhãn — thấy quỹ đạo các vì sao trong một hạt bụi'];
+const SIM_BLOOD=['Chân Long huyết mạch','Thái Cổ Yêu Tổ huyết mạch','Phượng Hoàng Niết Bàn huyết mạch','Huyền Vũ Bất Hoại huyết mạch','Thượng Cổ Thần Ma huyết mạch','Kỳ Lân Thánh Thú huyết mạch','Huyết Tộc Thủy Tổ huyết mạch','Cự Nhân Cổ Thần huyết mạch'];
 const SIM_SPELL=['Nguyên Tố Chi Ngữ','Không Gian Chuyển Dịch Thuật','Triệu Hoán Cổ Ma Nghi Thức','Thời Gian Đình Trệ Chú','Vạn Vật Biến Hình Thuật','Tinh Thần Chi Vực','Cấm Chú: Vẫn Tinh Thiên Giáng','Linh Hồn Khế Ước Thuật'];
+function simSystem(){const s=S.system;return !!(s&&sysDef(s.id).sim);}
+function luanhoiSystem(){const s=S.system;return !!(s&&sysDef(s.id).luanhoi);}
+function vangioiSystem(){const s=S.system;return !!(s&&sysDef(s.id).vangioi);}
+/* ---- BA HỆ MÔ PHỎNG KHÁC NHAU, ĐỪNG LẪN ----
+   1) MÔ PHỎNG NHÂN SINH  : sống thử tương lai của CHÍNH NGƯƠI (loại thường)
+   2) MÔ PHỎNG LUÂN HỒI   : đầu thai thành MỘT NGƯỜI HOÀN TOÀN KHÁC (triệu thân phận)
+   3) VẠN GIỚI (Tạ Diệm)  : xuyên vào CHÍNH NGƯƠI ở VỊ DIỆN KHÁC — cùng một hồn,
+                            khác một lựa chọn; và có thể chém vị diện chi tử. */
+const SIM_ERA=[
+ {n:'thời khai thiên',d:'quy tắc còn chưa định hình',r:7},{n:'thời hồng hoang',d:'thần ma còn đi lại',r:6},
+ {n:'thời thượng cổ',d:'các đại tộc phân chia thiên hạ',r:4},{n:'thời trung cổ',d:'tông môn thay tộc mà đứng',r:2},
+ {n:'thời mạt pháp',d:'linh khí cạn, tiên nhân tuyệt tích',r:3},{n:'thời loạn thế',d:'chín nước tranh bá',r:2},
+ {n:'thời thịnh thế',d:'thái bình, và mục nát bên dưới',r:1},{n:'thời sau đại kiếp',d:'chín phần mười đã chết',r:5},
+ {n:'thời tiền diệt thế',d:'ai cũng biết ngày tận số đang tới',r:5},{n:'thời phục hưng',d:'cổ pháp được đào lại',r:3},
+ {n:'thời cấm ma',d:'tu hành bị coi là trọng tội',r:4},{n:'thời chư thần hoàng hôn',d:'các vị thần đang chết dần',r:6}];
+const SIM_TRAIT=[
+ {n:'nhẫn nhịn tới lạnh người'},{n:'cuồng ngạo không coi ai ra gì'},{n:'đa nghi, không tin cả bóng mình'},
+ {n:'trọng nghĩa tới mức ngu ngốc'},{n:'tham lam vô đáy'},{n:'lãnh khốc, cắt đứt mọi tình cảm'},
+ {n:'ngây thơ tới cuối đời'},{n:'giảo hoạt, sống bằng mưu'},{n:'si tình một cách tuyệt vọng'},
+ {n:'hiếu chiến, gặp ai cũng muốn đánh'}];
+const SIM_GIFT=[
+ {n:'không một tia thiên phú',m:0.7},{n:'thiên phú tầm thường',m:0.85},{n:'thiên phú khá',m:1.0},
+ {n:'kỳ tài hiếm gặp',m:1.2},{n:'thiên tài trăm năm',m:1.4},{n:'yêu nghiệt ngàn năm',m:1.7},
+ {n:'thể chất đặc thù bẩm sinh',m:1.5},{n:'huyết mạch cổ xưa thức tỉnh',m:1.6}];
+const SIM_HO=['Lý','Vương','Trương','Triệu','Tần','Diệp','Hàn','Bạch','Mộ Dung','Âu Dương','Tiêu','Cố','Thẩm','Lâm','Tạ','Chu','Lục','Tô','Hạ Hầu','Độc Cô'];
+const SIM_TEN=['Thanh Phong','Vô Tình','Kiếm Tâm','Nhược Thủy','Hạo Nhiên','Tử Yên','Mặc','Linh Nhi','Thất Sát','Dạ','Cửu U','Trường Canh','Vãn Chu','Tuyết','Diệm','Huyền','Trầm Chu','Ly','Vô Danh','Tịch'];
 function simRarity(){return Math.max(1,S.ri*0.62+luckOf().id*1.1+(S.sim?Math.min(3,S.sim.uses*0.12):0));}
+function pickR(arr,cap){const ok=arr.filter(x=>!x.r||x.r<=cap);return ok.length?RNG.pick(ok):arr[0];}
+function simSpace(){return SIM_WORLD.length*SIM_ROLE.length*SIM_FATE.length*SIM_ERA.length*SIM_TRAIT.length*SIM_GIFT.length;}
 function genSimIdentity(){const cap=simRarity();
-  const ws=SIM_WORLD.filter(w=>w.r<=cap),rs=SIM_ROLE.filter(r=>r.r<=cap);
-  const w=ws.length?RNG.pick(ws):SIM_WORLD[0],r=rs.length?RNG.pick(rs):SIM_ROLE[0],f=RNG.pick(SIM_FATE);
-  const tags=[].concat(w.t,r.t);
-  return{w,r,f,tags,rar:Math.max(w.r,r.r),
-    n:'Mô Phỏng · '+r.n.charAt(0).toUpperCase()+r.n.slice(1)+' ở '+w.n,
-    d:`Làm một ${r.n} tại ${w.n} — ${w.d}. Khởi điểm: ${f.n} (${f.d}).`};}
+  const w=pickR(SIM_WORLD,cap),r=pickR(SIM_ROLE,cap),f=RNG.pick(SIM_FATE),e=pickR(SIM_ERA,cap),
+        tr=RNG.pick(SIM_TRAIT),g=RNG.pick(SIM_GIFT);
+  const nm=RNG.pick(SIM_HO)+' '+RNG.pick(SIM_TEN);
+  return{w,r,f,e,tr,g,nm,tags:[].concat(w.t,r.t),rar:Math.max(w.r,r.r,e.r||1),
+    n:nm+' — '+r.n+' ở '+w.n,
+    d:`${w.n} (${e.n}), ${w.d}. Ngươi đầu thai thành ${nm}, một ${r.n}; khởi điểm: ${f.n}; ${g.n}; tính cách ${tr.n}.`};}
+/* ---- VẠN GIỚI: CHÍNH NGƯƠI Ở VỊ DIỆN KHÁC ---- */
+const VG_DIVERGE=[
+ 'nếu năm đó ngươi không rời quê','nếu ngươi đã nhận lời bái sư kẻ đó','nếu ngươi chết trong lần đầu tiên suýt chết',
+ 'nếu ngươi chọn tà đạo ngay từ đầu','nếu ngươi chưa từng cầm tới công pháp','nếu ngươi sinh ra trong nhà quyền quý',
+ 'nếu ngươi đã giết kẻ mà ngươi tha','nếu ngươi đã tha kẻ mà ngươi giết','nếu ngươi không bao giờ tu hành',
+ 'nếu ngươi bị bắt làm nô từ nhỏ','nếu cha mẹ ngươi còn sống','nếu ngươi là nữ nhân',
+ 'nếu ngươi được thiên đạo chọn thay vì bị bỏ rơi','nếu ngươi đã nuốt thứ mà ngươi vứt đi',
+ 'nếu ngươi ở lại thay vì bỏ chạy','nếu ngươi đã tin người đó','nếu ngươi chưa từng gặp kẻ đã hủy đời ngươi',
+ 'nếu ngươi sinh sớm hơn một ngàn năm','nếu ngươi sinh muộn hơn một ngàn năm','nếu ngươi chưa từng được sinh ra'];
+const VG_PATH=['kiếm đạo độc tôn','ma đạo tàn khốc','thể tu nghịch thiên','hồn tu quỷ dị','đan đạo tuyệt thế','trận đạo vô song','ngự thú vạn linh','phù lục thần toán','võ đạo thuần túy','thương đạo nắm thiên hạ','đế vương chi đạo','ẩn thế cẩu đạo','tình đạo si tuyệt','sát đạo vô tình','vô vi tự nhiên','thần đạo hương hỏa','độc đạo bách chướng','huyễn đạo mê tâm','thời gian chi đạo','không gian chi đạo'];
+const VG_END=['đã thành đế, ngồi trên vạn giới','chết trẻ, không ai nhớ tên','tự phong ấn mình để chờ một ngày','hóa ma, bị cả thiên hạ vây giết','vẫn còn sống, vẫn còn tu','đã phi thăng và không quay lại','trở thành thứ không còn là người','làm phàm nhân trọn đời rồi già mà chết','bị chính đồ đệ mình phản sát','đang bị giam trong một cái lồng','đã xóa sạch tên mình khỏi lịch sử','trở thành vị diện chi tử của thế giới đó'];
+function vgSpace(){return SIM_WORLD.length*VG_DIVERGE.length*VG_PATH.length*VG_END.length;}
+function genVanGioi(){const cap=simRarity();const w=pickR(SIM_WORLD,cap);
+  const dv=RNG.pick(VG_DIVERGE),pa=RNG.pick(VG_PATH),en=RNG.pick(VG_END);
+  const strong=/thành đế|phi thăng|vị diện chi tử|không còn là người/.test(en);
+  return{w,dv,pa,en,strong,rar:w.r,tags:[].concat(w.t,strong?['law','shen']:['tech','exp']),
+    n:'「Ngươi」 ở '+w.n,
+    d:`Một vị diện tên ${w.n} — ${w.d}. Ở đó cũng có một kẻ mang hồn giống hệt ngươi. Điểm phân kỳ: ${dv}. Bản đó đi ${pa}, và hiện tại ${en}.`};}
 function simGrantTag(tag,mult){mult=mult||1;
-  if(tag==='tech'){const t=genTech(clamp(maxGrade(S.world.tier)+1,1,12));t.name=t.name+' (ngộ trong mô phỏng)';S.techs.push(t);return 'công pháp 「'+t.name+'」 — ngươi đã tu thành nó trong kiếp đó, tỉnh dậy vẫn nhớ trọn';}
-  if(tag==='spell'){const s=RNG.pick(SIM_SPELL);if((S.laws=S.laws||[]).indexOf(s)<0)S.laws.push(s);return 'pháp thuật dị giới 「'+s+'」 — ngươi mang được cả cách vận hành của một hệ thống pháp thuật khác về';}
+  if(tag==='tech'){const t=genTech(clamp(maxGrade(S.world.tier)+1,1,12));t.name=t.name+' (ngộ trong mô phỏng)';S.techs.push(t);return 'công pháp 「'+t.name+'」 — đã tu thành trong kiếp đó, tỉnh dậy vẫn nhớ trọn';}
+  if(tag==='spell'){const s=RNG.pick(SIM_SPELL);if((S.laws=S.laws||[]).indexOf(s)<0)S.laws.push(s);return 'pháp thuật dị giới 「'+s+'」';}
   if(tag==='shen'){const s=RNG.pick(SIM_SHEN);if((S.laws=S.laws||[]).indexOf(s)<0)S.laws.push(s);return 'thần thông 「'+s+'」';}
   if(tag==='eye'){const e=RNG.pick(SIM_EYE);(S.mutations=S.mutations||[]).push(e.split(' —')[0]);S.soul+=1;return 'đồng thuật: '+e;}
-  if(tag==='blood'){const b=RNG.pick(SIM_BLOOD);(S.mutations=S.mutations||[]).push(b);S.hpMul=Math.round(S.hpMul*(1+0.12*mult)*1000)/1000;S.hpMax=Math.round(100*S.hpMul);S.hp=S.hpMax;return 'huyết mạch: '+b+' (khí huyết đại tăng)';}
+  if(tag==='blood'){const b=RNG.pick(SIM_BLOOD);(S.mutations=S.mutations||[]).push(b);S.hpMul=Math.round(S.hpMul*(1+0.12*mult)*1000)/1000;S.hpMax=Math.round(100*S.hpMul);S.hp=S.hpMax;return 'huyết mạch: '+b;}
   if(tag==='law'){const l=RNG.pick(LAWS);if((S.laws=S.laws||[]).indexOf(l)<0)S.laws.push(l);return 'một tia đại đạo pháp tắc «'+l+'»';}
   if(tag==='exp'){const g=(0.1+RNG.range(0,0.15))*mult;S.progress=Math.min(1,S.progress+g);S.foundation=(S.foundation||0)+1;return 'kinh nghiệm luyện võ cả một đời — tu vi +'+Math.round(g*100)+'%, căn cơ +1 tầng';}
-  if(tag==='craft'){const t=genTreasure(clamp(maxGrade(S.world.tier),1,12));t.name=t.name+' (tự tay ngươi rèn trong mô phỏng)';S.treasures.push(t);return 'tay nghề chế tác — và một món ngươi rèn được mang về: '+t.name;}
-  if(tag==='soul'){S.soul+=1;return 'nguyên thần +1 — ngươi đã chết và tỉnh lại quá nhiều lần trong kiếp đó';}
-  if(tag==='faith'){S.faith=(S.faith||0)+120*mult;return 'ngươi nhớ được cảm giác nhận hương hỏa — +'+Math.round(120*mult)+' nguyện lực';}
+  if(tag==='craft'){const t=genTreasure(clamp(maxGrade(S.world.tier),1,12));t.name=t.name+' (tự tay rèn trong mô phỏng)';S.treasures.push(t);return 'tay nghề chế tác, và một món mang về: '+t.name;}
+  if(tag==='soul'){S.soul+=1;return 'nguyên thần +1';}
+  if(tag==='faith'){S.faith=(S.faith||0)+120*mult;return '+'+Math.round(120*mult)+' nguyện lực';}
   if(tag==='heal'){S.hp=S.hpMax;S.taint=Math.max(0,S.taint-15);return 'y đạo — thân thể hồi phục, chướng tính giảm 15';}
-  if(tag==='dao'){S.dao=Math.min(100,S.dao+10);S.heart+=1;return 'một kiếp dạy ngươi thứ tu tiên không dạy — đạo tâm +10';}
+  if(tag==='dao'){S.dao=Math.min(100,S.dao+10);S.heart+=1;return 'đạo tâm +10';}
   if(tag==='risk'){S.foundation=(S.foundation||0)+2;return 'sống sót trong tuyệt cảnh cả đời — căn cơ +2 tầng';}
   const c=(0.03+RNG.range(0,0.05))*mult;S.cmp=Math.round((S.cmp+c)*100)/100;return 'hiểu biết về một thế giới khác — ngộ tính +'+c.toFixed(2);}
-function simReward(idn){const out=[];const n=1+(RNG.chance(0.3)?1:0)+(idn.rar>=6&&RNG.chance(0.4)?1:0);
-  const bag=idn.tags.slice();
-  for(let i=0;i<n&&bag.length;i++)out.push(simGrantTag(bag.splice(RNG.int(0,bag.length-1),1)[0],idn.f?idn.f.rw:1));
+function simReward(idn){const out=[];const mult=(idn&&idn.f?idn.f.rw:1)*(idn&&idn.g?idn.g.m:1)*(idn&&idn.strong?1.5:1);
+  const n=1+(RNG.chance(0.3)?1:0)+((idn&&idn.rar>=6&&RNG.chance(0.4))?1:0)+((idn&&idn.strong)?1:0);
+  const bag=(idn&&idn.tags?idn.tags.slice():['info']);
+  for(let i=0;i<n&&bag.length;i++)out.push(simGrantTag(bag.splice(RNG.int(0,bag.length-1),1)[0],mult));
   return out;}
-function doSim(idn,yrs){const r=runSim(yrs);if(!r)return;
-  const rw=idn?simReward(idn):[simGrantTag('info',1)];
+function doSim(idn,yrs,head){const r=runSim(yrs);if(!r)return;
+  const rw=simReward(idn);
   const lines=r.ev.length?r.ev.slice(0,7).map(x=>'· '+x).join('\n'):'· (một đoạn đời phẳng lặng)';
-  const head=idn?`【${esc(idn.n)}】\n${esc(idn.d)}\n\n`:`【MÔ PHỎNG NHÂN SINH — tương lai của chính ngươi】\n\n`;
-  setResult(`${head}Mô phỏng ${yrs} năm:\n\n${lines}\n\n${r.died?'☠ Kết cục: '+r.died:'Kết cục: sống tới '+r.endAge+' tuổi, dừng ở '+r.endRealm+'.'}\n\n✦ MANG VỀ ĐƯỢC:\n${rw.map(x=>'· '+x).join('\n')}\n· ngộ tính +${r.gainC.toFixed(2)}\n\nMô phỏng là giả. Thứ ngươi học được trong đó là thật.`);}
-function sceneSimulate(){const n=3+(RNG.chance(0.5)?1:0)+(simRarity()>=6?1:0);
-  const seen={},ids=[];
-  for(let i=0;i<n*3&&ids.length<n;i++){const x=genSimIdentity();const k=x.w.n+'|'+x.r.n;if(seen[k])continue;seen[k]=1;ids.push(x);}
-  const c=[{l:'🔮 Mô Phỏng Nhân Sinh — sống thử tương lai của chính ngươi',hint:'Loại cơ bản: xem con đường hiện tại dẫn ngươi tới đâu.',cls:'primary',
-    act:()=>{doSim(null,RNG.int(20,50));}}];
-  ids.forEach(x=>c.push({l:(x.rar>=6?'🌌 ':'🔮 ')+x.n.replace('Mô Phỏng · ',''),hint:x.d+' — khởi điểm: '+x.f.n,cls:x.rar>=7?'primary':'',
-    act:()=>{doSim(x,RNG.int(20,60));}}));
-  c.push({l:'🎲 Thả trôi — để thiên đạo chọn hộ một thân phận bất kỳ',hint:'Có thể là thứ ngươi chưa từng tưởng tượng nổi.',
-    act:()=>{doSim(genSimIdentity(),RNG.int(20,60));}});
-  c.push({l:'Thôi, để dành — mô phỏng cũng hao tâm thần.',act:()=>{setResult('Ngươi thu tâm thần lại.');}});
-  const tot=SIM_WORLD.length*SIM_ROLE.length*SIM_FATE.length;
-  return{title:'MÔ PHỎNG · Chọn Một Kiếp Để Sống Thử',
-    narr:`Khí vận cho ngươi quyền sống thử. Không chỉ kiếp của chính mình — ngươi có thể mượn thân bất cứ sinh linh nào, ở bất cứ thế giới nào.\n\nThứ mang về không phải tu vi, mà là **thứ ngươi đã học được** ở kiếp đó: công pháp đã tu thành, pháp thuật dị giới, thần thông, huyết mạch, đồng thuật, tay nghề.\n\n(Thiên đạo vừa bốc ra ${ids.length} thân phận từ ${tot.toLocaleString('vi-VN')} tổ hợp khả dĩ. Cảnh giới & khí vận càng cao, thế giới bốc được càng xa lạ.)`,
+  setResult(`${head}\n\nMô phỏng ${yrs} năm:\n\n${lines}\n\n${r.died?'☠ Kết cục: '+r.died:'Kết cục: sống tới '+r.endAge+' tuổi, dừng ở '+r.endRealm+'.'}\n\n✦ MANG VỀ ĐƯỢC:\n${rw.map(x=>'· '+x).join('\n')}\n· ngộ tính +${r.gainC.toFixed(2)}\n\nMô phỏng là giả. Thứ ngươi học được trong đó là thật.`);}
+/* 1) MÔ PHỎNG NHÂN SINH — chính ngươi */
+function sceneSimulate(){return{title:'MÔ PHỎNG NHÂN SINH · Tương Lai Của Chính Ngươi',
+  narr:'Ngươi nhắm mắt, thả tâm thần trôi về phía trước.\n\nĐây là loại mô phỏng cơ bản: không đổi thân phận, không đổi thế giới — chỉ là **chính ngươi**, đi tiếp con đường hiện tại, xem nó dẫn tới đâu.',
+  choices:[
+   {l:'🔮 Mô phỏng một đoạn ngắn (20-30 năm)',cls:'primary',act:()=>{doSim(null,RNG.int(20,30),'【MÔ PHỎNG NHÂN SINH — tương lai của chính ngươi】');}},
+   {l:'🔮 Mô phỏng dài (50-90 năm) — hao tâm thần hơn',act:()=>{advance(RNG.range(0.3,1));doSim(null,RNG.int(50,90),'【MÔ PHỎNG NHÂN SINH — trọn một chặng đời】');}},
+   {l:'Thôi, để dành.',act:()=>{setResult('Ngươi thu tâm thần lại.');}}]};}
+/* 2) MÔ PHỎNG LUÂN HỒI — thành một người hoàn toàn khác */
+function sceneLuanHoi(){const n=4+(simRarity()>=6?2:0);const seen={},ids=[];
+  for(let i=0;i<n*4&&ids.length<n;i++){const x=genSimIdentity();const k=x.w.n+'|'+x.r.n+'|'+x.e.n;if(seen[k])continue;seen[k]=1;ids.push(x);}
+  const c=ids.map(x=>({l:(x.rar>=6?'🌌 ':'♾ ')+x.n,hint:x.d,cls:x.rar>=7?'primary':'',
+    act:()=>{doSim(x,RNG.int(30,80),`【LUÂN HỒI · ${esc(x.nm)}】\n${esc(x.d)}`);}}));
+  c.push({l:'🎲 Thả trôi — luân hồi thành bất cứ ai',hint:'Không chọn. Để nghiệp lực ném ngươi vào đâu thì vào.',
+    act:()=>{const x=genSimIdentity();doSim(x,RNG.int(30,80),`【LUÂN HỒI · ${esc(x.nm)}】\n${esc(x.d)}`);}});
+  c.push({l:'Thôi, chưa muốn làm người khác.',act:()=>{setResult('Ngươi rút tâm thần khỏi vòng luân hồi.');}});
+  return{title:'MÔ PHỎNG LUÂN HỒI · Sống Một Kiếp Của Người Khác',
+    narr:`Khác với mô phỏng nhân sinh, thứ này ném hồn ngươi vào **một con người hoàn toàn khác** — khác tên, khác thế giới, khác thời đại, khác cả tính cách.\n\nNgươi sẽ quên mình là ai cho tới lúc kiếp đó kết thúc. Thứ mang về là những gì kẻ đó đã học được.\n\n(Không gian luân hồi: **${simSpace().toLocaleString('vi-VN')}** tổ hợp thân phận, chưa kể họ tên. Vừa bốc ra ${ids.length}.)`,
+    choices:c};}
+/* 3) VẠN GIỚI (Tạ Diệm) — chính ngươi ở vị diện khác */
+function sceneVanGioi(){const n=3+(simRarity()>=6?2:0);const ids=[];
+  for(let i=0;i<n;i++)ids.push(genVanGioi());
+  const c=ids.map(x=>({l:(x.strong?'👑 ':'🌐 ')+x.n+(x.strong?' (bản đó đã đứng trên đỉnh)':''),hint:x.d,cls:x.strong?'primary':'',
+    act:()=>{
+      const head=`【VẠN GIỚI · ${esc(x.w.n)}】\n${esc(x.d)}`;
+      if(x.strong&&RNG.chance(0.45)){
+        // bản mạnh hơn có thể phản kháng
+        const e={name:'「Ngươi」 của '+x.w.n,ri:clamp(S.ri+RNG.int(0,3),1,100),si:3,boss:true,mightBonus:0.4};
+        const r=fight(e);
+        if(r==='win'){const rw=simReward(x);addKarma(-2,'nuốt một bản ngã khác của chính mình');S.heart-=1;
+          setResult(`${head}\n\nNgươi bước vào thân xác đó — nhưng bản ngã kia còn tỉnh, và nó không chịu nhường.\n\nHai cái "ta" đánh nhau trong một cái xác. Cuối cùng ngươi nuốt nó.\n\n✦ MANG VỀ:\n${rw.map(y=>'· '+y).join('\n')}\n\nNgươi tự hỏi: kẻ vừa bị nuốt, có phải cũng từng nghĩ mình mới là bản thật?`);}
+        else if(S.alive){S.hp=Math.max(1,Math.round(S.hp*0.5));deductLife(4,'bị bản ngã khác đánh bật');
+          setResult(`${head}\n\nBản ngã kia mạnh hơn ngươi tưởng. Nó đá hồn ngươi văng khỏi vị diện đó.\n\nNgươi tỉnh lại, hộc máu — và hiểu ra: không phải phiên bản nào của mình cũng thua mình.`);}
+        else afterAct();
+        return;}
+      doSim(x,RNG.int(25,70),head);}}));
+  c.push({l:'⚔ Truy tìm & chém VỊ DIỆN CHI TỬ của một thế giới',hint:'Kẻ được thiên đạo thế giới đó chọn. Giết được thì đoạt khí vận.',cls:'primary',
+    act:()=>{const w=pickR(SIM_WORLD,simRarity());
+      const e={name:'Vị diện chi tử của '+w.n,ri:clamp(S.ri+RNG.int(-1,2),1,100),si:3,boss:true,mightBonus:0.45};
+      const r=fight(e);
+      if(r==='win'){S.luck=clamp(S.luck+1,0,5);S.luckShown=true;addKarma(-4,'đoạt khí vận vị diện chi tử');
+        const rw=simReward({tags:['law','shen','tech'],rar:7,strong:true});
+        setResult(`Ngươi lần theo dấu vết khí vận, tìm ra kẻ được thiên đạo của ${esc(w.n)} chọn làm con cưng.\n\nHắn có mọi thứ: cơ duyên tự tìm tới, mỹ nhân, quý nhân, và một tương lai đã được viết sẵn.\n\nNgươi chém hắn, và cướp luôn cái tương lai đó.\n\n✦ ĐOẠT ĐƯỢC:\n${rw.map(y=>'· '+y).join('\n')}\n· khí vận của ngươi tăng một bậc — **${esc(LUCK[S.luck].n)}**\n\nThiên đạo ${esc(w.n)} đã ghi tên ngươi. Nhân quả này không nhỏ.`);}
+      else if(S.alive){S.att+=12;setResult(`Vị diện chi tử không dễ giết — hắn có cả thiên đạo chống lưng.\n\nNgươi bại, phải rút về qua khe nứt. Nhưng từ nay, ${esc(w.n)} biết có kẻ ngoại giới muốn lấy mạng con cưng của nó.`);}
+      else afterAct();}});
+  c.push({l:'Đóng khe nứt lại.',act:()=>{setResult('Ngươi khép vị diện lại. Vạn giới rộng lớn, không nhất thiết chuyến nào cũng đi.');}});
+  return{title:'VẠN GIỚI · 「Ngươi」 Ở Vị Diện Khác',
+    narr:`Hệ thống mở ra một danh sách. Mỗi dòng là một vị diện, và trong mỗi vị diện đó đều có **một kẻ mang hồn giống hệt ngươi** — chỉ khác một lựa chọn ở đâu đó.\n\nCó bản đã thành đế. Có bản chết từ lúc mười tuổi. Có bản chưa từng được sinh ra.\n\nXuyên vào bản nào, ngươi mang về được thứ bản đó đã tu thành. Nhưng bản mạnh hơn ngươi thì **không chịu nhường xác**.\n\n(Vạn giới hiện có **${vgSpace().toLocaleString('vi-VN')}** nhánh phân kỳ khả dĩ.)`,
     choices:c};}
 /* ---------------------- PHÂN THÂN ---------------------- */
 function canPhanThan(){return S.ri>=5&&S.soul>=3&&!S.phanthan;}
@@ -3116,7 +3199,7 @@ function sysConflictPenalty(dir){const S_=S.system;if(!S_)return 1;const d=sysDe
    thế giới đó truy sát. ---- */
 const PB_GOAL=['đoạt một môn trấn phái công pháp','cướp một món chí bảo trong cấm địa','lấy một giọt huyết mạch của chủng tộc bản địa','sao chép một bộ truyền thừa trong tàng kinh các','giết một kẻ và lấy thứ hắn giữ','moi một bí mật mà cả thế giới đó giấu kín'];
 const PB_MASK=['một tán tu vô danh','một lão nhân bệnh tật','một đệ tử ngoại môn mới nhập','một thương nhân qua đường','một tử tù được ân xá','một kẻ câm điếc quét sân'];
-function pbSystem(){const S_=S.system;return S_&&['thuthapvangioi','dulichct','xuyenvietct','chuyensinhct','phanhonct'].indexOf(S_.id)>=0;}
+function pbSystem(){const S_=S.system;return S_&&['dulichct','xuyenvietct','chuyensinhct','phanhonct'].indexOf(S_.id)>=0;}
 function evPhoBan(){const w=RNG.pick(SIM_WORLD),goal=RNG.pick(PB_GOAL),mask=RNG.pick(PB_MASK);
   const power=clamp(S.ri+RNG.int(-1,4),1,100);
   return{title:'PHÓ BẢN · '+w.n,
@@ -3142,6 +3225,73 @@ function evPhoBan(){const w=RNG.pick(SIM_WORLD),goal=RNG.pick(PB_GOAL),mask=RNG.
        const rw=simReward(idn);sysGain('travel',90);
        setResult(`Ngươi không lấy trộm. Ngươi sống ở ${esc(w.n)} như một ${esc(idn.r.n)} thật sự — bái sư, khổ luyện, ăn cơm của thế giới đó.\n\nĐến ngày rời đi, thứ ngươi mang theo không ai đòi lại được, vì nó đã nằm trong xương tủy ngươi.\n\n✦ Mang về:\n${rw.map(x=>'· '+x).join('\n')}`);}},
      {l:'↩ Đóng khe nứt — chuyến này không đáng.',act:()=>{setResult('Ngươi khép khe nứt lại. Vạn giới rộng lớn, không nhất thiết chuyến nào cũng phải đi.');}}]};}
+/* =========================================================================
+   VƯƠNG TRIỀU — mỗi vùng đất đều có kẻ trấn giữ. Bản đồ không còn là chỗ để
+   đi, mà là chỗ để TRANH. Thế lực tự bành trướng, đánh nhau, nuốt nhau kể cả
+   khi ngươi đứng ngoài.
+   ========================================================================= */
+const FC_TYPE=[
+ {k:'trieu',n:'Vương Triều',d:'quốc gia phàm trần có tu sĩ chống lưng',c:'#e0b34a'},
+ {k:'tong', n:'Tông Môn',d:'môn phái tu tiên truyền thừa nhiều đời',c:'#5ad1e6'},
+ {k:'giatoc',n:'Gia Tộc',d:'huyết mạch thế gia, quyền lực cha truyền con nối',c:'#c88ce8'},
+ {k:'ma',   n:'Ma Đạo',d:'tà phái, làm gì cũng được miễn là mạnh',c:'#e05a5a'},
+ {k:'yeu',  n:'Yêu Quốc',d:'yêu tộc chiếm cứ, nhân tộc là gia súc',c:'#7ad17a'},
+ {k:'thuong',n:'Thương Hội',d:'không có kiếm, chỉ có tiền — và tiền mua được kiếm',c:'#d4af37'},
+ {k:'than', n:'Thần Đình',d:'thờ một vị thần, lấy hương hỏa làm gốc',c:'#f0d78a'},
+ {k:'tansu',n:'Tán Tu Liên Minh',d:'đám không tông môn tụ lại cho khỏi bị nuốt',c:'#9aa7b8'}];
+const FC_SUR=['Thiên','Huyền','Bắc','Nam','Đông','Tây','Thanh','Hắc','Xích','Kim','Vạn','Cửu','Thái','Tử','Bạch','Huyết','Lôi','Phong'];
+const FC_MID=['Vân','Kiếm','Long','Phượng','Ma','Thần','Linh','Hỏa','Băng','Sát','Đạo','Minh','Dương','Nguyệt','Tinh','Uyên'];
+const FC_SUF={trieu:['Quốc','Vương Triều','Đế Quốc','Vương Quốc'],tong:['Tông','Môn','Các','Cung','Phái'],giatoc:['Gia','Thế Gia','Phủ'],ma:['Ma Tông','Ma Điện','Quỷ Môn','Huyết Giáo'],yeu:['Yêu Quốc','Thú Vực','Yêu Đình'],thuong:['Thương Hội','Bảo Hàng','Tiền Trang'],than:['Thần Đình','Thần Điện','Miếu Đường'],tansu:['Liên Minh','Minh Hội','Tán Minh']};
+function genFaction(rid,tier){const t=RNG.pick(FC_TYPE);
+  const nm=RNG.pick(FC_SUR)+' '+RNG.pick(FC_MID)+' '+RNG.pick(FC_SUF[t.k]);
+  return{id:'fc_'+RNG.int(0,1e9),n:nm,k:t.k,rid,
+    power:clamp(Math.round(tier*8+RNG.int(0,14)),3,100),
+    att:RNG.int(-40,40),          // thái độ với ngươi
+    troops:RNG.int(200,4000),alive:true};}
+function ensureFactions(){S.factions=S.factions||{};const t=S.world.tier||1;
+  for(const r of regionsOf(t)){if(!S.factions[r.id]){
+    S.factions[r.id]=RNG.chance(0.14)?null:genFaction(r.id,t);}}}
+function factionOf(rid){ensureFactions();return S.factions?S.factions[rid]:null;}
+function fcTypeOf(k){return FC_TYPE.find(x=>x.k===k)||FC_TYPE[0];}
+function fcStand(f){return f.att>=45?'thần phục ngươi':f.att>=20?'thân thiện':f.att<=-45?'thề diệt ngươi':f.att<=-20?'thù địch':'trung lập';}
+// thế lực tự vận động dù ngươi đứng ngoài
+function factionTick(years){if(!S.factions)return;const ks=Object.keys(S.factions);
+  for(const k of ks){const f=S.factions[k];if(!f||!f.alive)continue;
+    f.power=clamp(f.power+(RNG.chance(0.5*years)?1:0)-(RNG.chance(0.2*years)?1:0),1,120);
+    f.troops=Math.max(50,Math.round(f.troops*(1+RNG.range(-0.05,0.08)*years)));
+    if(f.att>0)f.att=Math.max(0,f.att-0.3*years);else if(f.att<0)f.att=Math.min(0,f.att+0.3*years);}
+  // chiến tranh giữa các vùng lân cận
+  if(RNG.chance(0.10*years)&&ks.length>1){const a=S.factions[RNG.pick(ks)],b=S.factions[RNG.pick(ks)];
+    if(a&&b&&a!==b&&a.alive&&b.alive){const win=a.power+RNG.int(0,10)>=b.power+RNG.int(0,10)?a:b,lose=win===a?b:a;
+      win.power=clamp(win.power+3,1,120);win.troops+=Math.round(lose.troops*0.3);
+      lose.alive=false;S.factions[lose.rid]=RNG.chance(0.5)?genFaction(lose.rid,S.world.tier):win;
+      log(`『THIÊN HẠ』 ${win.n} thôn tính ${lose.n}, chiếm luôn ${(regionsOf(S.world.tier).find(r=>r.id===lose.rid)||{}).n||'một vùng'}.`,'lore');}}}
+function evVuongTrieu(){ensureFactions();const r=curRegion();const f=factionOf(r.id);
+  if(!f)return evFortune();const t=fcTypeOf(f.k);
+  const gap=powerMight()-powerExp(Math.round(f.power/3),2);
+  return{title:'THẾ LỰC · '+f.n,
+    narr:`${esc(r.n)} nằm dưới quyền 「${esc(f.n)}」 — một ${esc(t.n.toLowerCase())}, ${esc(t.d)}.\n\nThực lực: ${f.power} · Bộ chúng: ${f.troops.toLocaleString('vi-VN')} · Thái độ với ngươi: ${esc(fcStand(f))}.\n\nỞ đất người ta, muốn yên thân thì phải chọn một đường.`,
+    choices:[
+     {l:'🤝 Đầu nhập — xin làm khách khanh dưới trướng họ',hint:'Có chỗ dựa, đổi lại phải nghe lệnh.',act:()=>{
+       if(f.att<-20){f.att-=5;setResult(`${esc(f.n)} nhổ nước bọt xuống chân ngươi. "Loại như ngươi cũng đòi đầu nhập?"\n\nQuan hệ càng xấu thêm.`);return;}
+       f.att=clamp(f.att+25,-100,100);S.linhThach+=Math.round(Math.pow(10,1.4+S.ri*0.35));addFame(4);advance(RNG.range(0.5,2));
+       setResult(`Ngươi bái kiến, dâng lễ, nhận một chức khách khanh hờ.\n\n${esc(f.n)} cấp cho ngươi bổng lộc và một tấm lệnh bài. Từ nay ở ${esc(r.n)}, ít kẻ dám động tới ngươi.\n\nChỉ là — nhận bổng lộc của ai thì phải làm việc cho người đó.`);}},
+     {l:'💰 Nộp cống — mua lấy hai chữ bình yên',hint:'Tốn linh thạch, không mắc nợ ân tình.',act:()=>{
+       const cost=Math.round(Math.pow(10,1.5+S.ri*0.32));
+       if(S.linhThach<cost){setResult('Ngươi lục túi càn khôn và nhận ra mình không đủ tiền để mua sự bình yên. Nghèo cũng là một cái tội.');return;}
+       S.linhThach-=cost;f.att=clamp(f.att+12,-100,100);advance(RNG.range(0.2,0.6));
+       setResult(`Ngươi nộp ${cost.toLocaleString('vi-VN')} linh thạch.\n\nKẻ thu cống đếm tiền, gật đầu, không hỏi tên ngươi. Giao dịch sòng phẳng — thứ ngươi mua là quyền được người ta ngó lơ.`);}},
+     {l:'⚔ Khiêu chiến — đạp đổ kẻ trấn giữ vùng này',hint:'Thắng thì cả vùng là của ngươi. Bại thì bị truy sát.',cls:gap>0?'primary':'',act:()=>{
+       const e={name:'Chủ nhân '+f.n,ri:Math.round(f.power/3),si:2,boss:true,mightBonus:0.4};const rr=fight(e);
+       if(rr==='win'){f.alive=false;S.factions[r.id]=null;S.ownRegions=S.ownRegions||[];
+         if(S.ownRegions.indexOf(r.id)<0)S.ownRegions.push(r.id);
+         addFame(25);S.att+=15;S.linhThach+=f.troops*10;
+         setResult(`Ngươi đánh thẳng vào tổng đàn ${esc(f.n)}, chém đổ kẻ đứng đầu trước mặt toàn bộ bộ chúng.\n\n✦ ${esc(r.n)} từ nay thuộc về ngươi. ${f.troops.toLocaleString('vi-VN')} bộ chúng cùng kho tàng đổi chủ.\n\nDanh ngươi vang khắp ${esc(S.world.name)} — và mọi thế lực còn lại đều vừa ghi tên ngươi vào sổ.`);}
+       else if(S.alive){f.att=clamp(f.att-45,-100,100);S.att+=10;
+         setResult(`Ngươi bại. ${esc(f.n)} không giết ngươi ngay — họ muốn ngươi sống để làm gương.\n\nTừ nay ở ${esc(r.n)}, ngươi là kẻ bị truy nã.`);}
+       else afterAct();}},
+     {l:'🕶️ Lặng lẽ đi qua, không dính dáng',hint:'Kẻ khôn ngoan không tranh với chủ nhà.',act:()=>{
+       advance(RNG.range(0.1,0.4));setResult('Ngươi cúi đầu đi qua cổng thành, không nhìn ai, không để ai nhìn kỹ mặt mình.\n\nTrong tu tiên giới, vô danh cũng là một loại giáp.');}}]};}
 /* ---- ACCORDION: phân hoá tab thành từng nhóm gập/mở, có đếm số ---- */
 let ACC={info:true,chiso:true};
 function acc(id,ic,ti,ct,body){const open=!!ACC[id];
