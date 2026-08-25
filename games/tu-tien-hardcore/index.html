@@ -854,7 +854,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,moment:'kham',momentLead:'',momentHist:[],momentTag:{},
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -1575,44 +1575,113 @@ function sceneAffairs(){const c=[];const bk=()=>afterAct();
   return{title:'Sự Vụ Tu Hành',narr:'Gác lại chuyện giang hồ trong chốc lát, ngươi lo liệu những việc bên lề con đường tu hành.',choices:c,affairs:true};
 }
 // Hub — TRANG CỐT TRUYỆN chính: dẫn chuyện, không phải menu động từ
-function sceneHub(){
-  const tg=nextTarget();const ready=S.progress>=1;
-  const c=[];
-  if(S.ri>=100)c.push({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
-  c.push({l:'⚔ Dấn thân — xem chuyện gì đang chờ ngươi',hint:'Bước vào một tình huống mới: cơ duyên, hiểm họa, ân oán, bí ẩn...',cls:'primary',act:()=>{setScene(rollEvent());}});
-  if(ready&&tg)c.push({l:`⚡ Đột phá cảnh giới → ${tg.name} (quy trình)`,cls:'primary',act:()=>{setScene(sceneBreakthrough());}});
-  if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập bí cảnh đang mở (cơ duyên & sát cơ)',cls:'primary',act:()=>{setScene(evSecretRealm());}});
-  if(canAscendWorld())c.push({l:`🌠 PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n}`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
-  c.push({l:'🧘 Lui về tĩnh tu một thời gian',hint:'Thời gian trôi — có khi một biến cố tự tìm tới ngươi.',act:()=>{passTime(1,false);}});
-  c.push({l:'🔥 Bế quan khổ tu (nhanh nhưng hao thọ)',act:()=>{passTime(1,true);}});
-  if(!ready)c.push({l:'⏩ Chuyên tâm tu tới khi đủ đột phá',act:()=>{let g=0;while(S.alive&&S.progress<1&&g<4000){cultivate(1,false);g++;}if(S.alive&&RNG.chance(0.5)){setScene(rollEvent());}else afterAct();}});
-  if(S.ri>=1&&S.dao>=40&&!S.flags.canSeekDao)c.push({l:'☯ Tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
-  c.push({l:'⚙ Lo liệu sự vụ tu hành',hint:'Phường thị · tông môn · động phủ · nghề phụ · luyện bảo · thu đồ · lập thế lực...',act:()=>{setScene(sceneAffairs());}});
+/* ============================================================================
+   CỐT TRUYỆN ĐỘNG — SITUATION ENGINE
+   Mỗi màn hình chính là MỘT TÌNH HUỐNG (không phải menu tĩnh). Lựa chọn đưa
+   ngươi sang một BỐI CẢNH khác (S.moment) → tình huống & lựa chọn kế tiếp đổi
+   theo nơi ngươi đang ở và việc ngươi vừa làm. Đây là chỗ "rẽ nhánh theo lựa
+   chọn trước" mà cốt truyện cần.
+   ========================================================================== */
+const MOMENT_NAME={kham:'Trên Đường',thon:'Chốn Phồn Hoa',hoang:'Hoang Dã Hiểm Địa',quan:'Bế Quan Tu Hành',giao:'Giữa Người Đời'};
+const RUMORS=[
+ 'Trà lâu xôn xao: một tán tu vừa vấp được động phủ của tiền bối đã ngã, ôm bảo vật chạy trối chết, cả vùng đang lùng.',
+ 'Có kẻ thì thầm về một mạch linh thạch mới lộ thiên ở sơn cốc phía tây — nhưng ai vào cũng chưa thấy ra.',
+ 'Người ta đồn một vị đại năng cảnh giới cao vừa bế quan thất bại, đạo cơ sụp đổ, để lại cả một tòa động phủ vô chủ.',
+ 'Tin dữ truyền tới: một yêu thú cổ tô tỉnh giấc ở đầm lầy phía nam, mấy đội tu sĩ đi săn chưa một ai trở về.',
+ 'Có lời rằng một tông môn nhỏ vừa bị diệt môn trong một đêm — kẻ ra tay không để lại dấu vết.',
+ 'Chợ đen rỉ tai nhau về một quyển tàn phổ công pháp thượng phẩm sắp được đấu giá kín.',
+ 'Đám tán tu bàn tán: gần đây trời thường có dị tượng, e là điềm báo một bí cảnh sắp mở.',
+ 'Một lão khách buôn say rượu lảm nhảm về "cửa trời" và một lời tiên tri chưa ai giải nổi.'];
+function situationText(m,season){
+  const region=esc(S.world.region||S.world.name),world=esc(S.world.name),rn=esc(realmName(S.ri,S.si));
+  const pool={
+   kham:[`Năm ${S.time.y}, ${season}. Con đường mòn trải dài dưới chân ngươi — thân mang ${rn}, ngươi lang bạt qua ${region}, trời đất rộng lớn mà chốn dừng chân thì chẳng có.`,
+     `Gió cuốn bụi đường. Phía trước, một ngã ba: một lối dẫn về nơi khói bếp lượn lờ, một lối chìm vào rừng sâu u tịch. Ngươi đứng giữa, ${rn}, cân nhắc.`,
+     `Ngươi dừng chân bên một cội cây già, phủi lớp bụi trên vai. Thiên hạ mênh mông, mỗi bước chân đều có thể là cơ duyên — hoặc là mồ chôn.`,
+     `Đường xa, người thưa. Ngươi đi giữa ${region}, lòng nhẩm lại con đường đã qua và những kẻ đã gặp. Chặng tiếp theo, sẽ về đâu?`],
+   thon:[`${MOMENT_NAME.thon} — thị trấn tu tiên tấp nập tán tu lẫn phàm nhân. Quán trà, tiệm đan, sạp pháp khí chen chúc; tin tức tứ phương đổ về đây.`,
+     `Ngươi hòa vào dòng người nơi phố chợ. Đâu đó vang tiếng rao bán bí tịch, tiếng mặc cả linh thạch, và những lời thì thầm về cơ duyên vừa xuất thế.`,
+     `Một tòa thành trì tu tiên, tường đá khắc đầy trận văn. Cổng thành tu sĩ ra vào không ngớt — kẻ tất bật kiếm chác, kẻ nhàn nhã dò la.`],
+   hoang:[`${MOMENT_NAME.hoang}. Rừng thiêng nước độc, linh khí hỗn loạn. Yêu thú gầm gừ trong bóng tối; cơ duyên và sát cơ đan xen từng tấc đất.`,
+     `Ngươi tiến vào vùng đất hoang vu, dấu chân người thưa thớt. Sau màn sương, một cỗ di tích đổ nát thấp thoáng, phảng phất tử khí ngàn năm.`,
+     `Đất đá cằn cỗi, gió rít qua khe núi. Đây là nơi kẻ mạnh săn kẻ yếu — và bảo vật thường chôn vùi cùng xương trắng.`],
+   quan:[`Ngươi tìm một sơn động khuất nẻo, bày sơ một trận tụ linh, ngồi kiết già. Thế giới bên ngoài lùi xa; chỉ còn hơi thở và dòng linh khí.`,
+     `Trong tĩnh lặng tuyệt đối, ngươi dẫn linh khí chạy vòng chu thiên, luyện hóa từng chút một. Thời gian dần mất đi ý nghĩa.`,
+     `Cửa động khép lại. Ánh sáng duy nhất là quầng linh quang mờ nơi đan điền. Bế quan — canh bạc của kẻ tu hành với chính thọ nguyên mình.`],
+   giao:[`Ngươi để tâm tới những kẻ đồng đạo quanh mình. Trong tu tiên giới, một người bạn có thể là cơ duyên — cũng có thể là con dao thọc sau lưng.`,
+     `Vài gương mặt lướt qua: kẻ cười nói hồ hởi, kẻ lạnh lùng dò xét. Ngươi hiểu, mỗi mối quan hệ đều có giá của nó.`]};
+  const arr=pool[m]||pool.kham;S.momentTag=S.momentTag||{};let i=RNG.int(0,arr.length-1);if(arr.length>1&&i===S.momentTag[m])i=(i+1)%arr.length;S.momentTag[m]=i;return arr[i];
+}
+function threadFlavor(){
+  const mot=S.flags&&S.flags.motive,out=[];
+  if(mot==='truongsinh')out.push('Sâu trong lòng, khát vọng trường sinh vẫn cháy âm ỉ — dù ngươi mơ hồ cảm thấy con đường ấy có gì chẳng lành.');
+  else if(mot==='sucmanh')out.push('Ngươi tự nhắc: chưa đủ mạnh. Còn kẻ đứng trên đầu ngươi thì còn phải tiến.');
+  else if(mot==='tudo')out.push('Ngươi chỉ muốn một đời tiêu dao — nhưng thiên hạ này liệu có để một kẻ tu tiên được yên?');
+  else if(mot==='baothu')out.push('Mối thù năm xưa vẫn nhức nhối. Mỗi bước tu luyện là một bước tới gần ngày báo phục.');
   const overdue=S.ledger.filter(x=>x.n<0).length;
-  // ---- Narrative động: đổi theo mùa / mục tiêu đạo / mối đe dọa / manh mối đang đeo đuổi ----
-  const season=['đầu xuân, vạn vật hồi sinh','giữa hạ, linh khí hừng hực','cuối thu, lá vàng rơi rụng','giữa đông, tuyết phủ trắng trời'][Math.floor(((S.time.m||1)-1)/3)%4];
-  const opens=[`Năm ${S.time.y}, ${season}. Ngươi đứng giữa ${esc(S.world.name)}, thân mang cảnh giới ${esc(realmName(S.ri,S.si))}.`,
-    `${season.charAt(0).toUpperCase()+season.slice(1)} — lại một mùa nữa trôi qua trên con đường vô tận. Ngươi, ${esc(realmName(S.ri,S.si))}, vẫn còn đứng đây.`,
-    `Thọ nguyên hao mòn từng khắc. Nơi ${esc(S.world.region||S.world.name)}, ngươi lặng lẽ tích lũy, chờ một bước tiến kế tiếp.`];
-  let narr=RNG.pick(opens);
-  // nhắc mục tiêu đạo (motive) — giữ mạch cốt truyện
-  const mot=S.flags&&S.flags.motive;
-  if(mot==='truongsinh')narr+='\n\nSâu trong lòng, khát vọng trường sinh vẫn cháy âm ỉ — dù ngươi mơ hồ cảm thấy con đường ấy có gì đó chẳng lành.';
-  else if(mot==='sucmanh')narr+='\n\nNgươi tự nhắc mình: chưa đủ mạnh. Vẫn chưa đủ. Còn kẻ đứng trên đầu ngươi thì còn phải tiến.';
-  else if(mot==='tudo')narr+='\n\nNgươi chỉ muốn một đời tiêu dao — nhưng thiên hạ này liệu có để một kẻ tu tiên được yên?';
-  else if(mot==='baothu')narr+='\n\nMối thù năm xưa vẫn nhức nhối. Mỗi bước tu luyện là một bước tới gần ngày báo phục.';
-  // các mối đe dọa / mạch truyện đang mở
-  const threads=[];
-  if(overdue>3)threads.push('Ngươi mơ hồ cảm thấy có những ánh mắt oán độc đang lùng sục ngươi trong bóng tối — nợ máu chưa trả.');
-  if(S.rival&&S.rival.alive&&S.rival.grudge>=30)threads.push(`Bóng dáng ${esc(S.rival.name)} — đối thủ mệnh định của ngươi — như luôn lảng vảng đâu đó, chờ ngày quyết một trận sinh tử.`);
+  if(overdue>3)out.push('Đâu đó trong bóng tối, những ánh mắt oán độc đang lùng sục ngươi — nợ máu chưa trả.');
+  if(S.rival&&S.rival.alive&&S.rival.grudge>=30)out.push(`Bóng dáng ${esc(S.rival.name)} — đối thủ mệnh định — như luôn lảng vảng đâu đó, chờ ngày quyết một trận sinh tử.`);
   const openMys=MYSTERIES.filter(m=>{const c=(S.clues&&S.clues[m.id])||0;return c>0&&c<m.clues.length&&(!m.identity||qualifiesIdentityMystery());});
-  if(openMys.length)threads.push(`Một bí ẩn chưa lời giải — 「${esc(RNG.pick(openMys).t)}」 — vẫn ám ảnh tâm trí ngươi, thôi thúc ngươi truy tìm nốt sự thật.`);
-  if(S.world.secretRealm>0)threads.push('Một bí cảnh cổ đang mở ra đâu đó gần đây — cơ duyên và sát cơ cùng vẫy gọi.');
-  if(S.taint>30)threads.push('Chướng khí trong người ngươi đã quá nặng, tâm ma chực chờ trỗi dậy mỗi khi ngươi nhắm mắt.');
-  if(threads.length)narr+='\n\n'+RNG.pick(threads);
-  else if(luckOf().id<=0)narr+='\n\nVận đen đeo bám; đi đâu ngươi cũng thấy điềm gở.';
-  else narr+='\n\nThiên địa tĩnh lặng một cách đáng ngờ — trước giông bão thường là như vậy.';
-  return{title:'Giang Hồ Lộ',narr,choices:c,log:true};
+  if(openMys.length)out.push(`Một bí ẩn chưa lời giải — 「${esc(RNG.pick(openMys).t)}」 — vẫn ám ảnh tâm trí ngươi.`);
+  if(S.taint>30)out.push('Chướng khí trong người đã quá nặng, tâm ma chực chờ trỗi dậy mỗi khi ngươi nhắm mắt.');
+  return out;
+}
+// chuyển bối cảnh → dòng chảy sang tình huống MỚI (giữ hub là null-scene, không lưu hàm)
+function flow(next,lead){
+  if(next){S.momentHist=S.momentHist||[];S.momentHist.push(S.moment);if(S.momentHist.length>8)S.momentHist.shift();S.moment=next;}
+  S.momentLead=lead||'';
+  if(!S.alive){afterAct();return;}
+  S.scene=null;render();save();
+}
+function sceneHub(){
+  const tg=nextTarget(),ready=S.progress>=1,m=S.moment||'kham';
+  const season=['đầu xuân, vạn vật hồi sinh','giữa hạ, linh khí hừng hực','cuối thu, lá vàng rơi rụng','giữa đông, tuyết phủ trắng trời'][Math.floor(((S.time.m||1)-1)/3)%4];
+  let narr='';
+  if(S.momentLead){narr+=S.momentLead+'\n\n';S.momentLead='';}
+  narr+=situationText(m,season);
+  const th=threadFlavor();
+  if(th.length&&RNG.chance(0.8))narr+='\n\n'+RNG.pick(th);
+  const c=[];
+  const deep=()=>setScene(rollEvent());
+  // ---- Lựa chọn LUÔN có (dù ở đâu): dấn thân theo bối cảnh ----
+  // ---- Lựa chọn theo BỐI CẢNH ----
+  if(m==='kham'){
+    c.push({l:'🏯 Tìm tới nơi có người — thị trấn, thôn xóm',hint:'Nghe ngóng tin tức, mua bán, tìm cơ hội.',act:()=>{advance(RNG.range(0.3,0.8));flow('thon','Theo làn khói bếp phía chân trời, ngươi tìm tới một thị trấn.');}});
+    c.push({l:'🌲 Dấn thân vào vùng hoang vu phía trước',hint:'Tài nguyên, di tích — và hiểm nguy.',act:()=>{advance(RNG.range(0.3,0.8));flow('hoang','Ngươi rẽ khỏi đường mòn, tiến vào vùng đất không người.');}});
+    c.push({l:'⚔ Bước thẳng vào chuyện đang chờ ngươi',hint:'Một tình huống bất ngờ: cơ duyên, ân oán, bí ẩn...',cls:'primary',act:deep});
+    c.push({l:'🧘 Tìm một nơi thanh tịnh, tĩnh tọa tu luyện',act:()=>{flow('quan','Ngươi rời con đường bụi bặm, tìm tới một hẻm núi vắng để tĩnh tu.');}});
+    if(S.ri>=1)c.push({l:'👥 Để mắt tới những kẻ đồng đạo quanh đây',act:()=>{flow('giao','Ngươi chậm bước, quan sát những tu sĩ qua lại.');}});
+  }else if(m==='thon'){
+    c.push({l:'🍵 Nghe ngóng tin đồn nơi quán trà',cls:'primary',act:()=>{advance(RNG.range(0.15,0.4));if(RNG.chance(0.35)){deep();return;}flow('thon','【Đồn đãi】 '+RNG.pick(RUMORS));}});
+    c.push({l:'⚙ Lo liệu sự vụ tu hành',hint:'Phường thị · tông môn · động phủ · nghề phụ · luyện bảo · thu đồ · lập thế lực...',act:()=>{setScene(sceneAffairs());}});
+    c.push({l:'🤝 Tìm người có thể chỉ điểm / kết giao',act:()=>{flow('giao','Ngươi lân la làm quen với đám tu sĩ trong thành.');}});
+    c.push({l:'🌲 Ra khỏi thành, vào vùng hoang săn tìm tài nguyên',act:()=>{advance(RNG.range(0.2,0.5));flow('hoang','Ngươi mua ít vật tư rồi rời thành, tiến về vùng hoang.');}});
+    c.push({l:'🛤 Rời thị trấn, tiếp tục lên đường',act:()=>{advance(RNG.range(0.2,0.5));flow('kham','Ngươi khoác túi càn khôn, hòa lại vào con đường thiên lý.');}});
+  }else if(m==='hoang'){
+    c.push({l:'⛏ Lùng sục tìm linh dược, khoáng mạch, di bảo',cls:'primary',act:()=>{advance(RNG.range(0.3,0.8));if(RNG.chance(0.42)){deep();return;}const got=loot(clamp(maxGrade(S.world.tier)-1,1,12));flow('hoang','Ngươi lùng sục hồi lâu giữa hiểm địa và thu hoạch: '+got.join(', ')+'.');}});
+    c.push({l:'⚔ Tiến sâu hơn nữa, bất chấp hiểm nguy',hint:'Càng sâu, cơ duyên càng lớn — sát cơ cũng vậy.',cls:'primary',act:deep});
+    if(S.world.secretRealm>0)c.push({l:'🌌 Thâm nhập bí cảnh cổ đang mở',hint:'Cơ duyên & sát cơ song hành.',cls:'primary',act:()=>{setScene(evSecretRealm());}});
+    c.push({l:'🧘 Ẩn mình tĩnh tu, hấp thu linh khí hoang dã',act:()=>{flow('quan','Ngươi tìm một hang đá kín gió giữa vùng hoang, thu liễm khí tức.');}});
+    c.push({l:'↩ Rút về nơi an toàn',act:()=>{advance(RNG.range(0.2,0.5));flow(RNG.chance(0.5)?'thon':'kham','Ngươi thận trọng lần theo lối cũ, rời khỏi vùng hiểm địa.');}});
+  }else if(m==='quan'){
+    c.push({l:'🧘 Chuyên tâm luyện hóa (an toàn, chậm)',cls:'primary',act:()=>{const g=cultivate(1,false);if(!S.alive){afterAct();return;}flow('quan','Một năm trôi qua trong tĩnh lặng. Tu vi nhích thêm '+Math.round(g*100)+'%.'+(S.progress>=1?' Ngươi cảm thấy đã tới bình cảnh — có thể xung kích đột phá.':''));}});
+    c.push({l:'🔥 Khổ tu bức tu vi (nhanh nhưng hao thọ)',act:()=>{const g=cultivate(1,true);if(!S.alive){afterAct();return;}flow('quan','Ngươi ép kinh mạch tới cực hạn. Tu vi +'+Math.round(g*100)+'%, nhưng thọ nguyên hao mòn.');}});
+    if(!ready)c.push({l:'⏩ Bế quan dài hạn tới khi đủ đột phá',act:()=>{let g=0;while(S.alive&&S.progress<1&&g<4000){cultivate(1,false);g++;}if(!S.alive){afterAct();return;}if(RNG.chance(0.4)){deep();return;}flow('quan','Ngươi bế quan không rõ bao lâu, tới khi tu vi đã tràn đầy, chỉ chờ một bước đột phá.');}});
+    if(ready&&tg)c.push({l:`⚡ Cảm thấy đã đến lúc — toàn lực đột phá ${tg.name}`,hint:'Ổn cố căn cơ rồi xung kích. Thành thì thăng cảnh, bại thì phản phệ.',cls:'primary',act:()=>{setScene(sceneBreakthrough());}});
+    if(S.ri>=1&&S.dao>=40)c.push({l:'☯ Tĩnh tọa, thử cầu một tia Ngộ Đạo',hidden:true,act:()=>{setScene(sceneNgoDao());}});
+    if(canAscendWorld())c.push({l:`🌠 Vận công cảm ứng — PHI THĂNG vượt giới → ${WORLDS[S.world.tier].n}`,cls:'primary',act:()=>{setScene(sceneAscendWorld());}});
+    if(S.ri>=100)c.push({l:'✧ Nghịch thiên độ kiếp — PHI THĂNG, kết thúc đạo ca',cls:'primary',hidden:true,act:()=>{S.flags.ascended=true;S.alive=false;S.cause='Ngươi đã đi tới tận cùng của đại đạo. Thiên môn mở ra, ngươi cất bước rời khỏi phàm trần này.';log('✧ ĐỘ KIẾP PHI THĂNG ✧','good');render();save();}});
+    c.push({l:'🚪 Xuất quan, trở lại giang hồ',act:()=>{flow('kham','Ngươi mở mắt, thu công. Cửa động mở ra, gió trần thổi vào mặt.');}});
+  }else if(m==='giao'){
+    c.push({l:'🤝 Kết giao chân thành, gây dựng nhân mạch',cls:'primary',act:()=>{const n=makeNPC(RNG.int(-1,2));remember(n,'kết giao',12);addFame(1);flow('giao','Ngươi kết giao với '+esc(n.name)+' ('+esc(realmName(n.ri,n.si))+') — một mối nhân duyên mới trong giang hồ.');}});
+    c.push({l:'🎭 Lợi dụng, đưa đẩy kẻ khác cho mục đích của mình',act:()=>{const n=makeNPC(RNG.int(-1,2));remember(n,'bị lợi dụng',-8);addKarma(-1,'lợi dụng người');if(RNG.chance(0.3)){flow('giao','Ngươi lợi dụng '+esc(n.name)+' xong xuôi — nhưng ánh mắt hắn nhìn ngươi đã khác. Ân oán gieo mầm.');}else{flow('giao','Ngươi khéo léo mượn tay '+esc(n.name)+' đạt được điều mình muốn, hắn còn chưa hay.');}}});
+    c.push({l:'⚔ Khiêu khích, ra oai với kẻ ngáng đường',act:deep});
+    c.push({l:'🚶 Thôi, một mình vẫn hơn — rời đi',act:()=>{flow('kham','Ngươi quay lưng với đám đông. Đạo của ngươi, rốt cuộc vẫn là con đường cô độc.');}});
+  }else{ // fallback
+    c.push({l:'⚔ Dấn thân — xem chuyện gì đang chờ ngươi',cls:'primary',act:deep});
+    c.push({l:'🧘 Tìm nơi tĩnh tọa tu luyện',act:()=>{flow('quan','');}});
+  }
+  return{title:MOMENT_NAME[m]||'Giang Hồ Lộ',narr,choices:c,log:true};
 }
 function sceneNgoDao(){S.stats.ngodao++;const gain=0.1+RNG.range(0,0.2)*(S.cmp);const insight=RNG.chance(0.3+S.cmp*0.05);
   return{title:'Ngộ Đạo',narr:`Ngươi ngồi kiết già, gạt bỏ vạn niệm. Hơi thở chậm lại, chậm lại... cho tới khi ngươi không còn nghe thấy nó nữa.
