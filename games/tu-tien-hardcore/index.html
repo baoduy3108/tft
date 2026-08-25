@@ -854,7 +854,7 @@ function newState(originId){
     luck:fx.luck!=null?fx.luck:luckId,luckShown:false,
     cmp:fx.cmp||1,hpMul:fx.hp||1,atkMul:fx.atk||1,defMul:fx.def||1,cultMul:fx.cult||1,
     fame:0,karma:fx.karma||0,att:fx.att||0,
-    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,
+    inv:{},treasures:[],techs:[],tech:null,arrays:[],beasts:[],prof:null,daolu:null,natal:null,laws:[],cave:null,tower:null,ownForce:null,disciple:null,rival:null,achievements:[],clues:{},heart:0,placeClues:{},placesFound:[],realmsFound:[],realmsLooted:[],fated:[],duyenDone:{},bivan:[],foundation:0,tkboard:null,
     hidden:fx.hidden?{...fx.hidden,shown:false}:null,mutations:[],
     world:{tier:1,name:'[Khô Kiệt Tinh Lộ]',region:'Thôn Khô Thạch',machId:1,qiMod:1,secretRealm:0},
     sect:null,npcs:{},ledger:[],flags:{...(fx.flags||{})},
@@ -907,6 +907,7 @@ function advance(years){S.time.d+=Math.round(years*360);while(S.time.d>360){S.ti
   if(S.world.qiMod&&S.world.qiMod!==1){S.world.qiMod+=(1-S.world.qiMod)*Math.min(1,years*0.12);if(Math.abs(S.world.qiMod-1)<0.03)S.world.qiMod=1;}
   if(S.world.secretRealm>0){S.world.secretRealm-=years;if(S.world.secretRealm<=0){S.world.secretRealm=0;log('『THẾ GIỚI』 Cửa bí cảnh cổ đã khép lại. Cơ duyên trong đó, từ nay thành truyền thuyết.','lore');}}
   if(S.rival)rivalGrow(years); // đối thủ mệnh định cũng tu luyện, cũng đột phá
+  boardGrow(years); // thiên kiêu trên Bảng Phong Vân cũng không ngừng tiến bộ
   if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên cạn kiệt. Ngươi ngồi kiết già, hóa thành tro tàn theo lẽ trời đất.';log('☠ Thọ nguyên cạn.',' death');}}
 function deductLife(y,r){S.life-=y;if(r)log(`Thọ nguyên hao ${Math.round(y)} năm (${r}).`,'bad');if(S.life<=0&&S.alive){S.alive=false;S.cause='Thọ nguyên khấu tận vì '+(r||'hao tổn')+'.';}}
 function machQi(){return MACH_QI[clamp((S.world.machId||1)-1,0,11)];}
@@ -2014,6 +2015,24 @@ function evBiVan(){var locked=[];for(var i=0;i<BIVAN.length;i++)if((S.bivan||[])
   if(RNG.chance(0.5))S.dao=Math.min(100,S.dao+1);else S.cmp=Math.round((S.cmp+0.01)*100)/100;
   return{title:'DỊ VĂN · Một Mảnh Chân Tướng',narr:`Giữa chốn phiêu bạt, ngươi vô tình chạm phải một mảnh bí văn cổ — một sự thật vụn vỡ về thế gian này:\n\n"${BIVAN[idx]}"\n\n(Dị Văn Lục: ${S.bivan.length}/${BIVAN.length} — ghi lại ở tab Nhân Vật)`,choices:[
     {l:'Ghi khắc vào tâm khảm.',cls:'primary',act:()=>setResult('Ngươi khắc mảnh dị văn này vào ký ức. Từng mảnh nhỏ, một ngày sẽ ghép thành bức tranh lớn về chân tướng của cái thế giới này.')}]};}
+/* ===== THIÊN KIÊU BẢNG (Bảng Phong Vân) — thiên tài cả thời đại, leo hạng tranh phong ===== */
+const TK_TITLE=['Kiếm Nhất','Đạo Tử','Thánh Nữ','Cuồng Đao','Vô Song Kiêu','Băng Tâm','Huyết Thủ','Ma Kiêu','Long Tôn','Sát Tinh','Thiên Đồng','Huyễn Cơ'];
+function ensureBoard(){if(S.tkboard)return;S.tkboard=[];const used={};for(let i=0;i<10;i++){let nm;do{nm=RNG.pick(SUR)+' '+RNG.pick(GIV);}while(used[nm]&&Object.keys(used).length<40);used[nm]=1;
+  S.tkboard.push({name:nm,title:TK_TITLE[i],ri:clamp((S.ri||1)+(10-i)+RNG.int(0,2),1,100),si:RNG.int(0,3),bonus:0.12+(9-i)*0.06,race:RNG.pick(['nhan','nhan','yeu','ma','long']),alive:true,beaten:false});}}
+function boardMight(m){return powerExp(m.ri,m.si)+(m.bonus||0)+(m.beaten?-0.6:0);}
+function playerRank(){ensureBoard();const pm=powerMight();const live=S.tkboard.filter(m=>m.alive);const stronger=live.filter(m=>boardMight(m)>pm).length;return stronger>=10?0:stronger+1;}
+function boardGrow(years){if(!S.tkboard)return;for(const m of S.tkboard){if(m.alive&&!m.beaten&&m.ri<100&&RNG.chance(0.05*years))m.ri++;}}
+function evTienKieu(){ensureBoard();const pm=powerMight();const live=S.tkboard.filter(m=>m.alive).sort((a,b)=>boardMight(a)-boardMight(b));if(!live.length)return evFortune();
+  const target=live.find(m=>boardMight(m)>pm)||live[live.length-1];const rank=playerRank();const above=live.filter(m=>boardMight(m)>pm).length;
+  const challenger=above>0&&RNG.chance(0.5); // kẻ trên bảng tìm tới khiêu chiến / hoặc ngươi thách đấu
+  return{title:'THIÊN KIÊU · Bảng Phong Vân',narr:`${challenger?`${target.name} — 【${target.title}】, xếp trên ngươi trong Bảng Phong Vân — tìm tới khiêu chiến, muốn mượn ngươi lập uy.`:`Ngươi chạm mặt ${target.name} — 【${target.title}】 (${esc(realmName(target.ri,target.si))}), một thiên kiêu trong Bảng Phong Vân. Đánh bại hắn là một bước lên đài danh vọng.`}\n\n〔 Thứ hạng của ngươi: ${rank?('#'+rank):'ngoài bảng'} 〕`,choices:[
+    {l:'Ứng chiến — tranh phong đoạt vị!',cls:'primary',hint:'Thắng: leo hạng, danh chấn. Bại: mất mặt, có thể mất mạng.',act:()=>{const r=fight({name:target.name,ri:target.ri,si:target.si,mightBonus:target.bonus});
+      if(r==='win'){S.fame=clamp(S.fame+18,-100,1000);if(RNG.chance(0.45)){target.alive=false;S.stats.kills++;addKarma(-1,'trảm một thiên kiêu');/* rising star thế chỗ */const nm=RNG.pick(SUR)+' '+RNG.pick(GIV);S.tkboard.push({name:nm,title:RNG.pick(TK_TITLE),ri:clamp((S.ri||1)-1,1,100),si:0,bonus:0.1,race:'nhan',alive:true,beaten:false});setResult('Ngươi TRẢM '+target.name+' ngay trên đài tranh phong! Cả một phương chấn động — một hậu bối khác lập tức nổi lên thế chỗ trong bảng. Danh ngươi vang xa.');}
+        else{target.beaten=true;setResult('Ngươi đánh bại '+target.name+' trước mặt quần hùng! Hắn ôm hận rút lui, thứ hạng của ngươi trên Bảng Phong Vân vọt lên. (Xem Bảng ở tab Nhân Vật.)');}}
+      else if(r==='dead'){setResult(S.cause);}
+      else{S.fame=clamp(S.fame-6,-100,1000);setResult(r==='flee'?'Ngươi liệu thế không địch nổi, liều mình thoát khỏi đài tranh phong — mất mặt nhưng giữ được mạng.':'Ngươi bại dưới tay '+target.name+', trọng thương. Danh dự tổn hại, nhưng núi cao còn có núi cao hơn.');}}},
+    {l:'Nén nhịn, chưa phải lúc — lặng lẽ rút lui.',hint:'Giữ mình, chờ đủ lông đủ cánh.',act:()=>{if(challenger){S.fame=clamp(S.fame-3,-100,1000);setResult('Ngươi nuốt nhục lui bước trước lời khiêu chiến. Đám đông cười nhạo, nhưng kẻ biết nhẫn mới đi được xa. "Cười đi. Có ngày ta trở lại."');}else setResult('Ngươi lặng lẽ quan sát thiên kiêu kia rồi rời đi, ghi nhớ thực lực đối phương. Chưa tới lúc.');}},
+  ]};}
 function rollEvent(){worldPulse();
   // Nhân quả CƯỠNG CHẾ (ưu tiên cao, hiếm): nợ máu bị báo thù / thiện được báo đáp
   const debts=S.ledger.filter(x=>x.n<=-2&&(x.tag.includes('giết')||x.tag.includes('cướp')||x.tag.includes('phản')||x.tag.includes('tà')||x.tag.includes('hắc')));
@@ -2042,6 +2061,7 @@ function rollEvent(){worldPulse();
   add('auction',4,evAuction);
   add('conf',(S.fame>=30)?4:0,evDaoConference);
   add('rival',(S.ri>=1)?7:0,evRival);
+  add('tienkieu',(S.ri>=1)?6:0,evTienKieu);
   add('consequence',npcRel?9:0,evConsequence);
   add('innerdemon',Math.round(clamp(0.04+(S.taint>20?0.04:0)+(S.karma<0?0.03:0)+(S.dao<40?0.04:0),0.04,0.2)*45),evInnerDemon);
   add('combat',Math.round(clamp(dis*45,3,30)),evCombat);
@@ -2249,6 +2269,9 @@ function charTab(){const l=luckOf();const buffs=Object.entries(S.tc.buff||{}).ma
    <p><b>Chủng tộc:</b> ${esc(S.raceName||'Nhân Tộc')} <span class="muted" style="font-size:.78rem">${esc((RACES.find(r=>r.id===S.race)||RACES[0]).d)}</span></p>
    <p><b>Động phủ:</b> ${S.cave?'cấp '+S.cave.level+' (linh điền '+S.cave.field.filter(x=>x).length+'/3 ô)':'<i>chưa có</i>'} · <b>Thế lực:</b> ${S.ownForce?esc(S.ownForce.name)+' ('+S.ownForce.members+' bộ hạ)':'<i>chưa lập</i>'} · <b>Đồ đệ:</b> ${S.disciple?esc(S.disciple.name):'<i>không</i>'} · <b>Tháp:</b> tầng ${(S.tower&&S.tower.best)||0}</p>
    <p><b>Đối thủ mệnh định:</b> ${S.rival?(S.rival.alive?esc(S.rival.name)+' <span class="muted">('+esc(realmName(S.rival.ri,S.rival.si))+', ân oán '+S.rival.grudge+', chạm mặt '+S.rival.encounters+' lần)</span>':'<span class="good">đã bị ngươi trảm sát</span>'):'<i>chưa xuất hiện</i>'}</p>
+   ${(()=>{if(!S.tkboard&&S.ri<1)return '';ensureBoard();const pm=powerMight();const rank=playerRank();const live=S.tkboard.filter(m=>m.alive).slice().sort((a,b)=>boardMight(b)-boardMight(a)).slice(0,10);const rows=live.map((m,i)=>{const stronger=boardMight(m)>pm;return `<div style="display:flex;justify-content:space-between;gap:6px;margin:1px 0;${stronger?'':'color:var(--muted)'}"><span>#${i+1} ${esc(m.name)} <span class="muted" style="font-size:.72rem">【${esc(m.title)}】${m.beaten?' · <span class="warn">bại dưới tay ngươi</span>':''}</span></span><span class="muted" style="font-size:.72rem">${esc(realmName(m.ri,m.si))}</span></div>`;}).join('');return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px"><div style="color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:4px">🏆 Bảng Phong Vân — Thiên Kiêu một thời đại</div>
+   <div style="font-size:.76rem">${rows}</div>
+   <div class="muted" style="font-size:.74rem;margin-top:4px">Thứ hạng của ngươi: <b style="color:${rank&&rank<=3?'var(--gold2)':'var(--txt)'}">${rank?('#'+rank+(rank===1?' — Thiên Hạ Đệ Nhất Kiêu!':'')):'ngoài bảng'}</b> · Đánh bại thiên kiêu để leo hạng, trảm để lưu danh.</div></div>`;})()}
    <p><b>Thống kê:</b> Giết ${S.stats.kills} · Đột phá ${S.stats.break} · Luyện đan ${S.stats.pills} · Ngộ đạo ${S.stats.ngodao} · Bị phản bội ${S.stats.betray}</p>
    <p><b>Thành tựu (${(S.achievements||[]).length}/${ACHIEVEMENTS.length}):</b> ${(S.achievements||[]).length?S.achievements.map(id=>`<span class="chip">🏆 ${esc(achTitle(id))}</span>`).join(''):'<i>chưa mở khóa</i>'}</p>
    ${(()=>{const cap=maxGrade(S.world.tier);const hard=Math.min(12,cap+2);return `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">
